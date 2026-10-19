@@ -14,6 +14,7 @@ class Gedung extends Model
     {
         return $this->hasMany(Lokasi::class);
     }
+
     public function users()
     {
         return $this->belongsToMany(User::class);

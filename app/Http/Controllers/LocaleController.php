@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 class LocaleController extends Controller
 {
     public function setLocale($lang)
@@ -11,7 +9,7 @@ class LocaleController extends Controller
         if (in_array($lang, ['en', 'id'])) {
             session(['locale' => $lang]);
         }
-        
+
         return back();
     }
 }

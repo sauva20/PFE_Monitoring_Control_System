@@ -3,8 +3,8 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
+use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
@@ -15,7 +15,9 @@ class AparExpiryReminder extends Mailable
     use Queueable, SerializesModels;
 
     public $apars;
+
     public $targetDate;
+
     public $recipientName;
 
     /**
@@ -34,6 +36,7 @@ class AparExpiryReminder extends Mailable
     public function envelope(): Envelope
     {
         $count = $this->apars->count();
+
         return new Envelope(
             subject: "Peringatan H-30: Terdapat {$count} APAR Kedaluwarsa",
         );
@@ -52,7 +55,7 @@ class AparExpiryReminder extends Mailable
     /**
      * Get the attachments for the message.
      *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
+     * @return array<int, Attachment>
      */
     public function attachments(): array
     {

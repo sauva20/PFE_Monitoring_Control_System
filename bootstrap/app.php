@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Middleware\PreventBackHistory;
+use App\Http\Middleware\RestrictPinLogin;
+use App\Http\Middleware\SetLocale;
+use App\Models\Apar;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,29 +17,30 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
-            \App\Http\Middleware\SetLocale::class,
+            SetLocale::class,
         ]);
         $middleware->alias([
-            'prevent-back-history' => \App\Http\Middleware\PreventBackHistory::class,
-            'restrict-pin-login' => \App\Http\Middleware\RestrictPinLogin::class,
+            'prevent-back-history' => PreventBackHistory::class,
+            'restrict-pin-login' => RestrictPinLogin::class,
         ]);
         $middleware->trustProxies(at: '*');
         $middleware->redirectGuestsTo(function (Request $request) {
             if ($request->is('inspeksi/*')) {
                 session()->flash('error', 'Sesi inspeksi Anda telah berakhir atau tidak valid. Silakan scan ulang QR Code atau masukkan PIN kembali.');
-                
+
                 $aparId = $request->segment(2);
                 if ($aparId && is_numeric($aparId)) {
-                    $apar = \App\Models\Apar::find($aparId);
+                    $apar = Apar::find($aparId);
                     if ($apar) {
                         return route('scan.apar', $apar->kode);
                     }
                 }
-                
+
                 return url()->previous() ?? '/';
             }
 
             session()->flash('auth_error', 'Anda harus login untuk mengakses sistem ini.');
+
             return route('login');
         });
         $middleware->redirectUsersTo(function (Request $request) {

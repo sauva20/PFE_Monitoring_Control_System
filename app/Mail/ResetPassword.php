@@ -12,6 +12,7 @@ class ResetPassword extends Mailable
     use Queueable, SerializesModels;
 
     public $user;
+
     public $resetUrl;
 
     /**
@@ -33,6 +34,6 @@ class ResetPassword extends Mailable
     public function build()
     {
         return $this->subject('Reset Kata Sandi - PFE Monitoring Control System')
-                    ->view('emails.reset-password');
+            ->view('emails.reset-password');
     }
 }

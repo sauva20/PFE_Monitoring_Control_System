@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Apar;
 use App\Models\Gedung;
 use App\Models\Inspeksi;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 class ReportController extends Controller
 {
@@ -20,13 +22,13 @@ class ReportController extends Controller
         $status = $request->input('status', 'all');
 
         $query = Apar::with(['lokasi.gedung', 'jenis', 'kapasitas']);
-        
+
         if ($selectedGedung) {
-            $query->whereHas('lokasi', function($q) use ($selectedGedung) {
+            $query->whereHas('lokasi', function ($q) use ($selectedGedung) {
                 $q->where('gedung_id', $selectedGedung);
             });
         }
-        
+
         $apars = $query->orderBy('kode', 'asc')->get();
 
         $inspeksiBulanIniAparIds = Inspeksi::whereMonth('created_at', $selectedMonth)
@@ -39,9 +41,13 @@ class ReportController extends Controller
 
         foreach ($apars as $apar) {
             $isInspected = in_array($apar->id, $inspeksiBulanIniAparIds);
-            
-            if ($status === 'sudah' && !$isInspected) continue;
-            if ($status === 'belum' && $isInspected) continue;
+
+            if ($status === 'sudah' && ! $isInspected) {
+                continue;
+            }
+            if ($status === 'belum' && $isInspected) {
+                continue;
+            }
 
             $inspeksi = null;
             if ($isInspected) {
@@ -55,7 +61,7 @@ class ReportController extends Controller
             $reportData->push([
                 'apar' => $apar,
                 'status' => $isInspected ? 'Sudah Diinspeksi' : 'Belum Diinspeksi',
-                'inspeksi' => $inspeksi
+                'inspeksi' => $inspeksi,
             ]);
         }
 
@@ -64,7 +70,7 @@ class ReportController extends Controller
             'selectedYear' => $selectedYear,
             'selectedMonth' => $selectedMonth,
             'selectedGedung' => $selectedGedung,
-            'status' => $status
+            'status' => $status,
         ];
     }
 
@@ -75,19 +81,19 @@ class ReportController extends Controller
         $reportData = $reportParams['data'];
 
         $perPage = 15;
-        $page = \Illuminate\Pagination\Paginator::resolveCurrentPage() ?: 1;
-        $paginatedData = new \Illuminate\Pagination\LengthAwarePaginator(
+        $page = Paginator::resolveCurrentPage() ?: 1;
+        $paginatedData = new LengthAwarePaginator(
             $reportData->forPage($page, $perPage),
             $reportData->count(),
             $perPage,
             $page,
-            ['path' => \Illuminate\Pagination\Paginator::resolveCurrentPath()]
+            ['path' => Paginator::resolveCurrentPath()]
         );
         $paginatedData->appends($request->all());
 
         return view('reports.index', array_merge($reportParams, [
             'paginatedData' => $paginatedData,
-            'gedungs' => $gedungs
+            'gedungs' => $gedungs,
         ]));
     }
 
@@ -95,19 +101,19 @@ class ReportController extends Controller
     {
         $reportParams = $this->getReportData($request);
         $reportData = $reportParams['data'];
-        
+
         $month = Carbon::createFromDate($reportParams['selectedYear'], $reportParams['selectedMonth'], 1);
-        $monthName = __($month->format('F')) . ' ' . $month->format('Y');
+        $monthName = __($month->format('F')).' '.$month->format('Y');
         $gedungName = $reportParams['selectedGedung'] ? Gedung::find($reportParams['selectedGedung'])->nama ?? __('All Buildings') : __('All Buildings');
 
         $pdf = Pdf::loadView('reports.pdf', [
             'reportData' => $reportData,
             'monthName' => $monthName,
             'gedungName' => $gedungName,
-            'status' => $reportParams['status']
+            'status' => $reportParams['status'],
         ])->setPaper('a4', 'landscape');
 
-        return $pdf->stream('Laporan_Inspeksi_' . $monthName . '.pdf');
+        return $pdf->stream('Laporan_Inspeksi_'.$monthName.'.pdf');
     }
 
     public function exportExcel(Request $request)
@@ -115,21 +121,21 @@ class ReportController extends Controller
         $reportParams = $this->getReportData($request);
         $reportData = $reportParams['data'];
         $month = Carbon::createFromDate($reportParams['selectedYear'], $reportParams['selectedMonth'], 1);
-        $monthName = __($month->format('F')) . ' ' . $month->format('Y');
+        $monthName = __($month->format('F')).' '.$month->format('Y');
 
-        $filename = "Laporan_Inspeksi_" . date('Ymd_His') . ".csv";
+        $filename = 'Laporan_Inspeksi_'.date('Ymd_His').'.csv';
 
         $headers = [
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            'Content-type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=$filename",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ];
 
         $columns = [__('No'), __('PFE ID'), __('Building'), __('Location'), __('Type'), __('Capacity'), __('Inspection Status'), __('Inspection Date'), __('Inspector'), __('Condition'), __('Additional Notes')];
 
-        $callback = function() use($reportData, $columns) {
+        $callback = function () use ($reportData, $columns) {
             $file = fopen('php://output', 'w');
             fputcsv($file, $columns);
 
@@ -138,7 +144,7 @@ class ReportController extends Controller
                 $apar = $row['apar'];
                 $inspeksi = $row['inspeksi'];
                 $isInspected = $row['status'] === 'Sudah Diinspeksi';
-                
+
                 fputcsv($file, [
                     $no++,
                     $apar->kode,
@@ -150,7 +156,7 @@ class ReportController extends Controller
                     $inspeksi ? Carbon::parse($inspeksi->created_at)->format('d M Y H:i') : 'n/a',
                     $inspeksi?->user?->name ?? 'n/a',
                     $inspeksi?->status ?? 'n/a',
-                    $inspeksi?->catatan_tambahan ?? 'n/a'
+                    $inspeksi?->catatan_tambahan ?? 'n/a',
                 ]);
             }
 
@@ -165,9 +171,9 @@ class ReportController extends Controller
         $bulan = $request->bulan ?? date('m');
         $tahun = $request->tahun ?? date('Y');
 
-        $apars = Apar::with(['lokasi.gedung', 'jenis', 'kapasitas', 'inspeksis' => function($q) use($bulan, $tahun) {
+        $apars = Apar::with(['lokasi.gedung', 'jenis', 'kapasitas', 'inspeksis' => function ($q) use ($bulan, $tahun) {
             $q->whereYear('created_at', $tahun)
-              ->whereMonth('created_at', $bulan);
+                ->whereMonth('created_at', $bulan);
         }])->get();
 
         $reportData = collect();
@@ -176,7 +182,7 @@ class ReportController extends Controller
             $reportData->push([
                 'apar' => $apar,
                 'status' => $inspeksiThisMonth ? 'Sudah Diinspeksi' : 'Belum Diinspeksi',
-                'inspeksi' => $inspeksiThisMonth
+                'inspeksi' => $inspeksiThisMonth,
             ]);
         }
 
@@ -186,7 +192,7 @@ class ReportController extends Controller
                 return $item['status'] === $statusFilter;
             });
         }
-        
+
         $columns = [__('No'), __('PFE ID'), __('Building'), __('Location'), __('Type'), __('Capacity'), __('Inspection Status'), __('Inspection Date'), __('Inspector'), __('Condition'), __('Additional Notes')];
         $rows = [];
 
@@ -195,7 +201,7 @@ class ReportController extends Controller
             $apar = $row['apar'];
             $inspeksi = $row['inspeksi'];
             $isInspected = $row['status'] === 'Sudah Diinspeksi';
-            
+
             $rows[] = [
                 $no++,
                 $apar->kode,
@@ -207,13 +213,13 @@ class ReportController extends Controller
                 $inspeksi ? Carbon::parse($inspeksi->created_at)->format('d M Y H:i') : 'n/a',
                 $inspeksi?->user?->name ?? 'n/a',
                 $inspeksi?->status ?? 'n/a',
-                $inspeksi?->catatan_tambahan ?? 'n/a'
+                $inspeksi?->catatan_tambahan ?? 'n/a',
             ];
         }
 
         return response()->json([
             'headers' => $columns,
-            'rows' => $rows
+            'rows' => $rows,
         ]);
     }
 }

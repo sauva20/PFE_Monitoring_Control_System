@@ -581,5 +581,9 @@
     "Type": "Type",
     "Capacity": "Capacity",
     "Stock Quantity": "Stock Quantity",
-    "Total": "Total"
+    "Total": "Total",
+    "Harap centang verifikasi reCAPTCHA.": "Please complete the reCAPTCHA verification.",
+    "Verifikasi reCAPTCHA tidak valid. Silakan coba lagi.": "reCAPTCHA verification is invalid. Please try again.",
+    "Gagal terhubung ke server verifikasi reCAPTCHA. Pastikan perangkat terhubung ke internet.": "Failed to connect to reCAPTCHA verification server. Please make sure the device is connected to the internet.",
+    "Security Verification": "Security Verification"
 }

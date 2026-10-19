@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use Spatie\Activitylog\Models\Activity;
 
 class ActivityLogController extends Controller
@@ -20,29 +21,30 @@ class ActivityLogController extends Controller
     {
         $activities = Activity::with('causer')->latest()->get();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('activity-log.pdf', compact('activities'))->setPaper('a4', 'portrait');
-        return $pdf->stream('Audit_Trail_' . date('Ymd_His') . '.pdf');
+        $pdf = Pdf::loadView('activity-log.pdf', compact('activities'))->setPaper('a4', 'portrait');
+
+        return $pdf->stream('Audit_Trail_'.date('Ymd_His').'.pdf');
     }
 
     public function exportExcel()
     {
         $activities = Activity::with('causer')->latest()->get();
-        $filename = "Audit_Trail_" . date('Ymd_His') . ".csv";
+        $filename = 'Audit_Trail_'.date('Ymd_His').'.csv';
 
         $headers = [
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            'Content-type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=$filename",
+            'Pragma' => 'no-cache',
+            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires' => '0',
         ];
 
         $columns = [__('Time'), __('User'), __('Action'), __('Module'), __('Description')];
 
-        $callback = function() use($activities, $columns) {
+        $callback = function () use ($activities, $columns) {
             $file = fopen('php://output', 'w');
             // add BOM to fix UTF-8 in Excel
-            fputs($file, $bom =(chr(0xEF) . chr(0xBB) . chr(0xBF)));
+            fwrite($file, $bom = (chr(0xEF).chr(0xBB).chr(0xBF)));
             fputcsv($file, $columns);
 
             foreach ($activities as $activity) {
@@ -64,7 +66,7 @@ class ActivityLogController extends Controller
     public function previewExcel()
     {
         $activities = Activity::with('causer')->latest()->get();
-        
+
         $columns = [__('Time'), __('User'), __('Action'), __('Module'), __('Description')];
         $rows = [];
 
@@ -80,7 +82,7 @@ class ActivityLogController extends Controller
 
         return response()->json([
             'headers' => $columns,
-            'rows' => $rows
+            'rows' => $rows,
         ]);
     }
 }

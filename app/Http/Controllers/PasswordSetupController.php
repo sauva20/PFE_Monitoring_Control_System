@@ -18,7 +18,7 @@ class PasswordSetupController extends Controller
             return redirect('/')->with('auth_error', 'Tautan tidak valid. Akun Anda sudah melakukan setup password sebelumnya.');
         }
 
-        $step = session('pin_verified_' . $user->id) ? 2 : 1;
+        $step = session('pin_verified_'.$user->id) ? 2 : 1;
 
         return view('auth.setup-password', compact('user', 'step'));
     }
@@ -43,13 +43,13 @@ class PasswordSetupController extends Controller
                 return back()->withErrors(['pin' => 'PIN yang Anda masukkan salah.']);
             }
 
-            session(['pin_verified_' . $user->id => true]);
+            session(['pin_verified_'.$user->id => true]);
 
             return back();
         }
 
         // Jika form mengirimkan password (Step 2)
-        if (! session('pin_verified_' . $user->id)) {
+        if (! session('pin_verified_'.$user->id)) {
             return back()->withErrors(['pin' => 'Sesi kedaluwarsa. Silakan masukkan PIN ulang.']);
         }
 
@@ -61,7 +61,7 @@ class PasswordSetupController extends Controller
         $user->email_verified_at = now();
         $user->save();
 
-        session()->forget('pin_verified_' . $user->id);
+        session()->forget('pin_verified_'.$user->id);
 
         return redirect()->route('setup-password.success');
     }

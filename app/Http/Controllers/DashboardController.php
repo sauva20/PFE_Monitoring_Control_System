@@ -2,20 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-
 use App\Models\Apar;
+use App\Models\AparCadangan;
 use App\Models\Inspeksi;
-use App\Models\JadwalInspeksi;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
     private function getDashboardData(Request $request)
     {
         $now = Carbon::now();
-        
+
         // 0. Filter Parameters
         $requestedYear = $request->input('year', $now->year);
         $requestedMonth = $request->input('month', $now->month);
@@ -33,19 +31,19 @@ class DashboardController extends Controller
         }
         // 1. Summary Cards Data
         $totalApar = Apar::count();
-        
+
         $endOfSelectedMonth = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth();
 
-        $apars = Apar::with(['inspeksis' => function($q) use ($endOfSelectedMonth) {
+        $apars = Apar::with(['inspeksis' => function ($q) use ($endOfSelectedMonth) {
             $q->where('created_at', '<=', $endOfSelectedMonth)->latest();
         }, 'jenis'])->get();
-        
+
         $kondisiBaik = 0;
         $rusakServis = 0;
         $akanKedaluwarsa = 0;
         $sudahKedaluwarsa = 0;
         $aparKosong = $apars->where('qty', '<', 1)->count();
-        
+
         $thirtyDaysFromSelected = $endOfSelectedMonth->copy()->addDays(30);
 
         foreach ($apars as $apar) {
@@ -70,7 +68,7 @@ class DashboardController extends Controller
         }
 
         // 2. Chart Data: Jenis APAR
-        $jenisData = $apars->groupBy(function($item) {
+        $jenisData = $apars->groupBy(function ($item) {
             return $item->jenis->nama ?? 'Unknown';
         })->map->count();
 
@@ -85,7 +83,7 @@ class DashboardController extends Controller
                 return [
                     'month' => $date->translatedFormat('M Y'),
                     'sudah' => 0,
-                    'belum' => 0
+                    'belum' => 0,
                 ];
             }
 
@@ -93,11 +91,11 @@ class DashboardController extends Controller
                 ->whereMonth('created_at', $date->month)
                 ->distinct('apar_id')
                 ->count('apar_id');
-                
+
             return [
                 'month' => $date->translatedFormat('M Y'),
                 'sudah' => $inspectedCount,
-                'belum' => max(0, $totalApar - $inspectedCount)
+                'belum' => max(0, $totalApar - $inspectedCount),
             ];
         });
 
@@ -116,13 +114,13 @@ class DashboardController extends Controller
         $sudahDiinspeksiBulanIni = $inspeksiBulanIniAparIds->count();
         $belumDiinspeksiBulanIni = max(0, $totalApar - $sudahDiinspeksiBulanIni);
         $persentaseInspeksi = $totalApar > 0 ? round(($sudahDiinspeksiBulanIni / $totalApar) * 100) : 0;
-        
-        $totalStock = \App\Models\AparCadangan::sum('total');
+
+        $totalStock = AparCadangan::sum('total');
 
         $sudahDiinspeksiApars = Apar::with('lokasi.gedung')
             ->whereIn('id', $inspeksiBulanIniAparIds)
             ->get();
-            
+
         $belumDiinspeksiApars = Apar::with('lokasi.gedung')
             ->whereNotIn('id', $inspeksiBulanIniAparIds)
             ->get();
@@ -151,7 +149,7 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $data = $this->getDashboardData($request);
-        
+
         if ($request->ajax()) {
             return response()->json([
                 'stats' => [
@@ -174,16 +172,17 @@ class DashboardController extends Controller
                     'recentInspections' => view('dashboard.partials.recent-inspections', ['recentInspections' => $data['recentInspections']])->render(),
                     'uninspectedTable' => view('dashboard.partials.uninspected-table', ['belumDiinspeksiApars' => $data['belumDiinspeksiApars']])->render(),
                     'inspectedTable' => view('dashboard.partials.inspected-table', ['sudahDiinspeksiApars' => $data['sudahDiinspeksiApars']])->render(),
-                ]
+                ],
             ]);
         }
-        
+
         return view('dashboard.index', $data);
     }
 
     public function displayReport(Request $request)
     {
         $data = $this->getDashboardData($request);
+
         return view('dashboard.display-report', $data);
     }
 }

@@ -2,7 +2,6 @@
 
 namespace App\Mail;
 
-use App\Models\JadwalInspeksi;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;

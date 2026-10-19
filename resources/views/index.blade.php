@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" class="overflow-hidden">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full">
 
 <head>
     <meta charset="utf-8">
@@ -29,9 +29,14 @@
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Google reCAPTCHA v2 -->
+    @if(config('services.recaptcha.site_key'))
+        <script src="https://www.google.com/recaptcha/api.js?hl={{ app()->getLocale() }}" async defer></script>
+    @endif
 </head>
 
-<body class="bg-[#F0F0F0] text-[#1A1A1A] relative overflow-hidden w-full h-screen grid place-items-center p-4"
+<body class="bg-[#F0F0F0] text-[#1A1A1A] relative overflow-y-auto sm:overflow-hidden w-full min-h-screen grid place-items-center p-4 py-8"
     oncontextmenu="return false;">
     <!-- Global Toast Notification -->
     @if(session('success') || session('error'))
@@ -187,6 +192,22 @@
                         </button>
                     </div>
                 </div>
+
+                @if(config('services.recaptcha.site_key'))
+                    <!-- Google reCAPTCHA v2 Themed Wrapper -->
+                    <div class="bg-gray-50/80 border border-gray-200/90 rounded-2xl p-3 flex flex-col items-center gap-2 shadow-sm hover:border-[#009B77]/40 hover:bg-white transition-all">
+                        <div class="w-full flex items-center justify-between px-1 text-gray-500">
+                            <span class="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 text-gray-500">
+                                <i class="ph-fill ph-shield-check text-[#009B77] text-sm"></i>
+                                <span>{{ __('Security Verification') }}</span>
+                            </span>
+                            <span class="text-[10px] text-gray-400 font-medium">Google reCAPTCHA</span>
+                        </div>
+                        <div class="w-full flex justify-center overflow-hidden rounded-xl border border-gray-200/60 bg-white p-1 shadow-inner">
+                            <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
+                        </div>
+                    </div>
+                @endif
 
                 <!-- Submit Button -->
                 <div class="pt-4">

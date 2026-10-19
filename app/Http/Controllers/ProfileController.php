@@ -15,7 +15,7 @@ class ProfileController extends Controller
             'new_password' => 'required|string|min:8|confirmed',
         ]);
 
-        if (!Hash::check($request->current_password, auth()->user()->password)) {
+        if (! Hash::check($request->current_password, auth()->user()->password)) {
             throw ValidationException::withMessages([
                 'current_password' => 'Kata sandi saat ini tidak sesuai.',
             ]);

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class AparCadangan extends Model
 {
     protected $table = 'apar_cadangans';
+
     protected $fillable = ['gedung_id', 'jenis_id', 'kapasitas_id', 'total'];
 
     public function gedung()
