@@ -35,7 +35,7 @@ class InspectionReminder extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Pengingat Jadwal Inspeksi APAR - B. Braun',
+            subject: 'Pengingat Batas Deadline Inspeksi Bulanan APAR - B. Braun',
         );
     }
 

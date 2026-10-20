@@ -55,8 +55,8 @@ class SimulateBotLogin extends Command
         $this->line('----------------------------------------------------');
 
         $params = [
-            'email' => 'qisty.sauva@bbraun.com',
-            'password' => 'password123',
+            'email' => 'dummy.bot.target@example.com',
+            'password' => 'DummyTestPassword123!',
         ];
 
         if ($mode === 'no-captcha') {

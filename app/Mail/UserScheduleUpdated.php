@@ -32,7 +32,7 @@ class UserScheduleUpdated extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Pembaruan Jadwal Inspeksi Rutin - B. Braun',
+            subject: 'Pembaruan Batas Deadline Inspeksi Bulanan - B. Braun',
         );
     }
 

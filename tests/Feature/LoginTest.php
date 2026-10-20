@@ -29,7 +29,7 @@ class LoginTest extends TestCase
         Config::set('services.recaptcha.site_key', 'test_site_key');
 
         $user = User::factory()->create([
-            'email' => 'qisty.sauva@bbraun.com',
+            'email' => 'test.user@example.com',
             'password' => Hash::make('password'),
         ]);
 
@@ -89,5 +89,78 @@ class LoginTest extends TestCase
         $response->assertSessionHasNoErrors();
         $response->assertRedirect('/dashboard');
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_login_locks_specific_account_after_5_failed_attempts(): void
+    {
+        Config::set('services.recaptcha.site_key', null);
+
+        $user = User::factory()->create([
+            'email' => 'user_test@example.com',
+            'password' => Hash::make('correct_password'),
+        ]);
+
+        for ($i = 1; $i <= 4; $i++) {
+            $response = $this->post('/login', [
+                'email' => $user->email,
+                'password' => 'wrong_password',
+            ]);
+            $response->assertSessionHasErrors(['email' => __('Email atau Password yang Anda masukkan salah.')]);
+            $this->assertGuest();
+        }
+
+        // Percobaan ke-5 -> akun langsung terkunci
+        $response5 = $this->post('/login', [
+            'email' => $user->email,
+            'password' => 'wrong_password',
+        ]);
+        $response5->assertSessionHasErrors(['email' => __('Akun Anda diblokir sementara karena terlalu banyak percobaan masuk.')]);
+        $this->assertGuest();
+    }
+
+    public function test_login_locks_ip_globally_after_10_failed_attempts_across_different_accounts(): void
+    {
+        Config::set('services.recaptcha.site_key', null);
+
+        // Simulasi bot mencoba 10 akun berbeda dengan password salah dari IP yang sama
+        for ($i = 1; $i <= 9; $i++) {
+            $user = User::factory()->create([
+                'email' => "target_{$i}@example.com",
+                'password' => Hash::make('password123'),
+            ]);
+
+            $response = $this->post('/login', [
+                'email' => $user->email,
+                'password' => 'wrong_password',
+            ]);
+            $response->assertSessionHasErrors(['email' => __('Email atau Password yang Anda masukkan salah.')]);
+            $this->assertGuest();
+        }
+
+        // Percobaan ke-10 (akun berbeda) -> IP global langsung terblokir
+        $user10 = User::factory()->create([
+            'email' => 'target_10@example.com',
+            'password' => Hash::make('password123'),
+        ]);
+
+        $response10 = $this->post('/login', [
+            'email' => $user10->email,
+            'password' => 'wrong_password',
+        ]);
+        $response10->assertSessionHasErrors(['email' => __('Akses masuk diblokir sementara karena terlalu banyak percobaan gagal dari perangkat ini.')]);
+        $this->assertGuest();
+
+        // Bahkan akun ke-11 yang sama sekali baru tetap ditolak karena IP sudah terblokir
+        $user11 = User::factory()->create([
+            'email' => 'target_11@example.com',
+            'password' => Hash::make('password123'),
+        ]);
+
+        $response11 = $this->post('/login', [
+            'email' => $user11->email,
+            'password' => 'password123',
+        ]);
+        $response11->assertSessionHasErrors(['email' => __('Akses masuk diblokir sementara karena terlalu banyak percobaan gagal dari perangkat ini.')]);
+        $this->assertGuest();
     }
 }

@@ -19,8 +19,8 @@
             </p>
 
             <div style="background-color: #f1f5f9; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #009B77;">
-                <p style="margin: 0; font-size: 14px; color: #64748b; margin-bottom: 4px;">Jadwal Inspeksi Rutin Bulanan:</p>
-                <h3 style="margin: 0; color: #009B77; font-size: 18px;">Setiap Tanggal {{ $user->jadwal_rutin_tanggal ?? '-' }}</h3>
+                <p style="margin: 0; font-size: 14px; color: #64748b; margin-bottom: 4px;">Batas Deadline Inspeksi Bulanan Anda:</p>
+                <h3 style="margin: 0; color: #009B77; font-size: 18px;">Setiap Tanggal {{ $user->jadwal_rutin_tanggal ?? '-' }} setiap bulannya</h3>
             </div>
 
             <p>
@@ -47,7 +47,7 @@
             </div>
 
             <p style="margin-top: 24px;">
-                Pastikan Anda melakukan inspeksi sesuai dengan jadwal yang telah ditetapkan. Terima kasih atas kerja sama Anda.
+                Pastikan seluruh inspeksi APAR telah selesai dilaksanakan sebelum atau pada tanggal batas deadline yang telah ditetapkan. Terima kasih atas kerja sama Anda.
             </p>
         </div>
 

@@ -13,7 +13,7 @@
         <div style="padding: 32px 24px;">
             <p style="font-weight: 600; font-size: 16px; margin-top: 0;">Hello, {{ $user->name }}</p>
             
-            <p>You have been assigned to perform a PFE inspection on the following schedule:</p>
+            <p>You have been assigned to perform a PFE inspection. Please ensure the inspection is completed on or before the following monthly deadline:</p>
             
             @php
                 $firstJadwal = $jadwals->first();
@@ -41,7 +41,7 @@
             @endphp
 
             <div style="background-color: #f1f5f9; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #009B77; display: flex; flex-direction: column; gap: 8px;">
-                <div style="margin: 0;"><strong>Date:</strong> <span style="color: #0f172a;">{{ \Carbon\Carbon::parse($firstJadwal->tanggal_inspeksi)->translatedFormat('d F Y') }}</span></div>
+                <div style="margin: 0;"><strong>Batas Deadline Inspeksi:</strong> <span style="color: #0f172a; font-weight: 700;">{{ \Carbon\Carbon::parse($firstJadwal->tanggal_inspeksi)->translatedFormat('d F Y') }}</span></div>
                 <div style="margin: 0;"><strong>Schedule Type:</strong> <span style="color: #0f172a;">{{ $scheduleType }}</span></div>
             </div>
 
@@ -76,8 +76,14 @@
 
             <div style="background-color: #fffbeb; padding: 20px; border-radius: 8px; border: 1px solid #fde68a; text-align: center; margin-bottom: 24px;">
                 <p style="margin-top: 0; color: #92400e; font-weight: 600; font-size: 14px; letter-spacing: 0.5px;">YOUR INSPECTION PIN</p>
-                <h3 style="letter-spacing: 6px; color: #b45309; font-size: 28px; margin: 10px 0;">{{ $pin ?? $user->pin }}</h3>
-                <p style="font-size: 13px; color: #92400e; margin-bottom: 0;">Use this PIN for verification when clicking the 'Inspect' button after scanning the PFE QR Code.</p>
+                @php $displayPin = $pin ?? $user->pin; @endphp
+                @if(strlen($displayPin ?? '') > 10 || str_starts_with($displayPin ?? '', '$2y$'))
+                    <p style="font-size: 14px; color: #b45309; font-weight: 700; margin: 10px 0;">Use your personal 4-digit Inspection PIN</p>
+                    <p style="font-size: 12px; color: #92400e; margin: 0;"><em>(Your PIN is securely encrypted)</em></p>
+                @else
+                    <h3 style="letter-spacing: 6px; color: #b45309; font-size: 28px; margin: 10px 0;">{{ $displayPin }}</h3>
+                @endif
+                <p style="font-size: 13px; color: #92400e; margin-top: 8px; margin-bottom: 0;">Use this PIN for verification when clicking the 'Inspect' button after scanning the PFE QR Code.</p>
             </div>
 
             @if($jadwals->first()->catatan_tambahan)

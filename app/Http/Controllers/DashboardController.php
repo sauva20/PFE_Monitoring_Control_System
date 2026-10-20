@@ -52,7 +52,7 @@ class DashboardController extends Controller
             if ($latestInspeksi) {
                 if ($latestInspeksi->status === 'layak') {
                     $kondisiBaik++;
-                } elseif (in_array($latestInspeksi->status, ['rusak', 'perbaikan', 'isi_ulang'])) {
+                } elseif (in_array($latestInspeksi->status, ['rusak', 'perbaikan', 'service'])) {
                     $rusakServis++;
                 }
             }

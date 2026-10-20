@@ -36,19 +36,30 @@ class AuthController extends Controller
 
         $credentials = $request->only('email', 'password');
 
-        // Buat key unik berdasarkan email dan IP address
-        $throttleKey = Str::transliterate(Str::lower($request->input('email')).'|'.$request->ip());
+        // 1. Throttle Akun spesifik (email + IP) - batas 5x salah
+        $accountThrottleKey = Str::transliterate(Str::lower($request->input('email')).'|'.$request->ip());
 
-        // Cek apakah sudah melebihi 5 kali percobaan
-        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+        // 2. Throttle Global IP (mencegah gonta-ganti email / password spraying) - batas 10x salah
+        $ipThrottleKey = 'login-ip:'.$request->ip();
+
+        // Cek apakah IP diblokir secara global (10x percobaan gagal)
+        if (RateLimiter::tooManyAttempts($ipThrottleKey, 10)) {
             return back()->withErrors([
-                'email' => 'Akun Anda diblokir sementara karena terlalu banyak percobaan masuk.',
+                'email' => __('Akses masuk diblokir sementara karena terlalu banyak percobaan gagal dari perangkat ini.'),
+            ])->onlyInput('email');
+        }
+
+        // Cek apakah akun ini diblokir (5x percobaan gagal)
+        if (RateLimiter::tooManyAttempts($accountThrottleKey, 5)) {
+            return back()->withErrors([
+                'email' => __('Akun Anda diblokir sementara karena terlalu banyak percobaan masuk.'),
             ])->onlyInput('email');
         }
 
         if (Auth::attempt($credentials)) {
             // Hapus blokir jika berhasil login
-            RateLimiter::clear($throttleKey);
+            RateLimiter::clear($accountThrottleKey);
+            RateLimiter::clear($ipThrottleKey);
 
             $request->session()->regenerate();
             $request->session()->forget('is_pin_login');
@@ -57,7 +68,20 @@ class AuthController extends Controller
         }
 
         // Catat percobaan gagal (blokir selama 10 menit = 600 detik)
-        RateLimiter::hit($throttleKey, 600);
+        RateLimiter::hit($accountThrottleKey, 600);
+        RateLimiter::hit($ipThrottleKey, 600);
+
+        if (RateLimiter::tooManyAttempts($ipThrottleKey, 10)) {
+            return back()->withErrors([
+                'email' => __('Akses masuk diblokir sementara karena terlalu banyak percobaan gagal dari perangkat ini.'),
+            ])->onlyInput('email');
+        }
+
+        if (RateLimiter::tooManyAttempts($accountThrottleKey, 5)) {
+            return back()->withErrors([
+                'email' => __('Akun Anda diblokir sementara karena terlalu banyak percobaan masuk.'),
+            ])->onlyInput('email');
+        }
 
         return back()->withErrors([
             'email' => __('Email atau Password yang Anda masukkan salah.'),

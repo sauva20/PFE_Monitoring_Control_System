@@ -36,7 +36,7 @@
     @endif
 </head>
 
-<body class="bg-[#F0F0F0] text-[#1A1A1A] relative overflow-y-auto sm:overflow-hidden w-full min-h-screen grid place-items-center p-4 py-8"
+<body class="bg-[#F0F0F0] text-[#1A1A1A] relative h-screen w-full overflow-hidden grid place-items-center p-4"
     oncontextmenu="return false;">
     <!-- Global Toast Notification -->
     @if(session('success') || session('error'))
@@ -78,25 +78,25 @@
     </div>
 
     <div
-        class="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-[28px] shadow-[0_20px_60px_-15px_rgba(0,155,119,0.2)] overflow-hidden relative z-10 border border-white/50">
+        class="w-full max-w-[420px] bg-white/95 backdrop-blur-xl rounded-[24px] shadow-[0_20px_50px_-15px_rgba(0,155,119,0.18)] overflow-hidden relative z-10 border border-white/50">
 
         <!-- Language Switcher -->
-        <div class="absolute top-4 right-4 z-20" x-data="{ open: false }">
+        <div class="absolute top-3.5 right-3.5 z-20" x-data="{ open: false }">
             <button @click="open = !open" @click.away="open = false"
-                class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors text-xs font-bold text-gray-600">
+                class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-100/90 hover:bg-gray-200 transition-colors text-[11px] font-bold text-gray-600 shadow-sm">
                 <i class="ph-bold ph-translate"></i>
                 <span class="uppercase">{{ app()->getLocale() }}</span>
-                <i class="ph-bold ph-caret-down text-[10px]"></i>
+                <i class="ph-bold ph-caret-down text-[9px]"></i>
             </button>
             <div x-show="open" x-transition.opacity.duration.200ms
-                class="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden py-1">
+                class="absolute right-0 mt-1.5 w-32 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden py-1">
                 <a href="{{ route('set-locale', 'id') }}"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-[#009B77]/10 hover:text-[#009B77] transition-colors font-medium flex items-center justify-between">
+                    class="block px-4 py-2 text-xs text-gray-700 hover:bg-[#009B77]/10 hover:text-[#009B77] transition-colors font-medium flex items-center justify-between">
                     <span>Indonesia</span>
                     @if(app()->getLocale() == 'id') <i class="ph-bold ph-check text-[#009B77]"></i> @endif
                 </a>
                 <a href="{{ route('set-locale', 'en') }}"
-                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-[#009B77]/10 hover:text-[#009B77] transition-colors font-medium flex items-center justify-between">
+                    class="block px-4 py-2 text-xs text-gray-700 hover:bg-[#009B77]/10 hover:text-[#009B77] transition-colors font-medium flex items-center justify-between">
                     <span>English</span>
                     @if(app()->getLocale() == 'en') <i class="ph-bold ph-check text-[#009B77]"></i> @endif
                 </a>
@@ -106,50 +106,45 @@
         <!-- Top Gradient Bar -->
         <div class="h-1.5 w-full bg-gradient-to-r from-[#009B77] via-[#8A4B9F] to-[#009B77]"></div>
 
-        <div class="p-8 sm:p-10">
+        <div class="px-6 py-6 sm:px-8 sm:py-6">
             <!-- Logo area -->
-            <div class="flex justify-center mb-8">
+            <div class="flex justify-center mb-3">
                 <div
-                    class="flex items-center justify-center bg-gradient-to-br from-[#009B77]/10 to-[#009B77]/5 w-20 h-20 rounded-2xl border border-[#009B77]/20 shadow-inner">
-                    <i class="ph-duotone ph-fire-extinguisher text-5xl text-[#009B77]"></i>
+                    class="flex items-center justify-center bg-gradient-to-br from-[#009B77]/10 to-[#009B77]/5 w-14 h-14 rounded-2xl border border-[#009B77]/20 shadow-inner">
+                    <i class="ph-duotone ph-fire-extinguisher text-3xl text-[#009B77]"></i>
                 </div>
             </div>
 
             <!-- Titles -->
-            <div class="text-center mb-10">
-                <h1 class="text-xl sm:text-xl font-extrabold text-[#1A1A1A] tracking-tight mb-1.5">
+            <div class="text-center mb-4">
+                <h1 class="text-base sm:text-lg font-extrabold text-[#1A1A1A] tracking-tight mb-0.5">
                     {{ __('PFE MONITORING CONTROL SYSTEM') }}
                 </h1>
-                <p class="text-sm text-[#009B77] font-bold">
+                <p class="text-xs text-[#009B77] font-bold">
                     PT B | BRAUN PHARMACEUTICAL INDONESIA
                 </p>
             </div>
 
             <!-- Form -->
-            <form action="/login" method="POST" class="space-y-5">
+            <form action="/login" method="POST" class="space-y-3">
                 @csrf
 
                 <!-- Honeypot Field (Bot Trap) -->
-                <!-- 
-                CARA TEST (DEVELOPER MODE):
-                Ganti 'opacity-0 absolute -z-50 h-0 w-0 overflow-hidden' 
-                menjadi 'p-3 bg-red-50 border border-red-300 rounded-xl mb-4'
-                -->
                 <div class="opacity-0 absolute -z-50 h-0 w-0 overflow-hidden" aria-hidden="true">
                     <label for="_contact_number">Contact Number</label>
                     <input type="text" name="_contact_number" id="_contact_number" tabindex="-1" autocomplete="off">
                 </div>
 
                 @if ($errors->any())
-                    <div class="text-red-500 text-[13px] flex items-start justify-center gap-1.5 pb-2 px-2">
-                        <i class="ph-fill ph-warning-circle text-[15px] mt-[2px] shrink-0"></i>
+                    <div class="text-red-500 text-xs flex items-start justify-center gap-1.5 pb-1 px-1">
+                        <i class="ph-fill ph-warning-circle text-sm mt-[1px] shrink-0"></i>
                         <p class="leading-tight text-left">{{ $errors->first() }}</p>
                     </div>
                 @endif
 
                 @if (session('auth_error'))
-                    <div class="text-amber-500 text-[13px] flex items-start justify-center gap-1.5 pb-2 px-2">
-                        <i class="ph-fill ph-lock-key text-[15px] mt-[2px] shrink-0"></i>
+                    <div class="text-amber-500 text-xs flex items-start justify-center gap-1.5 pb-1 px-1">
+                        <i class="ph-fill ph-lock-key text-sm mt-[1px] shrink-0"></i>
                         <p class="leading-tight text-left">{{ session('auth_error') }}</p>
                     </div>
                 @endif
@@ -157,83 +152,74 @@
                 <!-- Email -->
                 <div>
                     <label for="email"
-                        class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Email</label>
+                        class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Email</label>
                     <div class="relative group">
                         <div
-                            class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
-                            <i class="ph-fill ph-envelope text-lg"></i>
+                            class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
+                            <i class="ph-fill ph-envelope text-base"></i>
                         </div>
                         <input type="email" id="email" name="email" placeholder="{{ __('Enter your email') }}"
                             value="{{ old('email') }}"
-                            class="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#009B77]/10 focus:border-[#009B77] focus:bg-white transition-all outline-none text-[#1A1A1A] text-sm font-medium placeholder:font-normal"
+                            class="w-full pl-10 pr-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#009B77]/10 focus:border-[#009B77] focus:bg-white transition-all outline-none text-[#1A1A1A] text-xs sm:text-sm font-medium placeholder:font-normal"
                             required>
                     </div>
                 </div>
 
                 <!-- Password -->
                 <div>
-                    <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center justify-between mb-1">
                         <label for="password"
-                            class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
+                            class="block text-[10px] font-bold text-gray-500 uppercase tracking-wider">Password</label>
                         <a href="{{ route('password.request') }}"
-                            class="text-xs font-bold text-[#8A4B9F] hover:text-[#009B77] transition-colors">{{ __('Forgot Password?') }}</a>
+                            class="text-[11px] font-bold text-[#8A4B9F] hover:text-[#009B77] transition-colors">{{ __('Forgot Password?') }}</a>
                     </div>
                     <div class="relative group" x-data="{ show: false }">
                         <div
-                            class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
-                            <i class="ph-fill ph-lock-key text-lg"></i>
+                            class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
+                            <i class="ph-fill ph-lock-key text-base"></i>
                         </div>
                         <input :type="show ? 'text' : 'password'" id="password" name="password" placeholder="••••••••"
-                            class="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#009B77]/10 focus:border-[#009B77] focus:bg-white transition-all outline-none text-[#1A1A1A] text-sm tracking-widest font-mono placeholder:font-sans placeholder:tracking-normal"
+                            class="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#009B77]/10 focus:border-[#009B77] focus:bg-white transition-all outline-none text-[#1A1A1A] text-xs sm:text-sm tracking-widest font-mono placeholder:font-sans placeholder:tracking-normal"
                             required>
                         <button type="button" @click="show = !show"
-                            class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#009B77] transition-colors focus:outline-none">
-                            <i class="ph-fill text-lg" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
+                            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-[#009B77] transition-colors focus:outline-none">
+                            <i class="ph-fill text-base" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
                         </button>
                     </div>
                 </div>
 
                 @if(config('services.recaptcha.site_key'))
                     <!-- Google reCAPTCHA v2 Themed Wrapper -->
-                    <div class="bg-gray-50/80 border border-gray-200/90 rounded-2xl p-3 flex flex-col items-center gap-2 shadow-sm hover:border-[#009B77]/40 hover:bg-white transition-all">
+                    <div class="bg-gray-50/80 border border-gray-200/90 rounded-2xl p-2.5 flex flex-col items-center gap-1.5 shadow-sm hover:border-[#009B77]/40 hover:bg-white transition-all">
                         <div class="w-full flex items-center justify-between px-1 text-gray-500">
-                            <span class="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 text-gray-500">
-                                <i class="ph-fill ph-shield-check text-[#009B77] text-sm"></i>
+                            <span class="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 text-gray-500">
+                                <i class="ph-fill ph-shield-check text-[#009B77] text-xs"></i>
                                 <span>{{ __('Security Verification') }}</span>
                             </span>
-                            <span class="text-[10px] text-gray-400 font-medium">Google reCAPTCHA</span>
+                            <span class="text-[9px] text-gray-400 font-medium">Google reCAPTCHA</span>
                         </div>
-                        <div class="w-full flex justify-center overflow-hidden rounded-xl border border-gray-200/60 bg-white p-1 shadow-inner">
+                        <div class="w-full flex justify-center overflow-hidden rounded-xl border border-gray-200/60 bg-white p-0.5 shadow-inner">
                             <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
                         </div>
                     </div>
                 @endif
 
                 <!-- Submit Button -->
-                <div class="pt-4">
+                <div class="pt-1">
                     <button type="submit"
-                        class="w-full bg-[#009B77] hover:bg-[#008264] text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-[#009B77]/30 hover:shadow-[#009B77]/50 transition-all duration-300 flex items-center justify-center gap-2 text-sm uppercase tracking-widest transform hover:-translate-y-0.5">
+                        class="w-full bg-[#009B77] hover:bg-[#008264] text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-[#009B77]/30 hover:shadow-[#009B77]/50 transition-all duration-300 flex items-center justify-center gap-2 text-xs uppercase tracking-widest transform hover:-translate-y-0.5 active:translate-y-0">
                         <span>{{ __('Login') }}</span>
                     </button>
-                </div>
-
-                <div class="mt-4 text-center">
-                    <a href="{{ url('/display-report') }}"
-                        class="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-gray-500 hover:text-[#009B77] transition-colors">
-                        <i class="ph-bold ph-monitor-play text-sm"></i>
-                        {{ __('Open Display Report (Kiosk Mode)') }}
-                    </a>
                 </div>
             </form>
 
             <!-- Footer -->
-            <div class="mt-10 pt-6 border-t border-gray-100 flex flex-col items-center gap-1 text-center">
+            <div class="mt-4 pt-3 border-t border-gray-100 flex flex-col items-center gap-0.5 text-center">
                 <div class="flex items-center gap-1.5">
-                    <i class="ph-fill ph-shield-check text-[#009B77] text-sm"></i>
-                    <p class="text-[11px] text-gray-400 font-medium">PFE Monitoring Control System v1.0 | PTBP</p>
+                    <i class="ph-fill ph-shield-check text-[#009B77] text-xs"></i>
+                    <p class="text-[10px] text-gray-400 font-medium">PFE Monitoring Control System v1.0 | PTBP</p>
                 </div>
-                <p class="text-[11px] text-gray-400 font-medium">&copy; 2026 q.sauva | Intern of EHSS, SM, OE &amp; LPMO
-                </p>
+                <p class="text-[10px] text-gray-400 font-medium">&copy; 2026 q.sauva | Intern of EHSS, SM, OE &amp; LPMO</p>
             </div>
         </div>
     </div>

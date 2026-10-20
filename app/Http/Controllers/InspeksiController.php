@@ -517,7 +517,7 @@ class InspeksiController extends Controller
         $address = Cache::remember($cacheKey, 86400, function () use ($lat, $lon) {
             try {
                 $response = Http::withHeaders([
-                    'User-Agent' => 'APAR-Monitoring-System/1.0 (contact@bbraun.com)',
+                    'User-Agent' => 'APAR-Monitoring-System/1.0 (app@example.com)',
                 ])->timeout(3)->get('https://nominatim.openstreetmap.org/reverse', [
                     'format' => 'jsonv2',
                     'lat' => $lat,

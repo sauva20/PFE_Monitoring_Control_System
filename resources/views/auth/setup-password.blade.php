@@ -103,12 +103,12 @@
 
                 <!-- PIN -->
                 <div>
-                    <label for="pin" class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">{{ __('Inspection PIN (6 Digits)') }}</label>
+                    <label for="pin" class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">{{ __('Inspection PIN (4 Digits)') }}</label>
                     <div class="relative group">
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
                             <i class="ph-fill ph-numpad text-lg"></i>
                         </div>
-                        <input type="text" id="pin" name="pin" placeholder="{{ __('Enter PIN from Email') }}" maxlength="6" pattern="[0-9]*" inputmode="numeric" value="{{ old('pin') }}"
+                        <input type="text" id="pin" name="pin" placeholder="{{ __('Enter PIN from Email') }}" maxlength="4" pattern="[0-9]*" inputmode="numeric" value="{{ old('pin') }}"
                             class="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#009B77]/10 focus:border-[#009B77] focus:bg-white transition-all outline-none text-[#1A1A1A] text-sm font-medium placeholder:font-normal text-center tracking-[0.5em]" required autofocus>
                     </div>
                 </div>

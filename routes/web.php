@@ -17,6 +17,7 @@ use App\Mail\InspectionAssigned;
 use App\Mail\InspectionReminder;
 use App\Mail\NewUserRegistered;
 use App\Mail\ResetPassword;
+use App\Mail\UserScheduleUpdated;
 use App\Models\Apar;
 use App\Models\JadwalInspeksi;
 use App\Models\User;
@@ -31,7 +32,7 @@ Route::get('/', function () {
     return view('index');
 })->name('login')->middleware(['guest', 'prevent-back-history']);
 
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:20,1');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/setup-password/{user}', [PasswordSetupController::class, 'show'])->name('setup-password')->middleware('signed');
@@ -163,7 +164,9 @@ Route::get('/test-email/{type}', function ($type) {
             return new AparExpiryReminder($apars, now()->addDays(30)->format('Y-m-d'), $user->name);
         case 'inspection-reminder':
             return new InspectionReminder($user, 'Inspeksi Rutin Bulanan', now()->addDays(3)->format('Y-m-d'));
+        case 'user-schedule-updated':
+            return new UserScheduleUpdated($user, $user->gedungs ?? collect());
         default:
-            return 'Invalid type. Options: new-user, reset-password, inspection-assigned, apar-expiry, inspection-reminder';
+            return 'Invalid type. Options: new-user, reset-password, inspection-assigned, apar-expiry, inspection-reminder, user-schedule-updated';
     }
 });

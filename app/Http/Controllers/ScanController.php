@@ -51,12 +51,10 @@ class ScanController extends Controller
 
         $apar = Apar::where('kode', $kode)->firstOrFail();
 
-        // Rate Limiting: Maksimal 5 percobaan dalam 15 menit per IP dan APAR
-        $key = 'verify-pin:'.$apar->id.'|'.$request->ip();
+        // Rate Limiting: Maksimal 5 percobaan dalam 10 menit (600 detik) per IP
+        $key = 'verify-pin:'.$request->ip();
         if (RateLimiter::tooManyAttempts($key, 5)) {
-            $seconds = RateLimiter::availableIn($key);
-
-            return redirect()->back()->with('error', __('Terlalu banyak percobaan PIN gagal. Silakan coba lagi dalam :seconds detik.', ['seconds' => $seconds]));
+            return redirect()->back()->with('error', __('Akses verifikasi PIN diblokir sementara karena terlalu banyak percobaan salah.'));
         }
 
         // Find user by PIN (Loop through all users because PIN is hashed)
@@ -66,7 +64,11 @@ class ScanController extends Controller
         });
 
         if (! $user) {
-            RateLimiter::hit($key, 15 * 60); // Blokir 15 menit jika 5x gagal
+            RateLimiter::hit($key, 600); // Blokir 10 menit jika 5x gagal
+
+            if (RateLimiter::tooManyAttempts($key, 5)) {
+                return redirect()->back()->with('error', __('Akses verifikasi PIN diblokir sementara karena terlalu banyak percobaan salah.'));
+            }
 
             return redirect()->back()->with('error', __('PIN tidak valid atau tidak ditemukan.'));
         }

@@ -453,6 +453,7 @@
     "Kata sandi berhasil diubah!": "Kata sandi berhasil diubah!",
     "PIN berhasil diubah!": "PIN berhasil diubah!",
     "PIN tidak valid atau tidak ditemukan.": "PIN tidak valid atau tidak ditemukan.",
+    "Akses verifikasi PIN diblokir sementara karena terlalu banyak percobaan salah.": "Akses verifikasi PIN diblokir sementara karena terlalu banyak percobaan salah.",
     "User berhasil ditambahkan! Email setup telah dikirim.": "User berhasil ditambahkan! Email setup telah dikirim.",
     "Data user berhasil diperbarui!": "Data user berhasil diperbarui!",
     "User berhasil dihapus!": "User berhasil dihapus!",
@@ -590,5 +591,7 @@
     "Harap centang verifikasi reCAPTCHA.": "Harap centang verifikasi reCAPTCHA.",
     "Verifikasi reCAPTCHA tidak valid. Silakan coba lagi.": "Verifikasi reCAPTCHA tidak valid. Silakan coba lagi.",
     "Gagal terhubung ke server verifikasi reCAPTCHA. Pastikan perangkat terhubung ke internet.": "Gagal terhubung ke server verifikasi reCAPTCHA. Pastikan perangkat terhubung ke internet.",
-    "Security Verification": "Verifikasi Keamanan"
+    "Security Verification": "Verifikasi Keamanan",
+    "Akun Anda diblokir sementara karena terlalu banyak percobaan masuk.": "Akun Anda diblokir sementara karena terlalu banyak percobaan masuk.",
+    "Akses masuk diblokir sementara karena terlalu banyak percobaan gagal dari perangkat ini.": "Akses masuk diblokir sementara karena terlalu banyak percobaan gagal dari perangkat ini."
 }
