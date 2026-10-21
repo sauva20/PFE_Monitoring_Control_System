@@ -16,15 +16,6 @@ class ScanController extends Controller
 {
     public function index(Request $request, $kode)
     {
-        // Jika pengguna sudah login (via PIN) dan tidak berasal dari dashboard sistem,
-        // kita log out sesi mereka agar jika mereka menekan "Kembali", sesi inspeksi benar-benar terhapus.
-        // Dengan begitu, jika mereka menekan "Forward" (Maju) di browser, mereka tetap tidak bisa masuk tanpa PIN.
-        if (Auth::check() && $request->source !== 'system') {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-        }
-
         $apar = Apar::with([
             'lokasi.gedung',
             'jenis',
@@ -33,6 +24,11 @@ class ScanController extends Controller
                 $query->latest()->with('user');
             },
         ])->where('kode', $kode)->firstOrFail();
+
+        // Jika petugas sudah login via PIN, perbarui target APAR aktif di sesi
+        if (Auth::check() && session('is_pin_login')) {
+            session(['pin_login_apar_id' => $apar->id]);
+        }
 
         $latestInspeksi = $apar->inspeksis->first();
 

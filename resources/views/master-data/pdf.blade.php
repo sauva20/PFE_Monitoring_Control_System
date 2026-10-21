@@ -111,11 +111,15 @@
                 <th class="text-center" style="width: 4%;">
                     <div>No</div>
                 </th>
-                <th style="width: 10%;">
+                <th style="width: 9%;">
                     <div>Fire Extinguisher Code</div>
                     <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 2px; text-transform: none;">Kode APAR</div>
                 </th>
-                <th style="width: 12%;">
+                <th style="width: 8%;">
+                    <div>Room No</div>
+                    <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 2px; text-transform: none;">No. Ruangan</div>
+                </th>
+                <th style="width: 11%;">
                     <div>Location</div>
                     <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 2px; text-transform: none;">Lokasi</div>
                 </th>
@@ -167,6 +171,7 @@
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
                     <td class="font-bold">{{ $apar->kode }}</td>
+                    <td>{{ $apar->nomor_ruangan ?? '-' }}</td>
                     <td>{{ $apar->lokasi->nama ?? 'n/a' }}</td>
                     <td>{{ $apar->lokasi->gedung->nama ?? 'n/a' }}</td>
                     <td>{{ $apar->jenis->nama ?? 'n/a' }}</td>
@@ -202,7 +207,7 @@
             
             @if($apars->isEmpty())
                 <tr>
-                    <td colspan="10" class="text-center" style="padding: 20px;">Belum ada data APAR.</td>
+                    <td colspan="12" class="text-center" style="padding: 20px;">Belum ada data APAR.</td>
                 </tr>
             @endif
         </tbody>

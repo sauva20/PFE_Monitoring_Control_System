@@ -593,5 +593,10 @@
     "Gagal terhubung ke server verifikasi reCAPTCHA. Pastikan perangkat terhubung ke internet.": "Gagal terhubung ke server verifikasi reCAPTCHA. Pastikan perangkat terhubung ke internet.",
     "Security Verification": "Verifikasi Keamanan",
     "Akun Anda diblokir sementara karena terlalu banyak percobaan masuk.": "Akun Anda diblokir sementara karena terlalu banyak percobaan masuk.",
-    "Akses masuk diblokir sementara karena terlalu banyak percobaan gagal dari perangkat ini.": "Akses masuk diblokir sementara karena terlalu banyak percobaan gagal dari perangkat ini."
+    "Akses masuk diblokir sementara karena terlalu banyak percobaan gagal dari perangkat ini.": "Akses masuk diblokir sementara karena terlalu banyak percobaan gagal dari perangkat ini.",
+    "ROOM NO": "NO. RUANGAN",
+    "Room No": "No. Ruangan",
+    "Nomor Ruangan": "Nomor Ruangan",
+    "ROOM ID": "ID RUANGAN",
+    "Room ID": "ID Ruangan"
 }

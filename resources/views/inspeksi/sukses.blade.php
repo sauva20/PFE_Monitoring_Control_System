@@ -171,6 +171,15 @@
                 <button @click="startScanner()" class="w-full py-4 bg-[#009B77] hover:bg-[#008264] text-white rounded-xl font-bold text-[15px] shadow-lg shadow-[#009B77]/30 transition-all flex items-center justify-center gap-2">
                     <i class="ph-bold ph-scan text-xl"></i> {{ __('Scan Another PFE') }}
                 </button>
+
+                @if(Auth::check())
+                <form action="{{ route('logout') }}" method="POST" class="w-full mt-2">
+                    @csrf
+                    <button type="submit" class="w-full py-2.5 bg-transparent hover:bg-slate-100 text-slate-500 hover:text-red-600 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-1.5">
+                        <i class="ph-bold ph-sign-out text-sm"></i> {{ __('Selesai & Keluar Sesi') }}
+                    </button>
+                </form>
+                @endif
             @endif
         </div>
 
@@ -255,7 +264,15 @@
                             this.html5QrcodeScanner = new Html5Qrcode("reader");
                         }
                         
-                        const config = { fps: 10, aspectRatio: 1.0 };
+                        const config = { 
+                            fps: 15, 
+                            aspectRatio: 1.0,
+                            qrbox: (viewfinderWidth, viewfinderHeight) => {
+                                const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                                const qrboxSize = Math.floor(minEdge * 0.65);
+                                return { width: Math.max(180, Math.min(250, qrboxSize)), height: Math.max(180, Math.min(250, qrboxSize)) };
+                            }
+                        };
                         
                         this.html5QrcodeScanner.start(
                             { facingMode: "environment" },
@@ -269,14 +286,39 @@
                                         text: 'Anda baru saja menscan APAR {{ $apar->kode }} yang baru selesai diinspeksi. Apakah Anda ingin menginspeksinya lagi?',
                                         icon: 'warning',
                                         showCancelButton: true,
+                                        showDenyButton: true,
                                         confirmButtonText: 'Ya, Inspeksi Lagi',
-                                        cancelButtonText: 'Batal (Tutup Kamera)',
+                                        denyButtonText: 'Lanjut Scan Lain',
+                                        cancelButtonText: 'Tutup Kamera',
                                         confirmButtonColor: '#009B77',
+                                        denyButtonColor: '#3b82f6',
+                                        customClass: {
+                                            popup: 'rounded-2xl',
+                                            confirmButton: 'rounded-lg font-bold',
+                                            denyButton: 'rounded-lg font-bold',
+                                            cancelButton: 'rounded-lg font-bold'
+                                        }
                                     }).then((result) => {
                                         if (result.isConfirmed) {
-                                            let url = new URL(decodedText);
-                                            url.searchParams.set('source', 'system');
-                                            window.location.href = url.toString();
+                                            try {
+                                                let url = new URL(decodedText);
+                                                url.protocol = window.location.protocol;
+                                                url.host = window.location.host;
+                                                @if(request('source') === 'schedule')
+                                                url.searchParams.set('source', 'schedule');
+                                                @else
+                                                url.searchParams.delete('source');
+                                                @endif
+                                                window.location.href = url.toString();
+                                            } catch (e) {
+                                                window.location.href = decodedText;
+                                            }
+                                        } else if (result.isDenied) {
+                                            setTimeout(() => {
+                                                if (this.html5QrcodeScanner) {
+                                                    this.html5QrcodeScanner.resume();
+                                                }
+                                            }, 300);
                                         } else {
                                             this.stopScanner();
                                         }
@@ -288,7 +330,13 @@
                                 let targetUrl = decodedText;
                                 try {
                                     let url = new URL(decodedText);
-                                    url.searchParams.set('source', 'system');
+                                    url.protocol = window.location.protocol;
+                                    url.host = window.location.host;
+                                    @if(request('source') === 'schedule')
+                                    url.searchParams.set('source', 'schedule');
+                                    @else
+                                    url.searchParams.delete('source');
+                                    @endif
                                     targetUrl = url.toString();
                                 } catch (e) {
                                     // if decodedText is not a valid URL

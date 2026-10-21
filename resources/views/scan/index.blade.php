@@ -66,8 +66,15 @@
         tgl_kedaluwarsa: '{{ $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('Y-m-d') : '' }}'
     } }">
         
-        <!-- Top Bar for Language Switcher -->
-        <div class="flex justify-end mb-3 shrink-0">
+        <!-- Top Bar for Language Switcher & Officer Badge -->
+        <div class="flex {{ Auth::check() ? 'justify-between' : 'justify-end' }} items-center mb-3 shrink-0">
+            @if(Auth::check())
+            <div class="flex items-center gap-1.5 bg-white/80 backdrop-blur-md px-2.5 py-1 rounded-lg border border-emerald-200/60 shadow-sm text-slate-700">
+                <i class="ph-bold ph-user-check text-[#009B77] text-xs"></i>
+                <span class="text-[10px] font-bold text-slate-800">{{ Auth::user()->name }}</span>
+                <span class="text-[9px] px-1 py-0.2 bg-emerald-50 text-[#009B77] font-semibold rounded">{{ __('Aktif') }}</span>
+            </div>
+            @endif
             <div class="flex items-center gap-1 bg-white/50 backdrop-blur-md p-1 rounded-lg border border-slate-200/50 shadow-sm">
                 <a href="{{ route('set-locale', 'id') }}" class="text-[10px] font-bold px-2 py-1 rounded {{ app()->getLocale() == 'id' ? 'bg-[#009B77] text-white' : 'bg-transparent text-slate-500 hover:text-slate-700' }} transition-colors">ID</a>
                 <a href="{{ route('set-locale', 'en') }}" class="text-[10px] font-bold px-2 py-1 rounded {{ app()->getLocale() == 'en' ? 'bg-[#009B77] text-white' : 'bg-transparent text-slate-500 hover:text-slate-700' }} transition-colors">EN</a>
@@ -147,13 +154,13 @@
                 </div>
                 <!-- Action Buttons -->
                 <div class="flex items-center gap-2">
-                    @if(Auth::check() && request('source') == 'system')
-                    <a href="{{ route('inspeksi.pedoman', $apar->id) }}" class="bg-[#009B77] hover:bg-[#008264] text-white px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors">
+                    @if(Auth::check())
+                    <a href="{{ route('inspeksi.pedoman', array_filter(['apar' => $apar->id, 'source' => (request('source') === 'schedule' ? 'schedule' : null)])) }}" class="bg-[#009B77] hover:bg-[#008264] text-white px-3.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors font-bold">
                         <i class="ph-light ph-scan text-sm"></i>
                         <span class="text-[10px] font-bold uppercase tracking-widest">{{ __('Inspection') }}</span>
                     </a>
                     @else
-                    <button @click="showPinModal = true; pinAction = 'inspeksi'" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors">
+                    <button @click="showPinModal = true; pinAction = 'inspeksi'" class="bg-red-500 hover:bg-red-600 text-white px-3.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors font-bold">
                         <i class="ph-light ph-scan text-sm"></i>
                         <span class="text-[10px] font-bold uppercase tracking-widest">{{ __('Inspection') }}</span>
                     </button>

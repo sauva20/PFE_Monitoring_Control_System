@@ -13,7 +13,6 @@ use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Mail;
@@ -264,7 +263,7 @@ class InspeksiController extends Controller
                 ->with('error', 'Sesi form telah selesai dan terkunci. Form tidak dapat disubmit ulang.');
         }
 
-        $isSystem = in_array($request->query('source') ?? $request->source, ['schedule', 'system']);
+        $isSystem = ($request->query('source') ?? $request->source) === 'schedule';
         $pesanFoto = $isSystem
             ? 'Harap lampirkan foto kondisi APAR saat inspeksi berlangsung.'
             : 'Ambil foto kondisi APAR secara langsung dari lokasi menggunakan kamera.';
@@ -367,13 +366,6 @@ class InspeksiController extends Controller
 
         // Hapus penanda sesi aktif agar jika memencet kembali (back) tidak bisa masuk form lagi
         session()->forget('active_inspection_'.$apar->id);
-
-        // KUNCI KREDENSIAL: Logout paksa jika ini dari Direct Scan (agar kredensial tidak nyangkut)
-        if (! $isSystem) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-        }
 
         return redirect()->route('inspeksi.sukses', ['apar' => $apar->id, 'source' => $request->source]);
     }

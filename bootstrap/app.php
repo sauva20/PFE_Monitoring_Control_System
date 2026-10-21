@@ -8,6 +8,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Session\TokenMismatchException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -51,4 +52,15 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
+
+        $exceptions->render(function (TokenMismatchException $e, Request $request) {
+            if ($request->is('scan/*/verify') || $request->routeIs('scan.verify')) {
+                return redirect()->back()->with('error', 'Sesi verifikasi telah kedaluwarsa. Silakan masukkan PIN kembali.');
+            }
+            if ($request->is('inspeksi/store/*') || $request->routeIs('inspeksi.store')) {
+                return redirect()->back()->with('error', 'Sesi form telah kedaluwarsa. Silakan simpan ulang.');
+            }
+
+            return redirect()->back()->with('error', 'Sesi Anda telah kedaluwarsa. Halaman telah disegarkan, silakan coba kembali.');
+        });
     })->create();

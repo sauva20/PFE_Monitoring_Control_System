@@ -78,7 +78,7 @@
     <div class="fixed top-[-10%] left-[-10%] w-[60%] h-[40%] bg-[#009B77] rounded-full mix-blend-multiply filter blur-[100px] opacity-20 pointer-events-none"></div>
     <div class="fixed bottom-10 right-[-10%] w-[50%] h-[40%] bg-[#8A4B9F] rounded-full mix-blend-multiply filter blur-[100px] opacity-15 pointer-events-none"></div>
 
-    <div class="w-full {{ (request('source') === 'schedule' || request('source') === 'system') ? 'max-w-6xl' : 'max-w-xl' }} mx-auto relative z-10 flex flex-col p-4 sm:p-6 lg:p-8 space-y-6" x-data="{
+    <div class="w-full {{ (request('source') === 'schedule') ? 'max-w-6xl' : 'max-w-xl' }} mx-auto relative z-10 flex flex-col p-4 sm:p-6 lg:p-8 space-y-6" x-data="{
     statusAkhir: $persist('{{ old('status', 'layak') }}').using(sessionStorage).as('inspeksi_status_{{ $apar->id }}'),
     qty: $persist('{{ old('qty', $apar->qty ?? 0) }}').using(sessionStorage).as('inspeksi_qty_{{ $apar->id }}'),
     tgl_kedaluwarsa: $persist('{{ old('tgl_kedaluwarsa', $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('Y-m-d') : '') }}').using(sessionStorage).as('inspeksi_tgl_{{ $apar->id }}'),
@@ -88,6 +88,7 @@
         id: {{ $apar->id }},
         kode: '{{ addslashes($apar->kode) }}',
         nomor_apar: '{{ addslashes($apar->kode) }}'.match(/\d+$/) ? '{{ addslashes($apar->kode) }}'.match(/\d+$/)[0] : '',
+        nomor_ruangan: '{{ addslashes($apar->nomor_ruangan ?? '') }}',
         gedung_id: '{{ $apar->lokasi->gedung_id ?? '' }}',
         lokasi: '{{ addslashes($apar->lokasi->nama ?? '') }}',
         jenis_id: '{{ $apar->jenis_id }}',
@@ -97,16 +98,16 @@
     }
 }" x-init="$watch('qty', value => { if (value !== '' && value <= 0) statusAkhir = 'isi_ulang'; }); if (qty !== '' && qty <= 0) statusAkhir = 'isi_ulang';">
     <!-- Header Area -->
-    <div class="flex items-center justify-between gap-4 {{ (request('source') === 'schedule' || request('source') === 'system') ? 'bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm' : '' }}">
+    <div class="flex items-center justify-between gap-4 {{ (request('source') === 'schedule') ? 'bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm' : '' }}">
         <div class="flex items-center gap-3">
             <a href="{{ $backUrl }}" class="px-3 py-2 rounded-xl bg-white border border-slate-200/80 shadow-sm flex items-center gap-2 text-slate-600 hover:text-[#009B77] hover:border-[#009B77] transition-all text-xs font-bold" title="{{ __('Back') }}">
                 <i class="ph-bold ph-arrow-left text-base"></i>
-                <span class="{{ (request('source') === 'schedule' || request('source') === 'system') ? 'inline' : 'hidden sm:inline' }}">{{ __('Kembali') }}</span>
+                <span class="{{ (request('source') === 'schedule') ? 'inline' : 'hidden sm:inline' }}">{{ __('Kembali') }}</span>
             </a>
             <div>
                 <div class="flex items-center gap-2 flex-wrap">
                     <h2 class="text-base sm:text-lg font-black text-slate-800 leading-tight">{{ __('Formulir Inspeksi APAR') }}</h2>
-                    @if(request('source') === 'schedule' || request('source') === 'system')
+                    @if(request('source') === 'schedule')
                     <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
                         <i class="bi bi-pc-display"></i> {{ __('Mode Sistem Desktop') }}
                     </span>
@@ -140,23 +141,33 @@
                     @endif
                 </div>
                 <p class="text-xs font-semibold text-slate-500 flex items-center gap-1.5 mt-0.5">
-                    <i class="ph-fill ph-map-pin text-[#009B77]"></i> {{ $apar->lokasi->nama ?? 'n/a' }}
+                    <i class="ph-fill ph-map-pin text-[#009B77]"></i> 
+                    @if(!empty($apar->nomor_ruangan))
+                        <span class="font-bold text-slate-700">{{ $apar->nomor_ruangan }}</span>
+                        <span class="text-slate-300">•</span>
+                    @endif
+                    {{ $apar->lokasi->nama ?? 'n/a' }}
                 </p>
             </div>
         </div>
-        <div class="flex flex-wrap items-center gap-3 relative z-10">
-            <div class="px-3.5 py-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center min-w-[85px]">
-                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{{ __('Type') }}</span>
-                <span class="text-xs font-black text-[#009B77]">{{ $apar->jenis->nama ?? 'n/a' }}</span>
+        <div class="grid grid-cols-3 gap-2 w-full md:w-auto md:flex md:items-center relative z-10 pt-3 md:pt-0 border-t md:border-t-0 border-slate-100">
+            <div class="px-2 py-2 sm:px-3.5 sm:py-2 bg-slate-50/80 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-center min-h-[58px] min-w-0 md:min-w-[90px]">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ __('Type') }}</span>
+                <span class="text-[11px] sm:text-xs font-black text-[#009B77] leading-tight text-center break-words line-clamp-2" title="{{ $apar->jenis->nama ?? 'n/a' }}">{{ $apar->jenis->nama ?? 'n/a' }}</span>
             </div>
-            <div class="px-3.5 py-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center min-w-[85px]">
-                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{{ __('Capacity') }}</span>
-                <span class="text-xs font-black text-[#009B77]">{{ $apar->kapasitas->ukuran ?? 'n/a' }}</span>
+            <div class="px-2 py-2 sm:px-3.5 sm:py-2 bg-slate-50/80 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-center min-h-[58px] min-w-0 md:min-w-[85px]">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ __('Capacity') }}</span>
+                <span class="text-[11px] sm:text-xs font-black text-[#009B77] leading-tight">{{ $apar->kapasitas->ukuran ?? 'n/a' }}</span>
             </div>
             @if($apar->tgl_kedaluwarsa)
-            <div class="px-3.5 py-2 bg-slate-50 rounded-xl border border-slate-100 flex flex-col items-center min-w-[85px]">
-                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">{{ __('Expired') }}</span>
-                <span class="text-xs font-black {{ \Carbon\Carbon::parse($apar->tgl_kedaluwarsa)->isPast() ? 'text-red-500' : 'text-slate-700' }}">{{ \Carbon\Carbon::parse($apar->tgl_kedaluwarsa)->format('d M Y') }}</span>
+            <div class="px-2 py-2 sm:px-3.5 sm:py-2 bg-slate-50/80 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-center min-h-[58px] min-w-0 md:min-w-[95px]">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ __('Expired') }}</span>
+                <span class="text-[11px] sm:text-xs font-black {{ \Carbon\Carbon::parse($apar->tgl_kedaluwarsa)->isPast() ? 'text-red-500' : 'text-slate-700' }} leading-tight">{{ \Carbon\Carbon::parse($apar->tgl_kedaluwarsa)->format('d M Y') }}</span>
+            </div>
+            @else
+            <div class="px-2 py-2 sm:px-3.5 sm:py-2 bg-slate-50/80 rounded-xl border border-slate-100 flex flex-col items-center justify-center text-center min-h-[58px] min-w-0 md:min-w-[95px]">
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{{ __('Expired') }}</span>
+                <span class="text-[11px] sm:text-xs font-black text-slate-400 leading-tight">-</span>
             </div>
             @endif
         </div>
@@ -180,13 +191,28 @@
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden" 
          x-data="{ 
              step: $persist(1).using(sessionStorage).as('inspeksi_step_{{ $apar->id }}'),
-             isDesktop: @json(request('source') === 'schedule' || request('source') === 'system')
+             isDesktop: @json(request('source') === 'schedule')
          }">
         <form action="{{ route('inspeksi.store', $apar->id ?? 0) }}" method="POST" enctype="multipart/form-data" 
               @submit.prevent="
+                  let uncompleted = Array.from($el.querySelectorAll('input[name^=\'checklist[\'][name$=\'[jawaban]\']')).some(i => !i.value || i.value.trim() === '');
+                  if (uncompleted) {
+                      Swal.fire({
+                          icon: 'warning',
+                          title: '{{ __('Pemeriksaan Belum Lengkap') }}',
+                          text: '{{ __('Harap jawab seluruh pertanyaan inspeksi sebelum menyelesaikan.') }}',
+                          confirmButtonColor: '#009B77',
+                          confirmButtonText: '{{ __('OK') }}',
+                          customClass: {
+                              popup: 'rounded-2xl',
+                              confirmButton: 'rounded-lg font-bold shadow-sm'
+                          }
+                      });
+                      return;
+                  }
                   let foto = $el.querySelector('input[name=\'foto_base64\']').value;
                   if (!foto || foto.trim() === '') {
-                      let isSystem = ('{{ request('source') }}' === 'schedule' || '{{ request('source') }}' === 'system');
+                      let isSystem = ('{{ request('source') }}' === 'schedule');
                       let pesanText = isSystem 
                           ? '{{ __('Harap lampirkan foto kondisi APAR saat inspeksi berlangsung.') }}' 
                           : '{{ __('Ambil foto kondisi APAR secara langsung dari lokasi menggunakan kamera.') }}';
@@ -224,12 +250,12 @@
                         </div>
                     </h4>
                     
-                    <div class="space-y-3 {{ (request('source') === 'schedule' || request('source') === 'system') ? 'lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0' : '' }}">
+                    <div class="space-y-3 {{ (request('source') === 'schedule') ? 'lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0' : '' }}">
                         @foreach($pertanyaan as $index => $tanya)
                         @if($index >= 15)
                         
                         @if($index === 15)
-                        <div class="group flex flex-col sm:flex-row gap-3 p-3 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ (request('source') === 'schedule' || request('source') === 'system') ? 'lg:col-span-2' : '' }}" 
+                        <div class="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ (request('source') === 'schedule') ? 'lg:col-span-2' : '' }}" 
                              x-data="{ 
                                  selectedJenis: $persist('{{ old('jenis_id', $apar->jenis_id) }}').using(sessionStorage).as('inspeksi_jenis_{{ $apar->id }}'), 
                                  expectedJenis: '{{ $apar->jenis_id }}',
@@ -246,22 +272,22 @@
                             </div>
                             
                             <!-- Toggle Buttons -->
-                            <div class="flex flex-col gap-2 min-w-[180px] sm:w-[320px]">
-                                <div class="flex flex-wrap bg-slate-100/80 rounded-lg p-1 border border-slate-200 shadow-inner self-start w-full sm:w-auto">
+                            <div class="flex flex-col gap-2 w-full sm:w-[340px] sm:shrink-0">
+                                <div class="grid grid-cols-2 gap-1 bg-slate-100/80 rounded-xl p-1 border border-slate-200/80 shadow-inner w-full">
                                     <input type="hidden" name="checklist[{{ $index }}][jawaban]" :value="selectedJenis == expectedJenis ? 'ada' : 'tidak ada'">
                                     <input type="hidden" name="jenis_id" :value="selectedJenis" required>
                                     
                                     @foreach($jenisApars as $jenis)
                                     <button type="button" @click="selectedJenis = '{{ $jenis->id }}'" 
-                                            class="flex-1 px-3 py-1.5 rounded text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5 whitespace-nowrap" 
-                                            :class="selectedJenis == '{{ $jenis->id }}' ? (selectedJenis == expectedJenis ? 'bg-[#009B77] text-white shadow-sm scale-[1.02]' : 'bg-red-500 text-white shadow-sm scale-[1.02]') : 'text-slate-500 hover:bg-white hover:text-slate-700 hover:shadow-sm'">
+                                            class="px-2.5 py-2 rounded-lg text-[10px] font-bold transition-all duration-200 flex items-center justify-center text-center leading-tight truncate" 
+                                            :class="selectedJenis == '{{ $jenis->id }}' ? (selectedJenis == expectedJenis ? 'bg-[#009B77] text-white shadow-sm font-black' : 'bg-red-500 text-white shadow-sm font-black') : 'text-slate-500 hover:bg-white hover:text-slate-700'">
                                         {{ $jenis->nama }}
                                     </button>
                                     @endforeach
                                 </div>
                                 
                                 <!-- Input Keterangan -->
-                                <div x-show="selectedJenis !== ''" x-collapse>
+                                <div x-show="selectedJenis !== '' && selectedJenis != expectedJenis" x-collapse>
                                     <div class="relative">
                                         <i class="ph-bold absolute left-2.5 top-1/2 -translate-y-1/2 text-base" :class="selectedJenis != expectedJenis ? 'ph-warning-circle text-red-400' : 'ph-note-pencil text-slate-400'"></i>
                                         <input type="text" name="checklist[{{ $index }}][keterangan]" x-model="keterangan" 
@@ -273,7 +299,7 @@
                             </div>
                         </div>
                         @elseif($index === 16)
-                        <div class="group flex flex-col sm:flex-row gap-3 p-3 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ (request('source') === 'schedule' || request('source') === 'system') ? 'lg:col-span-2' : '' }}" 
+                        <div class="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ (request('source') === 'schedule') ? 'lg:col-span-2' : '' }}" 
                              x-data="{ 
                                  selectedKapasitas: $persist('{{ old('kapasitas_id', $apar->kapasitas_id) }}').using(sessionStorage).as('inspeksi_kapasitas_{{ $apar->id }}'), 
                                  expectedKapasitas: '{{ $apar->kapasitas_id }}',
@@ -290,22 +316,22 @@
                             </div>
                             
                             <!-- Toggle Buttons -->
-                            <div class="flex flex-col gap-2 min-w-[180px] sm:w-[320px]">
-                                <div class="flex flex-wrap bg-slate-100/80 rounded-lg p-1 border border-slate-200 shadow-inner self-start w-full sm:w-auto">
+                            <div class="flex flex-col gap-2 w-full sm:w-[340px] sm:shrink-0">
+                                <div class="grid grid-cols-4 sm:grid-cols-7 gap-1 bg-slate-100/80 rounded-xl p-1 border border-slate-200/80 shadow-inner w-full">
                                     <input type="hidden" name="checklist[{{ $index }}][jawaban]" :value="selectedKapasitas == expectedKapasitas ? 'ada' : 'tidak ada'">
                                     <input type="hidden" name="kapasitas_id" :value="selectedKapasitas" required>
                                     
                                     @foreach($kapasitasApars as $kapasitas)
                                     <button type="button" @click="selectedKapasitas = '{{ $kapasitas->id }}'" 
-                                            class="flex-1 px-3 py-1.5 rounded text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5 whitespace-nowrap" 
-                                            :class="selectedKapasitas == '{{ $kapasitas->id }}' ? (selectedKapasitas == expectedKapasitas ? 'bg-[#009B77] text-white shadow-sm scale-[1.02]' : 'bg-red-500 text-white shadow-sm scale-[1.02]') : 'text-slate-500 hover:bg-white hover:text-slate-700 hover:shadow-sm'">
+                                            class="px-1.5 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-200 flex items-center justify-center text-center leading-tight whitespace-nowrap" 
+                                            :class="selectedKapasitas == '{{ $kapasitas->id }}' ? (selectedKapasitas == expectedKapasitas ? 'bg-[#009B77] text-white shadow-sm font-black' : 'bg-red-500 text-white shadow-sm font-black') : 'text-slate-500 hover:bg-white hover:text-slate-700'">
                                         {{ $kapasitas->ukuran }}
                                     </button>
                                     @endforeach
                                 </div>
                                 
                                 <!-- Input Keterangan -->
-                                <div x-show="selectedKapasitas !== ''" x-collapse>
+                                <div x-show="selectedKapasitas !== '' && selectedKapasitas != expectedKapasitas" x-collapse>
                                     <div class="relative">
                                         <i class="ph-bold absolute left-2.5 top-1/2 -translate-y-1/2 text-base" :class="selectedKapasitas != expectedKapasitas ? 'ph-warning-circle text-red-400' : 'ph-note-pencil text-slate-400'"></i>
                                         <input type="text" name="checklist[{{ $index }}][keterangan]" x-model="keterangan" 
@@ -320,7 +346,7 @@
                         @php
                             $tglIsiUlangStr = $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->format('Y-m-d') : '';
                         @endphp
-                        <div class="group flex flex-col sm:flex-row gap-3 p-3 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ (request('source') === 'schedule' || request('source') === 'system') ? 'lg:col-span-2' : '' }}" 
+                        <div class="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ (request('source') === 'schedule') ? 'lg:col-span-2' : '' }}" 
                              x-data="{ 
                                  selectedTgl: $persist('{{ old('tgl_isi_ulang', $tglIsiUlangStr) }}').using(sessionStorage).as('inspeksi_tglisiulang_{{ $apar->id }}'), 
                                  expectedTgl: '{{ $tglIsiUlangStr }}',
@@ -337,17 +363,19 @@
                             </div>
                             
                             <!-- Date Input -->
-                            <div class="flex flex-col gap-2 min-w-[180px] sm:w-[320px]">
-                                <div class="flex flex-wrap bg-slate-100/80 rounded-lg p-1 border border-slate-200 shadow-inner self-start w-full sm:w-auto">
+                            <div class="flex flex-col gap-2 w-full sm:w-[340px] sm:shrink-0">
+                                <div class="relative w-full">
                                     <input type="hidden" name="checklist[{{ $index }}][jawaban]" :value="(selectedTgl == expectedTgl && expectedTgl !== '') ? 'ada' : 'tidak ada'">
+                                    <i class="ph-bold ph-calendar-blank absolute left-3 top-1/2 -translate-y-1/2 text-base pointer-events-none transition-colors"
+                                       :class="(selectedTgl == expectedTgl && expectedTgl !== '') ? 'text-[#009B77]' : 'text-red-500'"></i>
                                     <input type="text" name="tgl_isi_ulang" x-model="selectedTgl" required
                                            x-init="flatpickr($el, { dateFormat: 'Y-m-d', disableMobile: 'true', defaultDate: selectedTgl, onChange: (s, d) => { selectedTgl = d; } })"
-                                           class="w-full sm:w-auto px-3 py-1.5 rounded text-xs font-bold transition-all duration-300 outline-none shadow-sm focus:ring-2 focus:ring-[#009B77]/20 border-2"
-                                           :class="(selectedTgl == expectedTgl && expectedTgl !== '') ? 'bg-[#009B77] text-white border-[#009B77]' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'">
+                                           class="w-full bg-white border-2 rounded-xl py-2 pl-9 pr-3 text-xs font-bold transition-all outline-none shadow-sm cursor-pointer"
+                                           :class="(selectedTgl == expectedTgl && expectedTgl !== '') ? 'border-teal-200/90 text-teal-900 bg-teal-50/50 focus:border-[#009B77] focus:ring-2 focus:ring-[#009B77]/15' : 'border-red-300 text-red-700 bg-red-50/50 focus:border-red-400 focus:ring-2 focus:ring-red-100'">
                                 </div>
                                 
                                 <!-- Input Keterangan -->
-                                <div x-show="selectedTgl !== ''" x-collapse>
+                                <div x-show="selectedTgl !== '' && (selectedTgl != expectedTgl || expectedTgl === '')" x-collapse>
                                     <div class="relative">
                                         <i class="ph-bold absolute left-2.5 top-1/2 -translate-y-1/2 text-base" :class="(selectedTgl != expectedTgl || expectedTgl === '') ? 'ph-warning-circle text-red-400' : 'ph-note-pencil text-slate-400'"></i>
                                         <input type="text" name="checklist[{{ $index }}][keterangan]" x-model="keterangan" 
@@ -363,7 +391,7 @@
                             $expected = ($index === 20) ? 'tidak ada' : 'ada';
                         @endphp
                         <div x-data="{ 
-                                jawaban: $persist('{{ old('checklist.'.$index.'.jawaban', $expected) }}').using(sessionStorage).as('inspeksi_jawaban_{{ $index }}_{{ $apar->id }}'), 
+                                jawaban: $persist('{{ old('checklist.'.$index.'.jawaban', '') }}').using(sessionStorage).as('inspeksi_jawaban_{{ $index }}_{{ $apar->id }}'), 
                                 keterangan: $persist('{{ addslashes(old('checklist.'.$index.'.keterangan', '')) }}').using(sessionStorage).as('inspeksi_ket_{{ $index }}_{{ $apar->id }}'),
                                 expected: '{{ $expected }}' 
                              }" 
@@ -376,7 +404,7 @@
                                 }
                               }"
                              @endif
-                             class="group flex flex-col sm:flex-row gap-3 p-3 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ ($index === 24 && (request('source') === 'schedule' || request('source') === 'system')) ? 'lg:col-span-2' : '' }}" 
+                             class="group flex flex-col sm:flex-row gap-3 p-3 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ ($index === 24 && (request('source') === 'schedule')) ? 'lg:col-span-2' : '' }}" 
                              :class="jawaban === expected ? 'bg-teal-50/50 border-teal-200/60' : (jawaban !== '' ? 'bg-red-50/80 border-red-200' : 'bg-white border-slate-100 hover:border-slate-200')">
                              
                             <!-- Number & Question -->
@@ -405,7 +433,7 @@
                                 </div>
                                 
                                 <!-- Input Keterangan -->
-                                <div x-show="jawaban !== ''" x-collapse>
+                                <div x-show="jawaban !== '' && jawaban !== expected" x-collapse>
                                     <div class="relative">
                                         <i class="ph-bold absolute left-2.5 top-1/2 -translate-y-1/2 text-base" :class="jawaban !== expected ? 'ph-warning-circle text-red-400' : 'ph-note-pencil text-slate-400'"></i>
                                         <input type="text" name="checklist[{{ $index }}][keterangan]" x-model="keterangan" 
@@ -445,10 +473,27 @@
                             }
                         }
                         if (isValid) {
+                            let step1Checklist = $el.closest('div[x-show=\'isDesktop || step === 1\']').querySelectorAll('input[name^=\'checklist[\'][name$=\'[jawaban]\']');
+                            for (let c of step1Checklist) {
+                                if (!c.value || c.value.trim() === '') {
+                                    isValid = false;
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: '{{ __('Pemeriksaan Fisik Belum Lengkap') }}',
+                                        text: '{{ __('Harap lengkapi semua opsi pemeriksaan fisik sebelum melanjutkan.') }}',
+                                        confirmButtonColor: '#009B77',
+                                        confirmButtonText: '{{ __('OK') }}',
+                                        customClass: { popup: 'rounded-2xl', confirmButton: 'rounded-lg font-bold shadow-sm' }
+                                    });
+                                    break;
+                                }
+                            }
+                        }
+                        if (isValid) {
                             step = 2;
                             setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);
                         }
-                    " class="btn-smooth-ring bg-[#009B77] hover:bg-[#008264] text-white font-bold py-2 px-6 rounded-lg shadow-sm shadow-[#009B77]/25 transition-all flex items-center gap-1.5 text-xs">
+                    " class="w-full sm:w-auto h-11 btn-smooth-ring bg-[#009B77] hover:bg-[#008264] text-white font-bold px-6 rounded-xl shadow-sm shadow-[#009B77]/25 transition-all flex items-center justify-center gap-2 text-xs">
                         {{ __('Lanjut (Fungsi & Kelayakan)') }} <i class="ph-bold ph-arrow-right text-base"></i>
                     </button>
                 </div>
@@ -467,11 +512,11 @@
                         </div>
                     </h4>
                     
-                    <div class="space-y-3 {{ (request('source') === 'schedule' || request('source') === 'system') ? 'lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0' : '' }}">
+                    <div class="space-y-3 {{ (request('source') === 'schedule') ? 'lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0' : '' }}">
                         @foreach($pertanyaan as $index => $tanya)
                         @if($index < 15)
                         <div x-data="{ 
-                                jawaban: $persist('{{ old('checklist.'.$index.'.jawaban', 'ya') }}').using(sessionStorage).as('inspeksi_jawaban_{{ $index }}_{{ $apar->id }}'),
+                                jawaban: $persist('{{ old('checklist.'.$index.'.jawaban', '') }}').using(sessionStorage).as('inspeksi_jawaban_{{ $index }}_{{ $apar->id }}'),
                                 keterangan: $persist('{{ addslashes(old('checklist.'.$index.'.keterangan', '')) }}').using(sessionStorage).as('inspeksi_ket_{{ $index }}_{{ $apar->id }}')
                              }" 
                              class="group flex flex-col sm:flex-row gap-3 p-3 rounded-xl border-2 transition-all duration-300 hover:shadow-sm" 
@@ -503,7 +548,7 @@
                                 </div>
                                 
                                 <!-- Input Keterangan -->
-                                <div x-show="jawaban !== ''" x-collapse>
+                                <div x-show="jawaban === 'tidak'" x-collapse>
                                     <div class="relative">
                                         <i class="ph-bold absolute left-2.5 top-1/2 -translate-y-1/2 text-base" :class="jawaban === 'tidak' ? 'ph-warning-circle text-red-400' : 'ph-note-pencil text-slate-400'"></i>
                                         <input type="text" name="checklist[{{ $index }}][keterangan]" x-model="keterangan" 
@@ -525,9 +570,9 @@
                 </h4>
                 
                 <div class="space-y-4">
-                    <div class="grid grid-cols-1 {{ (request('source') === 'schedule' || request('source') === 'system') ? 'lg:grid-cols-12 lg:gap-6 items-start' : 'md:grid-cols-2 gap-6' }}">
+                    <div class="grid grid-cols-1 {{ (request('source') === 'schedule') ? 'lg:grid-cols-12 lg:gap-6 items-start' : 'md:grid-cols-2 gap-6' }}">
                         <!-- Status Akhir -->
-                        <div class="{{ (request('source') === 'schedule' || request('source') === 'system') ? 'lg:col-span-6' : 'md:col-span-2' }}">
+                        <div class="{{ (request('source') === 'schedule') ? 'lg:col-span-6' : 'md:col-span-2' }}">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ __('Overall Status') }}</label>
                             <div x-data="{ open: false, options: { 'layak': '{{ __('Good Condition') }}', 'perbaikan': '{{ __('Needs Repair') }}', 'isi_ulang': '{{ __('Needs Refill') }}', 'rusak': '{{ __('Broken / Service') }}' } }" class="relative">
                                 <input type="hidden" name="status" :value="statusAkhir">
@@ -559,7 +604,7 @@
                             </div>
                         </div>
                         <!-- Qty -->
-                        <div class="{{ (request('source') === 'schedule' || request('source') === 'system') ? 'lg:col-span-3' : '' }}">
+                        <div class="{{ (request('source') === 'schedule') ? 'lg:col-span-3' : '' }}">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Qty</label>
                             <div class="relative">
                                 <i class="ph-bold ph-hash absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
@@ -569,7 +614,7 @@
                         </div>
                         
                         <!-- Tgl Kedaluwarsa -->
-                        <div class="{{ (request('source') === 'schedule' || request('source') === 'system') ? 'lg:col-span-3' : '' }}">
+                        <div class="{{ (request('source') === 'schedule') ? 'lg:col-span-3' : '' }}">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Expired</label>
                             <div class="relative">
                                 <input type="text" name="tgl_kedaluwarsa" x-model="tgl_kedaluwarsa" required
@@ -579,7 +624,7 @@
                         </div>
 
                         <!-- Upload Foto & Watermark Lokasi Real -->
-                        <div class="{{ (request('source') === 'schedule' || request('source') === 'system') ? 'lg:col-start-7 lg:col-span-6 lg:row-start-1 lg:row-span-4' : 'md:col-span-2' }}">
+                        <div class="{{ (request('source') === 'schedule') ? 'lg:col-start-7 lg:col-span-6 lg:row-start-1 lg:row-span-4' : 'md:col-span-2' }}">
                             <div class="flex items-center justify-between mb-1">
                                 <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">
                                     {{ __('Condition Photo') }}
@@ -780,11 +825,11 @@
                         </div>
 
                         <!-- Catatan Tambahan -->
-                        <div class="{{ (request('source') === 'schedule' || request('source') === 'system') ? 'lg:col-span-6' : 'md:col-span-2' }}">
+                        <div class="{{ (request('source') === 'schedule') ? 'lg:col-span-6' : 'md:col-span-2' }}">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ __('Additional Notes (Optional)') }}</label>
                             <div class="relative">
                                 <i class="ph-bold ph-note-pencil absolute left-4 top-4 text-slate-400 text-lg"></i>
-                                <textarea rows="{{ (request('source') === 'schedule' || request('source') === 'system') ? '4' : '3' }}" name="catatan_tambahan" placeholder="{{ __('Write other general observation notes...') }}" x-model="catatan_tambahan"
+                                <textarea rows="{{ (request('source') === 'schedule') ? '4' : '3' }}" name="catatan_tambahan" placeholder="{{ __('Write other general observation notes...') }}" x-model="catatan_tambahan"
                                           class="w-full bg-white border-2 border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm font-bold text-slate-800 focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none placeholder:text-slate-400 placeholder:font-medium resize-none"></textarea>
                             </div>
                         </div>
@@ -794,7 +839,7 @@
 
             <div class="p-4 sm:p-5 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-white sticky bottom-0 z-10 shadow-[0_-5px_15px_rgba(0,0,0,0.02)]">
                 <!-- Tombol Kembali: Hanya muncul di mobile saat step 2 -->
-                <button x-show="!isDesktop && step === 2" type="button" @click="step = 1; setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);" class="w-full sm:w-auto px-5 py-2 rounded-lg font-bold text-slate-600 hover:text-slate-900 bg-white border-2 border-slate-200 hover:border-slate-300 transition-all text-xs flex items-center justify-center gap-1.5">
+                <button x-show="!isDesktop && step === 2" type="button" @click="step = 1; setTimeout(() => window.scrollTo({ top: 0, behavior: 'smooth' }), 50);" class="w-full sm:w-auto h-11 px-5 rounded-xl font-bold text-slate-600 hover:text-slate-900 bg-white border-2 border-slate-200 hover:border-slate-300 transition-all text-xs flex items-center justify-center gap-2 shrink-0">
                     <i class="ph-bold ph-arrow-left text-base"></i>
                     {{ __('Kembali ke Langkah 1') }}
                 </button>
@@ -802,11 +847,11 @@
                     <i class="ph-bold ph-shield-check text-[#009B77] text-base"></i>
                     <span>{{ __('Pastikan seluruh checklist fisik, fungsi, dan foto APAR telah dilengkapi.') }}</span>
                 </div>
-                <div class="flex items-center gap-2 w-full sm:w-auto ml-auto">
-                    <a href="{{ $backUrl }}" class="flex-1 sm:flex-none px-5 py-2 text-center rounded-lg font-bold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 border border-transparent transition-all text-xs">
+                <div class="flex items-center gap-2.5 w-full sm:w-auto ml-auto">
+                    <a href="{{ $backUrl }}" class="w-28 sm:w-auto px-4 h-11 rounded-xl font-bold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 border border-red-100/80 transition-all text-xs flex items-center justify-center shrink-0">
                         {{ __('Cancel') }}
                     </a>
-                    <button type="submit" class="flex-1 sm:flex-none btn-smooth-ring bg-[#009B77] hover:bg-[#008264] text-white font-bold py-2 px-6 rounded-lg shadow-sm shadow-[#009B77]/25 transition-all flex items-center justify-center gap-1.5 text-xs">
+                    <button type="submit" class="flex-1 sm:flex-none h-11 btn-smooth-ring bg-[#009B77] hover:bg-[#008264] text-white font-bold px-5 sm:px-6 rounded-xl shadow-sm shadow-[#009B77]/25 transition-all flex items-center justify-center gap-2 text-xs whitespace-nowrap">
                         <i class="ph-bold ph-check-circle text-base"></i>
                         {{ __('Complete Inspection') }}
                     </button>
@@ -857,6 +902,15 @@
                         <div class="relative">
                             <i class="ph-bold ph-hash absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-500 text-lg"></i>
                             <input type="number" name="nomor_apar" placeholder="{{ __('Enter sequence number...') }}" required x-model="editApar.nomor_apar" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm font-medium text-slate-700 focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/15 transition-all outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Nomor Ruangan -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ __('ROOM NO') }} <span class="text-[10px] text-slate-400 font-medium normal-case">({{ __('Optional') }})</span></label>
+                        <div class="relative">
+                            <i class="ph-bold ph-door absolute left-3.5 top-1/2 -translate-y-1/2 text-amber-500 text-lg"></i>
+                            <input type="text" name="nomor_ruangan" placeholder="{{ __('Example: R-101') }}" x-model="editApar.nomor_ruangan" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-3 pl-10 pr-4 text-sm font-medium text-slate-700 focus:bg-white focus:border-amber-500 focus:ring-4 focus:ring-amber-500/15 transition-all outline-none">
                         </div>
                     </div>
 
@@ -1089,7 +1143,7 @@
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('photoUploader', () => ({
-                isSystemSource: @json(request('source') === 'schedule' || request('source') === 'system'),
+                isSystemSource: @json(request('source') === 'schedule'),
                 fileName: '',
                 photoPreview: null,
                 isProcessing: false,

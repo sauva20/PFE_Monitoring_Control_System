@@ -7,7 +7,7 @@
         x-data="{ activeTab: localStorage.getItem('masterDataTab') || 'data', showModalApar: {{ old('form_type') == 'tambah_apar' && $errors->any() ? 'true' : 'false' }}, 
             showQrModal: false, qrData: { id: '', kode: '', svg: '' },
             showModalEditApar: {{ old('form_type') == 'edit_apar' && $errors->any() ? 'true' : 'false' }}, 
-            editApar: { id:'{{ old('form_type') == 'edit_apar' ? old('id') : '' }}', kode:'{{ old('form_type') == 'edit_apar' ? old('kode') : '' }}', nomor_apar:'{{ old('form_type') == 'edit_apar' ? old('nomor_apar') : '' }}', gedung_id:'{{ old('form_type') == 'edit_apar' ? old('gedung_id') : '' }}', lokasi:'{{ old('form_type') == 'edit_apar' ? old('lokasi') : '' }}', jenis_id:'{{ old('form_type') == 'edit_apar' ? old('jenis_id') : '' }}', kapasitas_id:'{{ old('form_type') == 'edit_apar' ? old('kapasitas_id') : '' }}', qty:'{{ old('form_type') == 'edit_apar' ? old('qty') : '' }}', tgl_kedaluwarsa:'{{ old('form_type') == 'edit_apar' ? old('tgl_kedaluwarsa') : '' }}', tgl_isi_ulang:'{{ old('form_type') == 'edit_apar' ? old('tgl_isi_ulang') : '' }}' },  
+            editApar: { id:'{{ old('form_type') == 'edit_apar' ? old('id') : '' }}', kode:'{{ old('form_type') == 'edit_apar' ? old('kode') : '' }}', nomor_apar:'{{ old('form_type') == 'edit_apar' ? old('nomor_apar') : '' }}', nomor_ruangan:'{{ old('form_type') == 'edit_apar' ? old('nomor_ruangan') : '' }}', gedung_id:'{{ old('form_type') == 'edit_apar' ? old('gedung_id') : '' }}', lokasi:'{{ old('form_type') == 'edit_apar' ? old('lokasi') : '' }}', jenis_id:'{{ old('form_type') == 'edit_apar' ? old('jenis_id') : '' }}', kapasitas_id:'{{ old('form_type') == 'edit_apar' ? old('kapasitas_id') : '' }}', qty:'{{ old('form_type') == 'edit_apar' ? old('qty') : '' }}', tgl_kedaluwarsa:'{{ old('form_type') == 'edit_apar' ? old('tgl_kedaluwarsa') : '' }}', tgl_isi_ulang:'{{ old('form_type') == 'edit_apar' ? old('tgl_isi_ulang') : '' }}' },  
             showModalLokasi: {{ old('form_type') == 'tambah_lokasi' && $errors->any() ? 'true' : 'false' }}, 
             showModalGedung: {{ old('form_type') == 'tambah_gedung' && $errors->any() ? 'true' : 'false' }}, 
             showModalJenis: {{ old('form_type') == 'tambah_jenis' && $errors->any() ? 'true' : 'false' }}, 
@@ -349,6 +349,7 @@
                             <tr class="bg-[#009B77] text-white divide-x divide-white/20 text-center">
                                 <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider w-12">No</th>
                                 <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('PFE ID') }}</th>
+                                <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('ROOM NO') }}</th>
                                 <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('LOCATION') }}</th>
                                 <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('BUILDING') }}</th>
                                 <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('Type') }}</th>
@@ -372,6 +373,9 @@
                                     <td class="py-4 px-5 text-center font-semibold text-slate-500">{{ $index + 1 }}</td>
                                     <td class="py-4 px-5">
                                         <span class="font-bold text-slate-800">{{ $apar->kode }}</span>
+                                    </td>
+                                    <td class="py-4 px-5 font-semibold text-slate-600">
+                                        {{ $apar->nomor_ruangan ?? '-' }}
                                     </td>
                                     <td class="py-4 px-5 font-semibold text-slate-600 capitalize">
                                         {{ $apar->lokasi->nama ?? 'n/a' }}
@@ -447,7 +451,7 @@
                                         <td class="py-4 px-5">
                                             <div class="flex items-center justify-center gap-1">
                                                 <button type="button"
-                                                    @click="editApar = { id: {{ $apar->id }}, kode: '{{ addslashes($apar->kode) }}', nomor_apar: '{{ addslashes($apar->kode) }}'.match(/\d+$/) ? '{{ addslashes($apar->kode) }}'.match(/\d+$/)[0] : '', gedung_id: '{{ $apar->lokasi->gedung_id ?? '' }}', lokasi: '{{ addslashes($apar->lokasi->nama ?? '') }}', jenis_id: '{{ $apar->jenis_id }}', kapasitas_id: '{{ $apar->kapasitas_id }}', qty: {{ $apar->qty }}, tgl_kedaluwarsa: '{{ $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('Y-m-d') : '' }}', tgl_isi_ulang: '{{ $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->format('Y-m-d') : '' }}', gunakanCadangan: false, cadanganId: '' }; originalEditApar = JSON.stringify(editApar); showModalEditApar = true"
+                                                    @click="editApar = { id: {{ $apar->id }}, kode: '{{ addslashes($apar->kode) }}', nomor_apar: '{{ addslashes($apar->kode) }}'.match(/\d+$/) ? '{{ addslashes($apar->kode) }}'.match(/\d+$/)[0] : '', nomor_ruangan: '{{ addslashes($apar->nomor_ruangan ?? '') }}', gedung_id: '{{ $apar->lokasi->gedung_id ?? '' }}', lokasi: '{{ addslashes($apar->lokasi->nama ?? '') }}', jenis_id: '{{ $apar->jenis_id }}', kapasitas_id: '{{ $apar->kapasitas_id }}', qty: {{ $apar->qty }}, tgl_kedaluwarsa: '{{ $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('Y-m-d') : '' }}', tgl_isi_ulang: '{{ $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->format('Y-m-d') : '' }}', gunakanCadangan: false, cadanganId: '' }; originalEditApar = JSON.stringify(editApar); showModalEditApar = true"
                                                     class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-slate-400 hover:text-amber-500 hover:bg-amber-50 transition-colors"
                                                     title="Edit">
                                                     <i class="ph-bold ph-pencil-simple text-lg"></i>
@@ -486,7 +490,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="py-8 text-center text-slate-500 font-semibold">
+                                    <td colspan="13" class="py-8 text-center text-slate-500 font-semibold">
                                         {{ __('No PFE data available.') }}
                                     </td>
                                 </tr>
@@ -1416,6 +1420,23 @@
                                         class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
                                     </div>
 
+                                    <!-- Nomor Ruangan -->
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2"
+                                            style="white-space: nowrap;">{{ __('ROOM NO') }} <span
+                                                class="text-[10px] text-slate-400 font-medium normal-case">({{ __('Optional') }})</span></label>
+                                        <div class="relative">
+                                            <i
+                                                class="ph-bold ph-door absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg transition-colors z-10 peer-focus:text-[#009B77]"></i>
+                                            <input type="text" name="nomor_ruangan"
+                                                placeholder="{{ __('Example: R-101') }}"
+                                                value="{{ old('nomor_ruangan') }}"
+                                                class="w-full peer bg-white border-2 border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm font-medium text-slate-700 focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none">
+                                        </div>
+                                        @error('nomor_ruangan') <span
+                                        class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
+                                    </div>
+
                                     <!-- Gedung -->
                                     <div x-data="{
                             open: false,
@@ -1910,6 +1931,23 @@
                                                 class="w-full bg-white border-2 border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm font-medium text-slate-700 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/15 transition-all outline-none">
                                         </div>
                                         @error('nomor_apar') <span
+                                        class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <!-- Nomor Ruangan -->
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2"
+                                            style="white-space: nowrap;">{{ __('ROOM NO') }} <span
+                                                class="text-[10px] text-slate-400 font-medium normal-case">({{ __('Optional') }})</span></label>
+                                        <div class="relative">
+                                            <i
+                                                class="ph-bold ph-door absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg transition-colors z-10 peer-focus:text-amber-500"></i>
+                                            <input type="text" name="nomor_ruangan"
+                                                placeholder="{{ __('Example: R-101') }}"
+                                                x-model="editApar.nomor_ruangan"
+                                                class="w-full peer bg-white border-2 border-slate-200 rounded-xl py-2.5 pl-10 pr-4 text-sm font-medium text-slate-700 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/15 transition-all outline-none">
+                                        </div>
+                                        @error('nomor_ruangan') <span
                                         class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
                                     </div>
 

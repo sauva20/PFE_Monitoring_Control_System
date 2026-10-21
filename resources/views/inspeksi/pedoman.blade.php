@@ -40,19 +40,19 @@
     <div class="fixed bottom-10 right-[-10%] w-[50%] h-[40%] bg-[#8A4B9F] rounded-full mix-blend-multiply filter blur-[100px] opacity-15 pointer-events-none"></div>
 
 
-    <div class="w-full {{ (request('source') === 'schedule' || request('source') === 'system') ? 'max-w-6xl' : 'max-w-xl' }} mx-auto relative z-10 flex flex-col p-4 sm:p-6 lg:p-8 space-y-6">
+    <div class="w-full {{ request('source') === 'schedule' ? 'max-w-6xl' : 'max-w-xl' }} mx-auto relative z-10 flex flex-col p-4 sm:p-6 lg:p-8 space-y-6">
         
         <!-- Header Area -->
-        <div class="flex items-center justify-between gap-4 {{ (request('source') === 'schedule' || request('source') === 'system') ? 'bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm' : '' }}">
+        <div class="flex items-center justify-between gap-4 {{ request('source') === 'schedule' ? 'bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm' : '' }}">
             <div class="flex items-center gap-3">
                 <a href="{{ request('source') === 'schedule' ? url('/inspection-schedule') : route('scan.apar', $apar->kode) }}" class="px-3 py-2 rounded-xl bg-white border border-slate-200/80 shadow-sm flex items-center gap-2 text-slate-600 hover:text-[#009B77] hover:border-[#009B77] transition-all text-xs font-bold" title="{{ __('Back') }}">
                     <i class="ph-bold ph-arrow-left text-base"></i>
-                    <span class="{{ (request('source') === 'schedule' || request('source') === 'system') ? 'inline' : 'hidden sm:inline' }}">{{ __('Kembali') }}</span>
+                    <span class="{{ request('source') === 'schedule' ? 'inline' : 'hidden sm:inline' }}">{{ __('Kembali') }}</span>
                 </a>
                 <div>
                     <div class="flex items-center gap-2 flex-wrap">
                         <h2 class="text-base sm:text-lg font-black text-slate-800 leading-tight">{{ __('Pedoman Inspeksi APAR') }}</h2>
-                        @if(request('source') === 'schedule' || request('source') === 'system')
+                        @if(request('source') === 'schedule')
                         <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 flex items-center gap-1">
                             <i class="bi bi-pc-display"></i> {{ __('Mode Sistem Desktop') }}
                         </span>
@@ -84,7 +84,7 @@
 
         <!-- Guidelines List -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 sm:p-6">
-            <div class="{{ (request('source') === 'schedule' || request('source') === 'system') ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4' }}">
+            <div class="{{ request('source') === 'schedule' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4' }}">
 
                 <div class="flex gap-3 p-3.5 rounded-xl border border-slate-100 bg-slate-50/60 hover:bg-white hover:border-slate-200 transition-all">
                     <div class="w-7 h-7 rounded-full bg-[#009B77]/10 text-[#009B77] flex items-center justify-center font-bold text-xs shrink-0 mt-0.5">
@@ -212,13 +212,18 @@
 
     <!-- Floating Action Button -->
     <div class="fixed bottom-0 left-0 right-0 p-4 sm:p-6 bg-gradient-to-t from-[#F0F0F0] via-[#F0F0F0]/90 to-transparent z-40 pb-6">
-        <div class="w-full {{ (request('source') === 'schedule' || request('source') === 'system') ? 'max-w-6xl' : 'max-w-xl' }} mx-auto">
+        <div class="w-full {{ request('source') === 'schedule' ? 'max-w-6xl' : 'max-w-xl' }} mx-auto">
             <a href="{{ route('inspeksi.mulai', $apar->id) . (request('source') ? '?source=' . request('source') : '') }}" class="w-full bg-[#009B77] hover:bg-[#008264] text-white font-bold py-3.5 sm:py-4 rounded-xl shadow-lg shadow-[#009B77]/30 transition-all text-sm flex items-center justify-center gap-2 tracking-wide">
                 <span>{{ __('Mulai Formulir Inspeksi') }}</span>
                 <i class="ph-bold ph-arrow-right"></i>
             </a>
         </div>
     </div>
+
+    <!-- Reset Session Storage for Re-inspection -->
+    <script>
+        sessionStorage.removeItem('form_selesai_{{ $apar->id }}');
+    </script>
 
     <!-- Anti-Inspect Script -->
     <script>

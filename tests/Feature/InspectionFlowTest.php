@@ -100,4 +100,78 @@ class InspectionFlowTest extends TestCase
         $res6->assertSessionHas('error', 'Akses verifikasi PIN diblokir sementara karena terlalu banyak percobaan salah.');
         $this->assertGuest();
     }
+
+    public function test_sesi_inspeksi_tetap_aktif_saat_menscan_apar_berikutnya()
+    {
+        $user = User::factory()->create([
+            'name' => 'Petugas Lapangan',
+            'pin' => Hash::make('1234'),
+            'role' => 'Staff',
+        ]);
+
+        Gedung::create(['id' => 1, 'nama' => 'Gedung A']);
+        Lokasi::create(['id' => 1, 'nama' => 'Lantai 1', 'gedung_id' => 1]);
+        JenisApar::create(['id' => 1, 'nama' => 'Powder']);
+        KapasitasApar::create(['id' => 1, 'ukuran' => '3 Kg']);
+
+        $apar1 = Apar::create([
+            'kode' => 'PFE-R-A1',
+            'gedung_id' => 1,
+            'lokasi_id' => 1,
+            'jenis_id' => 1,
+            'kapasitas_id' => 1,
+            'tgl_kedaluwarsa' => now()->addYear(),
+        ]);
+
+        $apar2 = Apar::create([
+            'kode' => 'PFE-R-A2',
+            'gedung_id' => 1,
+            'lokasi_id' => 1,
+            'jenis_id' => 1,
+            'kapasitas_id' => 1,
+            'tgl_kedaluwarsa' => now()->addYear(),
+        ]);
+
+        // 1. User verifikasi PIN di APAR 1
+        $this->post(route('scan.verify', ['kode' => $apar1->kode]), [
+            'pin' => '1234',
+        ]);
+        $this->assertAuthenticatedAs($user);
+
+        // 2. User mulai pedoman APAR 1 (mengaktifkan form)
+        $this->get(route('inspeksi.pedoman', ['apar' => $apar1->id]));
+        $this->assertTrue(session('active_inspection_'.$apar1->id));
+
+        // 3. User menyelesaikan inspeksi APAR 1
+        $checklist = [];
+        for ($i = 0; $i < 25; $i++) {
+            $checklist[$i] = [
+                'jawaban' => 'ya',
+                'keterangan' => null,
+            ];
+        }
+
+        $resStore = $this->post(route('inspeksi.store', ['apar' => $apar1->id]), [
+            'checklist' => $checklist,
+            'status' => 'layak',
+            'foto_base64' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+            'qty' => 1,
+            'tgl_kedaluwarsa' => now()->addYear()->format('Y-m-d'),
+            'jenis_id' => 1,
+            'kapasitas_id' => 1,
+        ]);
+
+        // Selesai inspeksi: user TIDAK di-logout paksa
+        $this->assertAuthenticatedAs($user);
+        $resStore->assertRedirect(route('inspeksi.sukses', ['apar' => $apar1->id]));
+
+        // 4. Petugas menscan APAR 2
+        $resScan2 = $this->get(route('scan.apar', ['kode' => $apar2->kode]));
+
+        // Petugas tetap login dan diarahkan ke link inspeksi langsung tanpa modal PIN
+        $this->assertAuthenticatedAs($user);
+        $resScan2->assertStatus(200);
+        $resScan2->assertSee(route('inspeksi.pedoman', $apar2->id));
+        $resScan2->assertSee('Petugas Lapangan');
+    }
 }

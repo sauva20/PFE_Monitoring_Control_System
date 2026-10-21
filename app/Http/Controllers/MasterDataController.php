@@ -30,6 +30,7 @@ class MasterDataController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('kode', 'like', "%{$search}%")
+                    ->orWhere('nomor_ruangan', 'like', "%{$search}%")
                     ->orWhereHas('lokasi', function ($q2) use ($search) {
                         $q2->where('nama', 'like', "%{$search}%")
                             ->orWhereHas('gedung', function ($q3) use ($search) {
@@ -230,6 +231,7 @@ class MasterDataController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('kode', 'like', "%{$search}%")
+                    ->orWhere('nomor_ruangan', 'like', "%{$search}%")
                     ->orWhereHas('lokasi', function ($q2) use ($search) {
                         $q2->where('nama', 'like', "%{$search}%")
                             ->orWhereHas('gedung', function ($q3) use ($search) {
@@ -269,7 +271,7 @@ class MasterDataController extends Controller
             'Expires' => '0',
         ];
 
-        $columns = [__('No'), __('PFE ID'), __('Location'), __('Building'), __('Type'), __('Capacity'), __('Fire Class'), __('Expiry Date'), __('Last Refill'), __('Qty'), __('PIC'), __('Last Inspection')];
+        $columns = [__('No'), __('PFE ID'), __('Room No'), __('Location'), __('Building'), __('Type'), __('Capacity'), __('Fire Class'), __('Expiry Date'), __('Last Refill'), __('Qty'), __('PIC'), __('Last Inspection')];
 
         $callback = function () use ($apars, $columns) {
             $file = fopen('php://output', 'w');
@@ -297,6 +299,7 @@ class MasterDataController extends Controller
                 $row = [
                     $index + 1,
                     $apar->kode,
+                    $apar->nomor_ruangan ?? '-',
                     $apar->lokasi->nama ?? 'n/a',
                     $apar->lokasi->gedung->nama ?? 'n/a',
                     $apar->jenis->nama ?? 'n/a',
@@ -325,6 +328,7 @@ class MasterDataController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('kode', 'like', "%{$search}%")
+                    ->orWhere('nomor_ruangan', 'like', "%{$search}%")
                     ->orWhereHas('lokasi', function ($q2) use ($search) {
                         $q2->where('nama', 'like', "%{$search}%")
                             ->orWhereHas('gedung', function ($q3) use ($search) {
@@ -353,7 +357,7 @@ class MasterDataController extends Controller
         }
 
         $apars = $query->orderBy('id', 'asc')->get();
-        $columns = [__('No'), __('PFE ID'), __('Location'), __('Building'), __('Type'), __('Capacity'), __('Fire Class'), __('Expiry Date'), __('Last Refill'), __('Qty'), __('PIC'), __('Last Inspection')];
+        $columns = [__('No'), __('PFE ID'), __('Room No'), __('Location'), __('Building'), __('Type'), __('Capacity'), __('Fire Class'), __('Expiry Date'), __('Last Refill'), __('Qty'), __('PIC'), __('Last Inspection')];
         $rows = [];
 
         foreach ($apars as $index => $apar) {
@@ -376,6 +380,7 @@ class MasterDataController extends Controller
             $rows[] = [
                 $index + 1,
                 $apar->kode,
+                $apar->nomor_ruangan ?? '-',
                 $apar->lokasi->nama ?? 'n/a',
                 $apar->lokasi->gedung->nama ?? 'n/a',
                 $apar->jenis->nama ?? 'n/a',
@@ -497,7 +502,7 @@ class MasterDataController extends Controller
 
     public function printAllQr()
     {
-        $apars = Apar::with(['lokasi.gedung', 'jenis', 'kapasitas'])->orderBy('kode')->get();
+        $apars = Apar::with(['lokasi.gedung', 'jenis', 'kapasitas'])->get()->sortBy('kode', SORT_NATURAL);
 
         return view('master-data.print-all', compact('apars'));
     }
@@ -521,6 +526,7 @@ class MasterDataController extends Controller
         $request->validate([
             'gedung_id' => 'required|exists:gedung,id',
             'lokasi' => 'required|string|max:255',
+            'nomor_ruangan' => 'nullable|string|max:100',
             'jenis_id' => 'required|exists:jenis_apar,id',
             'kapasitas_id' => 'required|exists:kapasitas_apar,id',
             'vendor' => 'nullable|string|max:255',
@@ -626,6 +632,7 @@ class MasterDataController extends Controller
         $request->validate([
             'gedung_id' => 'required|exists:gedung,id',
             'lokasi' => 'required|string|max:255',
+            'nomor_ruangan' => 'nullable|string|max:100',
             'jenis_id' => 'required|exists:jenis_apar,id',
             'kapasitas_id' => 'required|exists:kapasitas_apar,id',
             'vendor' => 'nullable|string|max:255',

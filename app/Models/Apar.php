@@ -13,7 +13,7 @@ class Apar extends Model
 
     protected $table = 'apar';
 
-    protected $fillable = ['kode', 'qty', 'lokasi_id', 'jenis_id', 'kapasitas_id', 'vendor', 'tgl_kedaluwarsa', 'tgl_isi_ulang', 'foto', 'pic_id'];
+    protected $fillable = ['kode', 'nomor_ruangan', 'qty', 'lokasi_id', 'jenis_id', 'kapasitas_id', 'vendor', 'tgl_kedaluwarsa', 'tgl_isi_ulang', 'foto', 'pic_id'];
 
     public function getActivitylogOptions(): LogOptions
     {
