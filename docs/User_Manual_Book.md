@@ -37,7 +37,7 @@
 ## BAB I PENDAHULUAN
 
 ### 1.1 Latar Belakang Masalah
-Pemantauan dan inspeksi kelayakan Alat Pemadam Api Ringan (APAR) di area perusahaan sering kali menghadapi kendala seperti human error dalam pencatatan manual, serta kesulitan dalam melacak jadwal inspeksi secara akurat. Untuk mengatasi masalah tersebut, dikembangkanlah PFE Monitoring Control System guna mendigitalisasi proses inspeksi APAR di PT B. Braun Pharmaceutical Indonesia.
+Pemantauan dan inspeksi kelayakan Alat Pemadam Api Ringan (APAR) di area perusahaan sering kali menghadapi kendala seperti human error dalam pencatatan manual, serta kesulitan dalam melacak jadwal inspeksi secara akurat. Untuk mengatasi masalah tersebut, dikembangkanlah PFE Monitoring Control System guna mendigitalisasi proses inspeksi APAR di Departemen EHSS (Environment, Health, Safety & Security).
 
 ### 1.2 Rumusan Masalah
 Bagaimana merancang sistem yang dapat mengelola data APAR, menjadwalkan inspeksi, dan memastikan petugas lapangan dapat melakukan pengecekan secara akurat baik menggunakan perangkat genggam maupun pencatatan fisik (kertas).

@@ -76,7 +76,7 @@
                 </div>
                 <div>
                     <h1 class="text-lg font-bold text-[#009B77] leading-tight">PFE Monitoring Control System</h1>
-                    <p class="text-xs text-slate-500 font-semibold tracking-wide">PT B | Braun Pharmaceutical Indonesia</p>
+                    <p class="text-xs text-slate-500 font-semibold tracking-wide">Environment, Health, Safety & Security</p>
                 </div>
             </div>
             
@@ -91,13 +91,34 @@
             </div>
         </header>
 
+        @if(isset($guestDisplay))
+        <!-- Guest Access Info Banner -->
+        <div class="bg-gradient-to-r from-emerald-900 to-teal-900 text-white px-6 py-2 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs border-b border-emerald-800 shadow-inner print:hidden">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#009B77] text-white uppercase tracking-wider">
+                    Sesi Viewer Terverifikasi
+                </span>
+                <span class="font-bold">{{ $guestDisplay->name }}</span>
+                <span class="text-emerald-300 font-medium">({{ $guestDisplay->institution }})</span>
+                <span class="text-emerald-400 font-medium hidden md:inline">&bull; Berlaku hingga {{ \Carbon\Carbon::parse($guestDisplay->valid_until)->translatedFormat('d F Y') }}</span>
+            </div>
+            <form action="{{ route('display.access.logout', $guestDisplay->access_token) }}" method="POST">
+                @csrf
+                <button type="submit" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-emerald-100 hover:text-white font-bold text-[11px] transition-colors flex items-center gap-1.5">
+                    <i class="ph-bold ph-sign-out"></i>
+                    <span>Keluar Sesi</span>
+                </button>
+            </form>
+        </div>
+        @endif
+
         <!-- Main Content -->
         <main class="flex-1 p-3 overflow-y-auto w-full mx-auto flex flex-col">
             @yield('content')
         </main>
         
         <footer class="py-2 text-center text-xs font-bold text-slate-400">
-            &copy; {{ date('Y') }} PT B | Braun Pharmaceutical Indonesia.
+            &copy; {{ date('Y') }} EHSS Department — Environment, Health, Safety & Security.
         </footer>
     </div>
 

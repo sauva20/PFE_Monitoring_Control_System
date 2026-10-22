@@ -9,7 +9,7 @@ files = {
         r"Rutin: Tgl ": "{{ __('Routine: Date') }} ",
         r"User ini akan dihapus secara permanen!": "{{ __('This user will be permanently deleted!') }}",
         r"Belum ada data User\.": "{{ __('No User data yet.') }}",
-        r"contoh@bbraun\.com": "example@bbraun.com",
+        r"contoh@bbraun\.com": "example@ehss.id",
         r'title="Edit"': 'title="{{ __(\'Edit\') }}"',
         r'title="Hapus"': 'title="{{ __(\'Delete\') }}"'
     },

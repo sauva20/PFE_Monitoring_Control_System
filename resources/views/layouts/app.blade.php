@@ -6,6 +6,29 @@
     <title>@yield('title', 'PFE Monitoring Control System')</title>
     <link rel="icon" href="{{ asset('favicon.svg') }}?v=3" type="image/svg+xml">
     
+    <!-- PWA Desktop Configuration -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#009B77">
+    <script>
+        // Immediate capture of beforeinstallprompt at head parsing time
+        window.__pfeDeferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const isTouchOnly = window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(pointer: fine)').matches;
+            if (isMobileUA || isTouchOnly) return;
+
+            e.preventDefault();
+            window.__pfeDeferredPrompt = e;
+            window.dispatchEvent(new CustomEvent('pfe:deferred-prompt-ready'));
+            console.log('[PFE PWA] Native beforeinstallprompt captured!');
+        });
+
+        // Register Service Worker immediately in head
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
+    </script>
+    
     <!-- Tailwind CSS (via Vite or CDN) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Keep JS Vite for Alpine and others if needed -->
@@ -145,12 +168,12 @@
              x-show="show"
              style="display: none;"
              x-transition:enter="transition ease-out duration-300 transform"
-             x-transition:enter-start="opacity-0 translate-y-8 scale-95"
-             x-transition:enter-end="opacity-100 translate-x-0 scale-100"
+             x-transition:enter-start="opacity-0 -translate-y-8 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
              x-transition:leave="transition ease-in duration-200 transform"
-             x-transition:leave-start="opacity-100 translate-x-0 scale-100"
-             x-transition:leave-end="opacity-0 translate-y-8 scale-95"
-             class="fixed bottom-6 right-6 z-[9999] flex items-center gap-3 px-5 py-4 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border min-w-[300px] max-w-sm backdrop-blur-md"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 -translate-y-8 scale-95"
+             class="fixed top-6 right-6 z-[9999] flex items-center gap-3 px-5 py-4 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.2)] border min-w-[300px] max-w-sm backdrop-blur-md"
              :class="type === 'success' ? 'bg-white/95 border-teal-100' : 'bg-white/95 border-red-100'">
              
             <div class="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -175,9 +198,15 @@
            class="h-screen absolute left-0 top-0 bg-white flex-col hidden md:flex border-r border-slate-200/60 z-[70] transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] will-change-[width]">
         
         <!-- Logo Area -->
-        <div class="px-0 justify-center h-[72px] flex items-center border-b border-slate-100 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] w-full overflow-hidden" :class="sidebarOpen ? 'px-6 justify-start' : 'px-0 justify-center'">
-            <div class="w-[22px] relative h-6 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden flex-shrink-0" :class="sidebarOpen ? 'w-[140px]' : 'w-[22px]'">
-                <img src="{{ asset('images/logo.png') }}?v=3" alt="B|Braun Logo" class="absolute left-0 top-0 h-full max-w-none">
+        <div class="h-[72px] flex items-center border-b border-slate-100 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] w-full overflow-hidden" :class="sidebarOpen ? 'px-5 justify-start' : 'px-0 justify-center'">
+            <div class="flex items-center gap-3 overflow-hidden">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#009B77] to-[#007A5E] flex items-center justify-center text-white shadow-md shadow-[#009B77]/25 flex-shrink-0">
+                    <i class="ph-bold ph-shield-check text-xl"></i>
+                </div>
+                <div class="flex flex-col overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" :class="sidebarOpen ? 'opacity-100 w-36' : 'opacity-0 w-0'">
+                    <span class="text-base font-black tracking-wider text-slate-800 leading-none">EHSS</span>
+                    <span class="text-[9px] font-bold text-[#009B77] tracking-wider uppercase mt-1 leading-none">Safety & Security</span>
+                </div>
             </div>
         </div>
         
@@ -197,6 +226,10 @@
                 <a href="/users" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('users') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="{{ __('User Management') }}">
                     <i class="ph-duotone ph-users text-xl flex-shrink-0"></i>
                     <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">{{ __('User Management') }}</span>
+                </a>
+                <a href="/guest-display" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('guest-display*') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="Akses Guest Display">
+                    <i class="ph-duotone ph-broadcast text-xl flex-shrink-0"></i>
+                    <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">Akses Display</span>
                 </a>
                 @endif
                 
@@ -359,6 +392,24 @@
 
             <!-- Right Actions -->
             <div class="flex-1 flex items-center justify-end gap-3">
+                <!-- Desktop Install PWA Button (Desktop Only) -->
+                <button type="button" 
+                        x-data="{ showBtn: false }"
+                        x-init="
+                            const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+                            if (!isMobileUA && !isStandalone && localStorage.getItem('pfe_pwa_installed') !== 'true') {
+                                showBtn = true;
+                            }
+                        "
+                        x-show="showBtn"
+                        @click="window.dispatchEvent(new CustomEvent('pfe:trigger-install'))"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#009B77]/10 hover:bg-[#009B77] text-[#009B77] hover:text-white font-bold text-xs transition-all border border-[#009B77]/20 cursor-pointer shadow-sm active:scale-95"
+                        title="Install PFE Monitoring Control System ke Desktop">
+                    <i class="ph-bold ph-download-simple text-sm"></i>
+                    <span>Install App</span>
+                </button>
+
                 @php
                     $notifSignature = md5($importantNotifications->pluck('id')->join(','));
                 @endphp
@@ -707,11 +758,25 @@
                                     </div>
                                     <div class="flex flex-col">
                                         <span class="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">{{ __('Open Display Report') }}</span>
-                                        <span class="text-[10px] font-semibold text-slate-500 mt-0.5">{{ __('View dashboard without login (Kiosk mode)') }}</span>
+                                        <span class="text-[10px] font-semibold text-slate-500 mt-0.5">Mode Kiosk layar penuh (Kredensial Sesi Aktif)</span>
                                     </div>
                                 </div>
                                 <i class="ph-bold ph-arrow-square-out text-slate-400 group-hover:text-indigo-500 transition-colors"></i>
                             </a>
+                            @if(auth()->user()->role !== 'Staff')
+                            <a href="{{ route('display-access.index') }}" class="w-full text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-[#009B77] hover:bg-teal-50 transition-all flex items-center justify-between group">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-[#009B77] flex items-center justify-center transition-colors shadow-sm">
+                                        <i class="ph-bold ph-key text-lg"></i>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-bold text-slate-700 group-hover:text-[#009B77] transition-colors">Kelola Akses Viewer (PIN & Durasi)</span>
+                                        <span class="text-[10px] font-semibold text-slate-500 mt-0.5">Buat kredensial PIN dan atur tanggal aktif untuk viewer</span>
+                                    </div>
+                                </div>
+                                <i class="ph-bold ph-caret-right text-slate-400 group-hover:text-[#009B77] transition-colors"></i>
+                            </a>
+                            @endif
                         </div>
                     </div>
 
@@ -901,6 +966,9 @@
         });
     </script>
     @stack('scripts')
+
+    <!-- PWA Desktop Install Banner (Only rendered for authenticated users on Desktop) -->
+    <x-desktop-install-banner />
 </body>
 </html>
 

@@ -15,7 +15,7 @@
             <p style="font-weight: 600; font-size: 16px; margin-top: 0;">Halo, {{ $user->name }}</p>
             
             <p>
-                Ini adalah pengingat otomatis dari B. Braun PFE Monitoring Control System mengenai <strong>Batas Deadline Inspeksi Bulanan Anda</strong> yang jatuh pada tanggal:
+                Ini adalah pengingat otomatis dari PFE Monitoring Control System — EHSS Department mengenai <strong>Batas Deadline Inspeksi Bulanan Anda</strong> yang jatuh pada tanggal:
             </p>
 
             <div style="background-color: #f1f5f9; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #009B77;">
@@ -51,7 +51,7 @@
         </div>
 
         <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 24px; text-align: center; font-size: 13px; color: #64748b;">
-            <p style="margin: 0;">Email ini dikirim otomatis oleh PFE Monitoring Control System (B. Braun). Harap tidak membalas email ini.</p>
+            <p style="margin: 0;">Email ini dikirim otomatis oleh PFE Monitoring Control System — EHSS Department. Harap tidak membalas email ini.</p>
         </div>
     </div>
 </body>

@@ -267,7 +267,7 @@
                     
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1.5">Email <span class="text-red-500">*</span></label>
-                        <input type="email" name="email" x-model="formEmailTambah" required placeholder="example@bbraun.com" class="w-full bg-slate-50 border border-slate-200/60 text-slate-800 text-sm rounded-xl focus:outline-none focus:ring-[#009B77] focus:border-[#009B77] block p-2.5 transition-colors font-medium" :class="isEmailTaken(formEmailTambah) ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''">
+                        <input type="email" name="email" x-model="formEmailTambah" required placeholder="user@ehss.id" class="w-full bg-slate-50 border border-slate-200/60 text-slate-800 text-sm rounded-xl focus:outline-none focus:ring-[#009B77] focus:border-[#009B77] block p-2.5 transition-colors font-medium" :class="isEmailTaken(formEmailTambah) ? 'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500/20' : ''">
                         <p x-show="isEmailTaken(formEmailTambah)" class="mt-1.5 text-xs text-red-600 font-bold leading-tight flex items-start gap-1" x-cloak><i class="ph-fill ph-warning-circle text-sm"></i> <span>{{ __('This Email is already registered. Please use a different Email.') }}</span></p>
                         @if(old('form_type') == 'tambah_user') @error('email') <p class="mt-1.5 text-xs text-red-500 font-medium">{{ $message }}</p> @enderror @endif
                     </div>

@@ -98,6 +98,19 @@
                 <p class="text-[11px] font-semibold text-emerald-700">{{ \Carbon\Carbon::now()->translatedFormat('l, d F Y') }}</p>
             </div>
         </div>
+
+        @if(isset($guestDisplay))
+        <div class="flex items-center gap-2 px-1">
+            <div class="flex items-center gap-2 bg-white/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-emerald-200 shadow-sm text-xs text-slate-700">
+                <i class="ph-bold ph-identification-badge text-[#009B77] text-base"></i>
+                <span class="font-bold text-slate-800">{{ $guestDisplay->name }}</span>
+                <span class="text-slate-500 font-medium hidden sm:inline">({{ $guestDisplay->institution }})</span>
+                <span class="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                    Aktif s.d. {{ \Carbon\Carbon::parse($guestDisplay->valid_until)->translatedFormat('d M Y') }}
+                </span>
+            </div>
+        </div>
+        @endif
     </div>
 
 
@@ -681,14 +694,32 @@
             const month = urlParams.get('month') || '{{ $selectedMonth }}';
             const year = urlParams.get('year') || '{{ $selectedYear }}';
             
-            fetch(`/dashboard?month=${month}&year=${year}`, {
+            @if(isset($guestDisplay))
+            const pollingUrl = `{{ route('display.access.view', $guestDisplay->access_token) }}?month=${month}&year=${year}`;
+            @else
+            const pollingUrl = `/dashboard?month=${month}&year=${year}`;
+            @endif
+
+            fetch(pollingUrl, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                if (response.status === 401 || response.status === 403) {
+                    window.location.href = '{{ isset($guestDisplay) ? route("display.access", $guestDisplay->access_token) : route("login") }}';
+                    return null;
+                }
+                return response.json();
+            })
             .then(data => {
+                if (!data) return;
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                    return;
+                }
+
                 // Update stats with super cool animations
                 updateStatWithAnimation('stat-totalApar', data.stats.totalApar);
                 updateStatWithAnimation('stat-kondisiBaik', data.stats.kondisiBaik);

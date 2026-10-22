@@ -163,7 +163,7 @@ translations = {
     "Forgot Password": "Lupa Kata Sandi",
     "Enter quantity": "Masukkan ukuran",
     "Verify PIN": "Verifikasi PIN",
-    "Example: user@bbraun.com": "Contoh: user@bbraun.com",
+    "Example: user@ehss.id": "Contoh: user@ehss.id",
     "Example: Focus on PFE in kitchen and generator area.": "Contoh: Fokuskan pada APAR di area dapur dan genset.",
     "No chart data available": "Belum ada data grafik",
     "Production Building": "Gedung Produksi",

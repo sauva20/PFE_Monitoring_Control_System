@@ -1,5 +1,5 @@
 # 🛡️ Dokumentasi Implementasi Keamanan Sistem (Security Implementation)
-**PFE Monitoring Control System — B. Braun Medical Indonesia**
+**PFE Monitoring Control System — EHSS Department — Environment, Health, Safety & Security**
 
 Dokumen ini menjelaskan seluruh arsitektur, lapisan pertahanan, mekanisme teknis, dan cara kerja fitur keamanan yang diimplementasikan pada aplikasi **PFE Monitoring Control System**.
 
@@ -8,7 +8,7 @@ Dokumen ini menjelaskan seluruh arsitektur, lapisan pertahanan, mekanisme teknis
 ## Daftar Isi
 1. [Ringkasan Arsitektur Keamanan (Defense-in-Depth)](#1-ringkasan-arsitektur-keamanan-defense-in-depth)
 2. [Proteksi Brute-Force & Flooding pada Login](#2-proteksi-brute-force--flooding-pada-login)
-3. [Keamanan Verifikasi PIN Inspeksi Lapangan](#3-keamanan-verifikasi-pin-inspeksi-lapangan)
+3. [Keamanan Verifikasi PIN (Inspeksi Lapangan & Viewer Display)](#3-keamanan-verifikasi-pin-inspeksi-lapangan--viewer-display)
 4. [Proteksi Bot (Honeypot & Google reCAPTCHA)](#4-proteksi-bot-honeypot--google-recaptcha)
 5. [Isolasi Hak Akses & Sesi (Privilege & Session Separation)](#5-isolasi-hak-akses--sesi-privilege--session-separation)
 6. [Kriptografi & URL Bertanda Tangan (Signed URLs)](#6-kriptografi--url-bertanda-tangan-signed-urls)
@@ -30,16 +30,17 @@ flowchart TD
     D --> E[Layer 4: Account-Specific Rate Limiter - Anti Credential Stuffing]
     E --> F[Layer 5: Bcrypt Hashing & Credential Verification]
     F --> G[Layer 6: Session Regeneration & Privilege Isolation Middleware]
+    G --> H[Layer 7: Stealth 404 & Cloaking Internal Endpoints]
 ```
 
 ---
 
 ## 2. Proteksi Brute-Force & Flooding pada Login
 
-Pada halaman login utama ([AuthController.php](file:///c:/laragon/www/APARB.Braun/app/Http/Controllers/AuthController.php)), diterapkan proteksi 3 lapis untuk mengantisipasi berbagai jenis serangan siber:
+Pada halaman login utama ([AuthController.php](file:///c:/laragon/www/APAR PFE EHSS/app/Http/Controllers/AuthController.php)), diterapkan proteksi 3 lapis untuk mengantisipasi berbagai jenis serangan siber:
 
 ### A. Lapis Kecepatan Request (Route Throttling)
-* **Lokasi**: [routes/web.php](file:///c:/laragon/www/APARB.Braun/routes/web.php#L34) (`middleware('throttle:20,1')`)
+* **Lokasi**: [routes/web.php](file:///c:/laragon/www/APAR PFE EHSS/routes/web.php#L34) (`middleware('throttle:20,1')`)
 * **Cara Kerja**:
   Membatasi maksimal **20 request per menit per IP** ke endpoint `POST /login`.
 * **Tujuan**:
@@ -51,7 +52,7 @@ Pada halaman login utama ([AuthController.php](file:///c:/laragon/www/APARB.Brau
 * **Durasi Blokir**: **10 menit** (600 detik).
 * **Pesan Error**: *"Akun Anda diblokir sementara karena terlalu banyak percobaan masuk."*
 * **Cara Kerja**:
-  Jika penyerang menargetkan satu akun tertentu (misal: `admin@bbraun.com`) dan gagal 5 kali berturut-turut, maka kombinasi akun tersebut dari IP pengakses akan dibekukan selama 10 menit.
+  Jika penyerang menargetkan satu akun tertentu (misal: `admin@ehss.id`) dan gagal 5 kali berturut-turut, maka kombinasi akun tersebut dari IP pengakses akan dibekukan selama 10 menit.
 
 ### C. Lapis Global IP (Anti-Password Spraying)
 * **Kunci Throttle**: `login-ip:{ip_address}`
@@ -66,9 +67,9 @@ Sistem **tidak menampilkan hitungan mundur** (*countdown* detik/menit sisa bloki
 
 ---
 
-## 3. Keamanan Verifikasi PIN Inspeksi Lapangan
+## 3. Keamanan Verifikasi PIN (Inspeksi Lapangan & Viewer Display)
 
-Petugas yang melakukan inspeksi di lapangan memindai QR Code APAR dan memverifikasi identitas menggunakan **4 Digit PIN** ([ScanController.php](file:///c:/laragon/www/APARB.Braun/app/Http/Controllers/ScanController.php)).
+Petugas yang melakukan inspeksi di lapangan memindai QR Code APAR dan memverifikasi identitas menggunakan **4 Digit PIN** ([ScanController.php](file:///c:/laragon/www/APAR PFE EHSS/app/Http/Controllers/ScanController.php)).
 
 ### A. Kunci Throttle Global per Perangkat
 * **Kunci Throttle**: `verify-pin:{ip_address}`
@@ -80,6 +81,38 @@ Petugas yang melakukan inspeksi di lapangan memindai QR Code APAR dan memverifik
 
 ### B. Hashing PIN
 PIN disimpan di database dalam bentuk terenkripsi satu arah menggunakan **Bcrypt** (`Hash::make()`), bukan teks polos (*plaintext*).
+
+### C. Keamanan Akses Portal Viewer Display (Kiosk Report)
+Fitur portal Display Report diperuntukkan bagi tamu dan stakeholder eksternal yang diundang secara resmi oleh EHSS untuk memantau status kesiapan APAR secara transparan tanpa memberikan akun login internal ([GuestDisplayController.php](file:///c:/laragon/www/APAR PFE EHSS/app/Http/Controllers/GuestDisplayController.php)).
+
+1. **Proteksi Anti-Brute Force PIN Berbasis IP Perangkat**:
+   * **Lokasi**: [GuestDisplayController.php](file:///c:/laragon/www/APAR PFE EHSS/app/Http/Controllers/GuestDisplayController.php)
+   * **Kunci Throttle**: `viewer-verify-pin:{ip_address}`
+   * **Ambang Batas**: Maksimal **3 kali percobaan salah**.
+   * **Durasi Blokir**: **30 menit** (1.800 detik) di backend melalui `RateLimiter::hit($throttleKey, 1800)`.
+
+2. **Pencegahan Kebocoran Informasi & Anti-Timing Attack (OWASP Generic Notice)**:
+   * **Judul Banner**: *"Perangkat Diblokir"*
+   * **Pesan Error**: *"Akses verifikasi PIN diblokir karena telah mencapai batas maksimal percobaan salah dari perangkat ini."*
+   * **Eliminasi Durasi & Status Sementara**: Sistem sengaja **tidak mencantumkan hitungan mundur (*countdown*)**, durasi menit/detik, kata *"sementara"*, maupun anjuran *"coba kembali nanti"*.
+   * **Tujuan**: Mencegah penyerang mengetahui batas waktu *cooldown* blokir untuk merancang serangan brute-force berkala secara terjadwal.
+
+3. **Umpan Balik Sisa Kesempatan Dinamis**:
+   * Sebelum IP terblokir (percobaan salah ke-1 dan ke-2), sistem menginformasikan sisa kesempatan mencoba secara transparan (*"PIN yang Anda masukkan salah. Sisa kesempatan mencoba: X kali."*) agar pengakses berhati-hati.
+
+4. **Auto-Lockdown UI di Sisi Frontend**:
+   * Begitu IP terdeteksi diblokir oleh backend, antarmuka verifikasi secara otomatis mengunci seluruh input 4-digit PIN (`disabled`) dan tombol konfirmasi (`disabled` dengan cursor `not-allowed`).
+
+5. **Validasi Format & Regex Numerik Murni**:
+   * Input PIN divalidasi ketat pada backend: `required|string|size:4|regex:/^[0-9]{4}$/` untuk menolak injeksi karakter khusus, payload non-numerik, atau panjang tidak sesuai sebelum diproses oleh database.
+
+6. **Route Throttling**:
+   * Endpoint verifikasi `POST /display-report/access/{token}/verify` diproteksi middleware `throttle:15,1` (maksimal 15 request per menit) pada [routes/web.php](file:///c:/laragon/www/APAR PFE EHSS/routes/web.php#L52) untuk menangkal spam bot otomatis dan serangan flooding.
+
+7. **Pencegahan Reconnaissance & Form Login Cloaking (Stealth 404)**:
+   * Endpoint internal `/display-report` yang dapat dibuka dari profil pengguna internal menerapkan mekanisme **Stealth 404** ([DashboardController.php](file:///c:/laragon/www/APAR PFE EHSS/app/Http/Controllers/DashboardController.php#L182-L188)).
+   * Jika dibuka tanpa sesi kredensial aktif (`! auth()->check()`), sistem **tidak melakukan redirect ke form `/login`**, melainkan langsung mengeksekusi `abort(404)` (HTTP 404 Not Found).
+   * **Manfaat**: Pihak luar, penyerang, atau perayap bot yang menyalin URL `/display-report` tidak dapat menemukan keberadaan halaman login web utama aplikasi ataupun struktur otentikasi internal.
 
 ---
 
@@ -124,6 +157,18 @@ Aplikasi memisahkan secara ketat antara sesi **Inspeksi Lapangan (PIN)** dan ses
   Expires: Sat, 01 Jan 1990 00:00:00 GMT
   ```
 * **Fungsi**: Mematikan fitur *back-forward cache* di browser. Setelah pengguna logout, menekan tombol "Back" di browser tidak akan menampilkan kembali formulir atau data sensitif yang tersimpan di cache.
+
+### D. Isolasi Sesi Portal Viewer Display (Kiosk Portal)
+* **Pemisahan Kredensial**: Sesi viewer publik tidak pernah menyentuh tabel pengguna (`users`) atau sesi autentikasi Laravel utama (`auth()->user()`). Sesi disimpan dengan kunci unik terisolasi: `guest_display_auth_{token}`.
+* **Prinsip Least Privilege**: Pengakses viewer hanya memiliki izin *read-only* terhadap data agregat inspeksi APAR pada endpoint `/display-report/view/{token}`. Segala upaya memanggil rute administratif, master data, atau mutasi data ditolak.
+* **Proactive Invalidation (Kedaluwarsa & Nonaktif)**: Sistem memvalidasi tanggal aktif `valid_until` dan status `is_active` secara *real-time* di setiap pemanggilan halaman. Begitu masa aktif habis atau dinonaktifkan oleh Admin EHSS, sesi langsung dihanguskan dan diarahkan ke halaman pemberitahuan kedaluwarsa/nonaktif.
+* **Sesi Logout Bersih**: Fitur logout viewer (`POST /display-report/logout/{token}`) segera menghapus kunci sesi dari server (`session()->forget(...)`) dan mengarahkan kembali ke verifikasi PIN tanpa menyisakan cache laporan.
+* **Kriptografi Token Akses**: Token URL viewer di-generate menggunakan `Str::random(40)` (240-bit entropy acak) yang secara matematis mustahil ditebak melalui *dictionary attack* atau *sequential scanning*.
+
+### E. Batas Waktu Sesi Otomatis Akibat Inaktivitas (Session Inactivity Lifetime)
+* **Konfigurasi**: `SESSION_LIFETIME=60` (60 menit) pada [.env](file:///c:/laragon/www/APARB.Braun/.env#L36) dan [config/session.php](file:///c:/laragon/www/APARB.Braun/config/session.php#L35).
+* **Penyimpanan Driver**: Menggunakan database session (`SESSION_DRIVER=database`). Setiap aksi/request pengguna memperbarui timestamp kolom `last_activity` pada tabel `sessions`.
+* **Mekanisme Auto-Expire**: Jika pengguna tidak melakukan aktivitas/request apa pun selama **60 menit**, sesi di server secara otomatis dianggap kedaluwarsa (*expired*). Saat pengguna mencoba berinteraksi atau mengklik menu berikutnya, middleware `Authenticate` langsung membatalkan akses dan mengarahkan kembali ke halaman login, mencegah pembajakan sesi (*session hijacking*) saat komputer ditinggalkan.
 
 ---
 
@@ -173,8 +218,13 @@ Untuk memastikan bahwa inspeksi benar-benar dilakukan secara fisik di lokasi APA
 | **Login (HTTP Traffic)** | IP Address | 20 request/menit | 1 Menit (Rolling) | HTTP 429 Too Many Requests |
 | **Honeypot Form** | Field `_contact_number` | 1 kali terdeteksi | Instan | Ditolak seketika (anggap Bot) |
 | **PIN Verifikasi APAR** | `verify-pin:{ip}` | 5 kali gagal | 10 Menit (600s) | Blokir input PIN di semua APAR |
+| **PIN Verifikasi Viewer Display** | `viewer-verify-pin:{ip}` | 3 kali gagal | 30 Menit (1.800s - Dirahasiakan) | Kunci form PIN, generic notice tanpa kata "sementara" / countdown |
+| **Viewer PIN (HTTP Traffic)** | IP Address | 15 request/menit | 1 Menit (Rolling) | HTTP 429 Too Many Requests |
+| **Display Kiosk Internal (`/display-report`)** | Sesi Login Web (`auth`) | Tanpa sesi login aktif | Instan | HTTP 404 Not Found (Stealth 404 / Cloaking form login) |
+| **Token Akses Viewer** | `access_token` (40 char cryptographically secure) | Validitas tanggal & `is_active` | Sesuai tanggal `valid_until` | Akses ditutup, sesi dimusnahkan jika expired/nonaktif/logout |
+| **Sesi Login Web (Inactivity)** | Database Session (`sessions.last_activity`) | Tidak ada interaksi selama 60 menit | 60 Menit (Inaktif) | Sesi server hangus, redirect ke login saat request berikutnya |
 | **Sesi PIN Inspeksi** | `session('is_pin_login')` | Akses rute non-inspeksi | Instan | Sesi dimusnahkan, force logout |
 | **Reset / Setup Password** | Signed URL (HMAC) | 1 signature valid | Waktu terbatas | HTTP 403 Forbidden jika dimanipulasi |
 
 ---
-*Dokumen ini diperbarui secara berkala mengikuti arsitektur keamanan aktif pada proyek APARB.Braun.*
+*Dokumen ini diperbarui secara berkala mengikuti arsitektur keamanan aktif pada proyek APAR PFE EHSS.*

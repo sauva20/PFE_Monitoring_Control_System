@@ -4,6 +4,7 @@ use App\Http\Controllers\ActivityLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ForgotPasswordController;
+use App\Http\Controllers\GuestDisplayController;
 use App\Http\Controllers\InspeksiController;
 use App\Http\Controllers\LocaleController;
 use App\Http\Controllers\MasterDataController;
@@ -13,12 +14,14 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ScanController;
 use App\Http\Controllers\UserController;
 use App\Mail\AparExpiryReminder;
+use App\Mail\GuestDisplayAccessMail;
 use App\Mail\InspectionAssigned;
 use App\Mail\InspectionReminder;
 use App\Mail\NewUserRegistered;
 use App\Mail\ResetPassword;
 use App\Mail\UserScheduleUpdated;
 use App\Models\Apar;
+use App\Models\GuestDisplay;
 use App\Models\JadwalInspeksi;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
@@ -32,8 +35,12 @@ Route::get('/', function () {
     return view('index');
 })->name('login')->middleware(['guest', 'prevent-back-history']);
 
+Route::get('/login', function () {
+    return redirect('/');
+});
+
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:20,1');
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::match(['get', 'post'], '/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/setup-password/{user}', [PasswordSetupController::class, 'show'])->name('setup-password')->middleware('signed');
 Route::post('/setup-password/{user}', [PasswordSetupController::class, 'store'])->middleware('signed');
@@ -45,6 +52,10 @@ Route::get('/reset-password/{user}', [ForgotPasswordController::class, 'showRese
 Route::post('/reset-password/{user}', [ForgotPasswordController::class, 'reset'])->name('password.update')->middleware('signed');
 
 Route::get('/display-report', [DashboardController::class, 'displayReport'])->name('display-report');
+Route::get('/display-report/access/{token}', [GuestDisplayController::class, 'showAccess'])->name('display.access');
+Route::post('/display-report/access/{token}/verify', [GuestDisplayController::class, 'verifyPin'])->name('display.access.verify')->middleware('throttle:15,1');
+Route::get('/display-report/view/{token}', [GuestDisplayController::class, 'viewReport'])->name('display.access.view');
+Route::post('/display-report/logout/{token}', [GuestDisplayController::class, 'logout'])->name('display.access.logout');
 
 Route::middleware(['auth', 'prevent-back-history'])->group(function () {
     Route::middleware(['restrict-pin-login'])->group(function () {
@@ -71,6 +82,13 @@ Route::middleware(['auth', 'prevent-back-history'])->group(function () {
         Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
         Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])->name('reports.export-excel');
         Route::get('/reports/export-excel-preview', [ReportController::class, 'previewExcel'])->name('reports.export-excel-preview');
+
+        // Guest Display Management (Admin EHSS)
+        Route::get('/guest-display', [GuestDisplayController::class, 'index'])->name('display-access.index');
+        Route::post('/guest-display', [GuestDisplayController::class, 'store'])->name('display-access.store');
+        Route::put('/guest-display/{guestDisplay}', [GuestDisplayController::class, 'update'])->name('display-access.update');
+        Route::delete('/guest-display/{guestDisplay}', [GuestDisplayController::class, 'destroy'])->name('display-access.destroy');
+        Route::post('/guest-display/{guestDisplay}/resend-email', [GuestDisplayController::class, 'resendEmail'])->name('display-access.resend');
 
         // Master Data Reference Routes
         Route::post('/master-data/gedung', [MasterDataController::class, 'storeGedung']);
@@ -166,7 +184,19 @@ Route::get('/test-email/{type}', function ($type) {
             return new InspectionReminder($user, 'Inspeksi Rutin Bulanan', now()->addDays(3)->format('Y-m-d'));
         case 'user-schedule-updated':
             return new UserScheduleUpdated($user, $user->gedungs ?? collect());
+        case 'guest-display':
+            $guest = new GuestDisplay([
+                'name' => 'Bpk. Ahmad Sujarwo',
+                'institution' => 'PT Surveyor HSE Audit',
+                'email' => 'ahmad@surveyor.com',
+                'pin' => '849201',
+                'access_token' => 'sample-test-token-1234567890',
+                'valid_until' => now()->addDays(7)->format('Y-m-d'),
+                'is_active' => true,
+            ]);
+
+            return new GuestDisplayAccessMail($guest);
         default:
-            return 'Invalid type. Options: new-user, reset-password, inspection-assigned, apar-expiry, inspection-reminder, user-schedule-updated';
+            return 'Invalid type. Options: new-user, reset-password, inspection-assigned, apar-expiry, inspection-reminder, user-schedule-updated, guest-display';
     }
 });

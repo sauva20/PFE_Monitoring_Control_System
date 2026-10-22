@@ -7,7 +7,7 @@ Kita akan menyimpan koordinat pusat perusahaan (Latitude & Longitude) dan batas 
 
 **Tambahan di `.env`:**
 ```env
-# Koordinat Pusat PT B | Braun (Contoh: Jakarta/Karawang)
+# Koordinat Pusat Fasilitas / Pabrik EHSS (Contoh: Jakarta/Karawang)
 COMPANY_LATITUDE=-6.2088
 COMPANY_LONGITUDE=106.8456
 # Batas radius dalam satuan kilometer

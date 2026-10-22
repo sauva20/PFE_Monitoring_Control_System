@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    private function getDashboardData(Request $request)
+    public function getDashboardData(Request $request)
     {
         $now = Carbon::now();
 
@@ -181,6 +181,10 @@ class DashboardController extends Controller
 
     public function displayReport(Request $request)
     {
+        if (! auth()->check()) {
+            abort(404);
+        }
+
         $data = $this->getDashboardData($request);
 
         return view('dashboard.display-report', $data);

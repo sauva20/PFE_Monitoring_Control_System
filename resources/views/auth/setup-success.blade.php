@@ -72,7 +72,7 @@
             <div class="mt-10 pt-6 border-t border-gray-100 flex flex-col items-center gap-1 text-center">
                 <div class="flex items-center gap-1.5">
                     <i class="ph-fill ph-shield-check text-[#009B77] text-sm"></i>
-                    <p class="text-[11px] text-gray-400 font-medium">PFE Monitoring Control System v1.0 | PTBP</p>
+                    <p class="text-[11px] text-gray-400 font-medium">PFE Monitoring Control System v1.0 | EHSS</p>
                 </div>
                 <p class="text-[11px] text-gray-400 font-medium">&copy; 2026 q.sauva | Intern of EHSS, SM, OE &amp; LPMO</p>
             </div>

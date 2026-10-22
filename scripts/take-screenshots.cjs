@@ -18,7 +18,7 @@ const puppeteer = require('puppeteer');
         console.log('Saved 1_login.png');
 
         // Login
-        await page.type('input[name="email"]', 'head@braun.com');
+        await page.type('input[name="email"]', 'head@ehss.id');
         await page.type('input[name="password"]', 'password');
         
         await Promise.all([

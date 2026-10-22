@@ -15,7 +15,7 @@ class UserSeeder extends Seeder
     {
         User::create([
             'name' => 'Manager Keselamatan',
-            'email' => 'head@braun.com',
+            'email' => 'head@ehss.id',
             'password' => Hash::make('password'),
             'role' => 'Head of EHSS, SM, OE & LPMO',
             'pin' => '123456',
@@ -23,7 +23,7 @@ class UserSeeder extends Seeder
 
         User::create([
             'name' => 'Andi Rahman',
-            'email' => 'andi@braun.com',
+            'email' => 'andi@ehss.id',
             'password' => Hash::make('password'),
             'role' => 'EHSS',
             'pin' => '654321',

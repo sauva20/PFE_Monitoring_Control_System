@@ -60,12 +60,12 @@ Buka terminal server dan ketik `crontab -e`, lalu tambahkan baris ini di paling 
 * * * * * cd /path-ke-folder-project-kamu && php artisan schedule:run >> /dev/null 2>&1
 ```
 > [!TIP]
-> Ganti `/path-ke-folder-project-kamu` dengan *path* asli di server kamu (misal `/var/www/aparb-braun`). Laravel akan mengecek setiap menit apakah ada jadwal email yang harus dikirim hari itu jam 07:00 dan 08:00.
+> Ganti `/path-ke-folder-project-kamu` dengan *path* asli di server kamu (misal `/var/www/aparb-ehss`). Laravel akan mengecek setiap menit apakah ada jadwal email yang harus dikirim hari itu jam 07:00 dan 08:00.
 
 ## 7. Web Server Configuration
 Pastikan Nginx atau Apache di-pointing (*Document Root*) langsung ke folder `public`, bukan ke folder *root* project.
 Contoh untuk Nginx:
-`root /var/www/aparb-braun/public;`
+`root /var/www/aparb-ehss/public;`
 
 ---
 

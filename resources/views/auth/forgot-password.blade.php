@@ -92,7 +92,7 @@
                         <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
                             <i class="ph-fill ph-envelope text-lg"></i>
                         </div>
-                        <input type="email" id="email" name="email" placeholder="{{ __('Example: user@bbraun.com') }}" value="{{ old('email') }}"
+                        <input type="email" id="email" name="email" placeholder="{{ __('Example: user@ehss.id') }}" value="{{ old('email') }}"
                             class="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#009B77]/10 focus:border-[#009B77] focus:bg-white transition-all outline-none text-[#1A1A1A] text-sm font-medium placeholder:font-normal" required autofocus>
                     </div>
                 </div>
@@ -110,7 +110,7 @@
             <div class="mt-10 pt-6 border-t border-gray-100 flex flex-col items-center gap-1 text-center">
                 <div class="flex items-center gap-1.5">
                     <i class="ph-fill ph-shield-check text-[#009B77] text-sm"></i>
-                    <p class="text-[11px] text-gray-400 font-medium">PFE Monitoring Control System v1.0 | PTBP</p>
+                    <p class="text-[11px] text-gray-400 font-medium">PFE Monitoring Control System v1.0 | EHSS</p>
                 </div>
                 <p class="text-[11px] text-gray-400 font-medium">&copy; 2026 q.sauva | Intern of EHSS, SM, OE &amp; LPMO</p>
             </div>

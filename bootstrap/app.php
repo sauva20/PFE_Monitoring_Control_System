@@ -9,6 +9,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Support\Facades\Auth;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -44,6 +45,9 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return route('login');
         });
+        $middleware->validateCsrfTokens(except: [
+            'logout',
+        ]);
         $middleware->redirectUsersTo(function (Request $request) {
             return '/dashboard';
         });
@@ -54,6 +58,18 @@ return Application::configure(basePath: dirname(__DIR__))
         );
 
         $exceptions->render(function (TokenMismatchException $e, Request $request) {
+            if ($request->is('logout') || $request->routeIs('logout')) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect('/')->with('info', 'Anda telah berhasil keluar dari sistem.');
+            }
+            if ($request->is('login') || $request->is('/') || $request->routeIs('login')) {
+                $request->session()->regenerateToken();
+
+                return redirect('/')->with('error', 'Sesi form login Anda telah disegarkan. Silakan masukkan kembali akun Anda.');
+            }
             if ($request->is('scan/*/verify') || $request->routeIs('scan.verify')) {
                 return redirect()->back()->with('error', 'Sesi verifikasi telah kedaluwarsa. Silakan masukkan PIN kembali.');
             }
@@ -61,6 +77,6 @@ return Application::configure(basePath: dirname(__DIR__))
                 return redirect()->back()->with('error', 'Sesi form telah kedaluwarsa. Silakan simpan ulang.');
             }
 
-            return redirect()->back()->with('error', 'Sesi Anda telah kedaluwarsa. Halaman telah disegarkan, silakan coba kembali.');
+            return redirect('/')->with('error', 'Sesi Anda telah kedaluwarsa. Silakan coba kembali.');
         });
     })->create();

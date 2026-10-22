@@ -67,7 +67,7 @@
 <body>
 
     <div class="header">
-        <h1>{{ __('PFE DATA REPORT') }} PT B. BRAUN PHARMACEUTICAL INDONESIA</h1>
+        <h1>{{ __('PFE DATA REPORT') }} — EHSS DEPARTMENT (ENVIRONMENT, HEALTH, SAFETY & SECURITY)</h1>
         <p>Identify Fire Extinguisher Placement</p>
     </div>
 

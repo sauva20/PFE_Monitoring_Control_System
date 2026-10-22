@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ __('Login - PFE Monitoring Control System') }}</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" href="{{ asset('favicon.svg') }}?v=3" type="image/svg+xml">
 
     <!-- Tailwind CSS (via Vite) -->
@@ -121,7 +122,7 @@
                     {{ __('PFE MONITORING CONTROL SYSTEM') }}
                 </h1>
                 <p class="text-xs text-[#009B77] font-bold">
-                    PT B | BRAUN PHARMACEUTICAL INDONESIA
+                    ENVIRONMENT, HEALTH, SAFETY & SECURITY DEPARTMENT
                 </p>
             </div>
 
@@ -217,9 +218,9 @@
             <div class="mt-4 pt-3 border-t border-gray-100 flex flex-col items-center gap-0.5 text-center">
                 <div class="flex items-center gap-1.5">
                     <i class="ph-fill ph-shield-check text-[#009B77] text-xs"></i>
-                    <p class="text-[10px] text-gray-400 font-medium">PFE Monitoring Control System v1.0 | PTBP</p>
+                    <p class="text-[10px] text-gray-400 font-medium">PFE Monitoring Control System v1.0 | EHSS</p>
                 </div>
-                <p class="text-[10px] text-gray-400 font-medium">&copy; 2026 q.sauva | Intern of EHSS, SM, OE &amp; LPMO</p>
+                <p class="text-[10px] text-gray-400 font-medium">&copy; 2026 EHSS Department &bull; Environment, Health, Safety &amp; Security</p>
             </div>
         </div>
     </div>
@@ -246,6 +247,12 @@
                 return false;
             }
         }, { capture: true });
+
+        // Clean up any stale service worker caches on login page
+        if ('caches' in window) {
+            caches.delete('pfe-ehss-v1');
+            caches.delete('pfe-v2');
+        }
     </script>
 </body>
 

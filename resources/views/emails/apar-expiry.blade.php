@@ -24,7 +24,7 @@
             border-top: 5px solid #009B77;
         }
         .header {
-            background-color: #009B77; /* B. Braun Green */
+            background-color: #009B77; /* EHSS Emerald Green */
             color: #ffffff;
             padding: 24px;
             text-align: center;
@@ -134,7 +134,7 @@
         </div>
 
         <div class="footer">
-            <p>This email is sent automatically by the PFE Monitoring Control System (B. Braun). Please do not reply to this email.</p>
+            <p>This email is sent automatically by the PFE Monitoring Control System — EHSS Department. Please do not reply to this email.</p>
         </div>
     </div>
 </body>

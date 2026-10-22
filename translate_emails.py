@@ -54,13 +54,13 @@ files = {
         ('>Jenis<', '>Type<'),
         ('Mohon segera lakukan koordinasi untuk pengecekan, pengisian ulang (refill), atau penggantian APAR tersebut sebelum tanggal kedaluwarsa demi menjaga standar keselamatan dan keamanan.', 'Please coordinate immediately for checking, refilling, or replacing these PFEs before the expiry date to maintain safety and security standards.'),
         ('Lihat Data APAR di Sistem', 'View PFE Data in System'),
-        ('Email ini dikirim secara otomatis oleh PFE Monitoring Control System (B. Braun). Mohon tidak membalas email ini.', 'This email is sent automatically by the PFE Monitoring Control System (B. Braun). Please do not reply to this email.')
+        ('Email ini dikirim secara otomatis oleh PFE Monitoring Control System (EHSS). Mohon tidak membalas email ini.', 'This email is sent automatically by the PFE Monitoring Control System (EHSS). Please do not reply to this email.')
     ],
     'inspection-reminder.blade.php': [
         ('Pengingat Inspeksi APAR</title>', 'PFE Inspection Reminder</title>'),
         ('Pengingat Inspeksi APAR</h1>', 'PFE Inspection Reminder</h1>'),
         ('Halo, <strong>{{ $user->name }}</strong>', 'Hello, <strong>{{ $user->name }}</strong>'),
-        ('Ini adalah pengingat otomatis dari sistem APAR Monitoring B. Braun.', 'This is an automated reminder from the B. Braun PFE Monitoring Control System.'),
+        ('Ini adalah pengingat otomatis dari sistem APAR Monitoring EHSS.', 'This is an automated reminder from the EHSS PFE Monitoring Control System.'),
         ('Anda memiliki jadwal <strong>{{ $jenis }}</strong> yang akan jatuh pada tanggal:', 'You have a <strong>{{ $jenis }}</strong> schedule that will fall on:'),
         ('Mohon persiapkan waktu Anda untuk melakukan inspeksi rutin pada seluruh gedung yang menjadi tanggung jawab Anda:', 'Please prepare your time to perform routine inspections on all buildings under your responsibility:'),
         ('Gedung {{ $gedung->nama }}', 'Building {{ $gedung->nama }}'),
@@ -68,7 +68,7 @@ files = {
         ('Gunakan PIN ini untuk memverifikasi inspeksi di aplikasi.', 'Use this PIN to verify inspections in the application.'),
         ('Anda dapat login ke sistem untuk melihat detail lebih lanjut.', 'You can log in to the system to view further details.'),
         ('Buka Sistem', 'Open System'),
-        ('Email ini dikirim secara otomatis oleh PFE Monitoring Control System B. Braun.<br>', 'This email is sent automatically by the PFE Monitoring Control System B. Braun.<br>'),
+        ('Email ini dikirim secara otomatis oleh PFE Monitoring Control System EHSS.<br>', 'This email is sent automatically by the PFE Monitoring Control System EHSS.<br>'),
         ('Mohon tidak membalas email ini.', 'Please do not reply to this email.')
     ]
 }

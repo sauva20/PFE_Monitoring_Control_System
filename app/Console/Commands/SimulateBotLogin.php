@@ -32,7 +32,7 @@ class SimulateBotLogin extends Command
 
         $this->newLine();
         $this->info('====================================================');
-        $this->info('🤖 SIMULASI SERANGAN BOT PADA LOGIN PFE B. BRAUN');
+        $this->info('🤖 SIMULASI SERANGAN BOT PADA LOGIN PFE EHSS');
         $this->info('====================================================');
 
         if ($mode === 'all') {

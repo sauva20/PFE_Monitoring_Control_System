@@ -25,7 +25,7 @@ files = {
         r"Masukkan email Anda dan kami akan mengirimkan tautan untuk mengatur ulang kata sandi\.": "{{ __('Enter your email and we will send a link to reset your password.') }}",
         r"Email Terkirim": "{{ __('Email Sent') }}",
         r"Email Terdaftar": "{{ __('Registered Email') }}",
-        r'placeholder="Contoh: user@bbraun\.com"': 'placeholder="{{ __(\'Example: user@bbraun.com\') }}"',
+        r'placeholder="Contoh: user@bbraun\.com"': 'placeholder="{{ __(\'Example: user@ehss.id\') }}"',
         r">\s*Kirim Link Reset\s*<": ">{{ __('Send Reset Link') }}<"
     },
     "auth/reset-password.blade.php": {

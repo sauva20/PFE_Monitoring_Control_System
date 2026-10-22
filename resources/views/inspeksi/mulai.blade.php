@@ -1351,7 +1351,7 @@
                             ctx.fill();
                             ctx.stroke();
 
-                            // Aksen Hijau Brand B.Braun di sisi kiri badge
+                            // Aksen Hijau Brand EHSS di sisi kiri badge
                             ctx.fillStyle = '#009B77';
                             ctx.fillRect(boxX, boxY + radius, 4.5 * scale, boxHeight - (radius * 2));
 
