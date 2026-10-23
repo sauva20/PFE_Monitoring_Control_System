@@ -44,24 +44,58 @@
             background: #94a3b8; 
         }
 
-        /* Global UI Animations */
+        /* Global UI Animations & Polish */
         .report-card {
             position: relative;
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
+                        box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
+                        border-color 0.25s ease;
+            will-change: transform, box-shadow;
         }
-        .report-card::after {
-            content: '';
-            position: absolute;
-            top: -4px; right: -4px; bottom: -4px; left: -4px;
-            border: 2px solid #009B77;
-            border-radius: 20px;
-            opacity: 0;
-            transform: scale(0.96);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none;
+        .report-card:hover {
+            transform: translateY(-4px);
+            border-color: #009B77 !important;
+            box-shadow: 0 0 0 2px #009B77, 0 14px 28px -4px rgba(0, 155, 119, 0.22) !important;
         }
-        .report-card:hover::after {
-            opacity: 1;
-            transform: scale(1);
+        .report-card.bg-gradient-to-br:hover {
+            transform: translateY(-4px);
+            border-color: #ffffff !important;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 14px 28px -4px rgba(0, 155, 119, 0.45) !important;
+        }
+
+        #progressPieChart {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease;
+            cursor: pointer;
+        }
+        #progressPieChart:hover {
+            transform: scale(1.04);
+            filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.2));
+        }
+
+        /* Clean ApexCharts Tooltip */
+        .apexcharts-tooltip {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+            font-family: inherit !important;
+        }
+        .apexcharts-tooltip-title {
+            background: #f8fafc !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            font-weight: 700 !important;
+            font-size: 11px !important;
+            color: #334155 !important;
+            padding: 6px 10px !important;
+        }
+        .apexcharts-tooltip-series-group {
+            padding: 4px 10px !important;
+        }
+        .apexcharts-tooltip-text {
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            color: #1e293b !important;
         }
     </style>
 </head>
@@ -118,7 +152,7 @@
         </main>
         
         <footer class="py-2 text-center text-xs font-bold text-slate-400">
-            &copy; {{ date('Y') }} EHSS Department — Environment, Health, Safety & Security.
+            &copy; {{ date('Y') }} EHSS — Environment, Health, Safety & Security.
         </footer>
     </div>
 

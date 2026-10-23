@@ -8,11 +8,14 @@
     window.pertanyaanApar = @json($pertanyaan);
     window.jadwalsData = @json($jadwals->map(function($j) { return ['tanggal' => \Carbon\Carbon::parse($j->tanggal_inspeksi)->format('Y-m-d'), 'status' => $j->status, 'area_id' => $j->tipe_area == 'gedung' ? 'g_'.$j->gedung_id : 'l_'.$j->lokasi_id]; })->groupBy('tanggal'));
     window.statusTranslations = {
-        'layak': '{{ __('Good Condition') }}',
-        'perbaikan': '{{ __('Needs Maintenance') }}',
-        'tidak_layak': '{{ __('Bad Condition') }}',
-        'isi_ulang': '{{ __('Needs Refill') }}',
-        'rusak': '{{ __('Damaged') }}'
+        'sesuai': '{{ __('Sesuai') }}',
+        'tidak_sesuai': '{{ __('Tidak Sesuai') }}',
+        'perlu_refill': '{{ __('Perlu Refill') }}',
+        'layak': '{{ __('Sesuai') }}',
+        'perbaikan': '{{ __('Tidak Sesuai') }}',
+        'tidak_layak': '{{ __('Tidak Sesuai') }}',
+        'isi_ulang': '{{ __('Perlu Refill') }}',
+        'rusak': '{{ __('Tidak Sesuai') }}'
     };
 </script>
 
@@ -308,6 +311,10 @@
                                             $inspeksiData = [
                                                 'apar_kode' => $apar->kode,
                                                 'lokasi' => $apar->lokasi->nama ?? 'n/a',
+                                                'jenis' => $apar->jenis->nama ?? '-',
+                                                'kapasitas' => $apar->kapasitas->ukuran ?? '-',
+                                                'tgl_isi_ulang' => $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->translatedFormat('d M Y') : '-',
+                                                'tgl_kedaluwarsa' => $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->translatedFormat('d M Y') : '-',
                                                 'waktu' => $inspeksi->created_at->format('d M Y, H:i'),
                                                 'petugas' => ucwords(strtolower($inspeksi->user->name ?? 'User')),
                                                 'is_pic' => $isPic,
@@ -463,12 +470,24 @@
 
                                         <!-- Final Status -->
                                         <div class="flex flex-col gap-3 p-4 rounded-xl border"
-                                             :class="selectedInspeksi.status?.toLowerCase() === 'layak' ? 'border-[#009B77]/20 bg-[#009B77]/5' : 'border-red-200 bg-red-50'">
+                                             :class="{
+                                                 'border-[#009B77]/20 bg-[#009B77]/5': selectedInspeksi.status?.toLowerCase() === 'sesuai' || selectedInspeksi.status?.toLowerCase() === 'layak',
+                                                 'border-red-200 bg-red-50': selectedInspeksi.status?.toLowerCase() === 'tidak_sesuai' || selectedInspeksi.status?.toLowerCase() === 'perbaikan' || selectedInspeksi.status?.toLowerCase() === 'rusak' || selectedInspeksi.status?.toLowerCase() === 'tidak_layak',
+                                                 'border-amber-200 bg-amber-50': selectedInspeksi.status?.toLowerCase() === 'perlu_refill' || selectedInspeksi.status?.toLowerCase() === 'isi_ulang'
+                                             }">
                                             <div class="flex items-center justify-between">
                                                 <div class="flex items-center gap-3">
-                                                    <i class="text-2xl" :class="selectedInspeksi.status?.toLowerCase() === 'layak' ? 'ph-fill ph-shield-check text-[#009B77]' : 'ph-fill ph-warning-circle text-red-500'"></i>
+                                                    <i class="text-2xl" :class="{
+                                                        'ph-fill ph-shield-check text-[#009B77]': selectedInspeksi.status?.toLowerCase() === 'sesuai' || selectedInspeksi.status?.toLowerCase() === 'layak',
+                                                        'ph-fill ph-warning-circle text-red-500': selectedInspeksi.status?.toLowerCase() === 'tidak_sesuai' || selectedInspeksi.status?.toLowerCase() === 'perbaikan' || selectedInspeksi.status?.toLowerCase() === 'rusak' || selectedInspeksi.status?.toLowerCase() === 'tidak_layak',
+                                                        'ph-fill ph-arrows-clockwise text-amber-500': selectedInspeksi.status?.toLowerCase() === 'perlu_refill' || selectedInspeksi.status?.toLowerCase() === 'isi_ulang'
+                                                    }"></i>
                                                     <div>
-                                                        <span class="block text-[10px] font-bold uppercase tracking-wider" :class="selectedInspeksi.status?.toLowerCase() === 'layak' ? 'text-[#009B77]' : 'text-red-500'">{{ __('FINAL STATUS') }}</span>
+                                                        <span class="block text-[10px] font-bold uppercase tracking-wider" :class="{
+                                                            'text-[#009B77]': selectedInspeksi.status?.toLowerCase() === 'sesuai' || selectedInspeksi.status?.toLowerCase() === 'layak',
+                                                            'text-red-500': selectedInspeksi.status?.toLowerCase() === 'tidak_sesuai' || selectedInspeksi.status?.toLowerCase() === 'perbaikan' || selectedInspeksi.status?.toLowerCase() === 'rusak' || selectedInspeksi.status?.toLowerCase() === 'tidak_layak',
+                                                            'text-amber-600': selectedInspeksi.status?.toLowerCase() === 'perlu_refill' || selectedInspeksi.status?.toLowerCase() === 'isi_ulang'
+                                                        }">{{ __('FINAL STATUS') }}</span>
                                                         <span class="font-bold text-slate-800 text-sm capitalize" x-text="window.statusTranslations[selectedInspeksi.status?.toLowerCase()] || selectedInspeksi.status?.replace('_', ' ')"></span>
                                                     </div>
                                                 </div>
@@ -513,19 +532,32 @@
                                         <div x-show="tabs === 'checklist'">
                                             <div class="space-y-6">
                                                 
-                                                <!-- Step 1: Pemeriksaan Fisik (Indices 15-24) -->
+                                                <!-- Step 1: Pemeriksaan Fisik (Indices 14-23) -->
                                                 <div>
                                                     <h4 class="font-bold text-slate-800 text-[11px] uppercase tracking-wider mb-3">{{ __('Physical Inspection') }}</h4>
                                                     <div class="space-y-3">
                                                         <template x-for="(item, index) in selectedInspeksi.checklist" :key="index">
-                                                            <template x-if="parseInt(index) >= 15">
+                                                            <template x-if="parseInt(index) >= 14">
                                                                 <div class="flex items-start gap-3 p-3 rounded-xl border" 
                                                                     x-data="{ 
                                                                         isExpected() { 
-                                                                            if (parseInt(index) === 20) return item.jawaban === 'tidak ada';
+                                                                            if (parseInt(index) === 19) return item.jawaban === 'tidak ada';
                                                                             return item.jawaban === 'ada';
                                                                         },
-                                                                        translatedAnswer() {
+                                                                        getAnswerBadge() {
+                                                                            const idx = parseInt(index);
+                                                                            if (idx === 14) return selectedInspeksi.jenis || '{{ __('Ada') }}';
+                                                                            if (idx === 15) return selectedInspeksi.kapasitas || '{{ __('Ada') }}';
+                                                                            if (idx === 16) return selectedInspeksi.tgl_isi_ulang || '{{ __('Ada') }}';
+                                                                            if (idx === 17) return selectedInspeksi.tgl_kedaluwarsa || '{{ __('Ada') }}';
+                                                                            if (idx === 19) return item.jawaban === 'tidak ada' ? '{{ __('Tidak Ada') }}' : '{{ __('Ada') }}';
+                                                                            if (idx === 20) return item.jawaban === 'ada' ? '{{ __('Padat') }}' : '{{ __('Tidak Padat') }}';
+                                                                            if (idx === 23) {
+                                                                                if (item.jawaban === 'tidak ada' && item.keterangan) {
+                                                                                    return '{{ __('Pindah: ') }}' + item.keterangan;
+                                                                                }
+                                                                                return selectedInspeksi.lokasi || '{{ __('Sesuai') }}';
+                                                                            }
                                                                             const dict = { 'ya': '{{ __('Yes') }}', 'tidak': '{{ __('No') }}', 'ada': '{{ __('Ada') }}', 'tidak ada': '{{ __('Tidak Ada') }}' };
                                                                             return dict[item.jawaban] || item.jawaban;
                                                                         }
@@ -535,9 +567,9 @@
                                                                     <div class="w-full">
                                                                         <div class="flex justify-between items-start gap-2">
                                                                             <p class="font-bold text-slate-800 text-xs leading-relaxed" x-text="window.pertanyaanApar[index]"></p>
-                                                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider flex-shrink-0" :class="isExpected() ? 'bg-teal-50 text-teal-600' : 'bg-red-100 text-red-600'" x-text="translatedAnswer()"></span>
+                                                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider flex-shrink-0 text-center" :class="isExpected() ? 'bg-teal-50 text-teal-600' : 'bg-red-100 text-red-600'" x-text="getAnswerBadge()"></span>
                                                                         </div>
-                                                                        <template x-if="item.keterangan && item.keterangan.trim() !== ''">
+                                                                        <template x-if="item.keterangan && item.keterangan.trim() !== '' && parseInt(index) !== 23">
                                                                             <p class="text-xs font-bold mt-1.5 bg-white px-2 py-1 rounded border inline-block" :class="isExpected() ? 'text-slate-600 border-slate-100' : 'text-red-600 border-red-100'">
                                                                                 {{ __('Notes:') }} <span class="font-medium" x-text="item.keterangan"></span>
                                                                             </p>
@@ -549,12 +581,12 @@
                                                     </div>
                                                 </div>
 
-                                                <!-- Step 2: Pemeriksaan Fungsi (Indices 0-14) -->
+                                                <!-- Step 2: Pemeriksaan Fungsi (Indices 0-13) -->
                                                 <div>
                                                     <h4 class="font-bold text-slate-800 text-[11px] uppercase tracking-wider mb-3">{{ __('Function Check') }}</h4>
                                                     <div class="space-y-3">
                                                         <template x-for="(item, index) in selectedInspeksi.checklist" :key="index">
-                                                            <template x-if="parseInt(index) < 15">
+                                                            <template x-if="parseInt(index) < 14">
                                                                 <div class="flex items-start gap-3 p-3 rounded-xl border" 
                                                                     x-data="{ 
                                                                         translatedAnswer() {

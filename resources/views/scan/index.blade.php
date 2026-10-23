@@ -245,7 +245,7 @@
                         @if($latestInspeksi)
                             <p class="text-xs font-medium text-slate-800 leading-tight">
                                 {{ $latestInspeksi->created_at->format('d M Y') }} {{ __('by') }} <span class="font-bold">{{ $latestInspeksi->user->name ?? 'User' }}</span>
-                                <span class="ml-1 inline-flex items-center text-[8px] px-1.5 py-0.5 rounded {{ $latestInspeksi->status == 'layak' ? 'bg-teal-50 text-teal-600' : 'bg-red-50 text-red-600' }} uppercase font-bold">{{ $latestInspeksi->status }}</span>
+                                <span class="ml-1 inline-flex items-center text-[8px] px-1.5 py-0.5 rounded {{ in_array($latestInspeksi->status, ['sesuai', 'layak']) ? 'bg-teal-50 text-teal-600' : (in_array($latestInspeksi->status, ['perlu_refill', 'isi_ulang']) ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600') }} uppercase font-bold">{{ str_replace('_', ' ', $latestInspeksi->status) }}</span>
                             </p>
                             @if(!empty($latestInspeksi->catatan_tambahan))
                                 <p class="mt-1 text-[10px] text-slate-500 italic bg-slate-50 p-1.5 rounded border border-slate-100">

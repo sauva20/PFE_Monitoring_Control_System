@@ -163,17 +163,67 @@ class GuestDisplayController extends Controller
             'valid_until.required' => 'Batas tanggal berlaku wajib diisi.',
         ]);
 
+        $isActive = $request->boolean('is_active');
+        $validUntil = Carbon::parse($validated['valid_until']);
+
+        if ($isActive && $validUntil->endOfDay()->isPast()) {
+            return back()->withErrors([
+                'valid_until' => __('Masa berlaku tidak boleh tanggal yang sudah lewat jika status akses diaktifkan. Silakan pilih tanggal hari ini atau masa mendatang.'),
+            ])->withInput();
+        }
+
         $guestDisplay->update([
             'name' => $validated['name'],
             'institution' => $validated['institution'],
             'email' => $validated['email'],
             'pin' => $validated['pin'],
             'valid_until' => $validated['valid_until'],
-            'is_active' => $request->boolean('is_active', true),
+            'is_active' => $isActive,
         ]);
 
         return redirect()->route('display-access.index')
-            ->with('success', 'Data akses Viewer Display berhasil diperbarui.');
+            ->with('success', __('Viewer Display Access data successfully updated.'));
+    }
+
+    /**
+     * Toggle active status of a guest display credential.
+     */
+    public function toggleActive(GuestDisplay $guestDisplay): RedirectResponse
+    {
+        $this->ensureAdmin();
+
+        $isCurrentlyAccessible = $guestDisplay->isAccessible();
+
+        if ($isCurrentlyAccessible) {
+            $guestDisplay->update([
+                'is_active' => false,
+            ]);
+
+            $statusMessage = __('Akses viewer untuk :name telah dinonaktifkan.', [
+                'name' => $guestDisplay->name,
+            ]);
+        } else {
+            $updates = ['is_active' => true];
+
+            if ($guestDisplay->isExpired()) {
+                // If currently expired, automatically extend validity by 7 days so activation actually works
+                $newValidDate = Carbon::today()->addDays(7);
+                $updates['valid_until'] = $newValidDate;
+
+                $statusMessage = __('Akses viewer untuk :name telah diaktifkan kembali dan masa berlaku otomatis diperpanjang 7 hari (hingga :date).', [
+                    'name' => $guestDisplay->name,
+                    'date' => $newValidDate->translatedFormat('d F Y'),
+                ]);
+            } else {
+                $statusMessage = __('Akses viewer untuk :name telah diaktifkan.', [
+                    'name' => $guestDisplay->name,
+                ]);
+            }
+
+            $guestDisplay->update($updates);
+        }
+
+        return back()->with('success', $statusMessage);
     }
 
     /**
@@ -186,7 +236,7 @@ class GuestDisplayController extends Controller
         $guestDisplay->delete();
 
         return redirect()->route('display-access.index')
-            ->with('success', 'Akses Viewer Display berhasil dihapus.');
+            ->with('success', __('Viewer Display Access successfully deleted.'));
     }
 
     // ==========================================
@@ -203,6 +253,8 @@ class GuestDisplayController extends Controller
         if (! $guest) {
             abort(404, 'Tautan akses display tidak valid atau tidak ditemukan.');
         }
+
+        session(['guest_display_token' => $token]);
 
         // If inactive or expired
         if (! $guest->is_active || $guest->isExpired()) {
@@ -275,7 +327,10 @@ class GuestDisplayController extends Controller
             'last_accessed_at' => Carbon::now(),
         ]);
 
-        session(["guest_display_auth_{$token}" => true]);
+        session([
+            'guest_display_token' => $token,
+            "guest_display_auth_{$token}" => true,
+        ]);
 
         return redirect()->route('display.access.view', ['token' => $token]);
     }
@@ -334,6 +389,6 @@ class GuestDisplayController extends Controller
         session()->forget("guest_display_auth_{$token}");
 
         return redirect()->route('display.access', ['token' => $token])
-            ->with('success', 'Anda telah berhasil keluar dari sesi Display Report.');
+            ->with('success', __('You have successfully logged out of the Display Report session.'));
     }
 }

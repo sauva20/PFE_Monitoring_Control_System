@@ -24,7 +24,7 @@ class GuestDisplayTest extends TestCase
         $response = $this->actingAs($admin)->get(route('display-access.index'));
 
         $response->assertStatus(200);
-        $response->assertSee('Akses Viewer Display');
+        $response->assertSee(__('Viewer Display Access'));
     }
 
     public function test_staff_cannot_access_guest_display_management(): void
@@ -88,7 +88,7 @@ class GuestDisplayTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Dr. Rina');
         $response->assertSee('Kementerian Kesehatan');
-        $response->assertSee('Verifikasi Akses Viewer');
+        $response->assertSee(__('Viewer Access Verification'));
     }
 
     public function test_guest_gets_expired_page_when_valid_until_date_has_passed(): void
@@ -106,7 +106,7 @@ class GuestDisplayTest extends TestCase
         $response = $this->get(route('display.access', ['token' => $guest->access_token]));
 
         $response->assertStatus(200);
-        $response->assertSee('Masa Berlaku Akses Telah Berakhir');
+        $response->assertSee(__('Access Validity Period Has Ended'));
     }
 
     public function test_guest_cannot_verify_with_wrong_pin(): void
@@ -216,8 +216,8 @@ class GuestDisplayTest extends TestCase
 
         $followResponse = $this->get(route('display.access', ['token' => $guest->access_token]));
         $followResponse->assertStatus(200);
-        $followResponse->assertSee('Verifikasi Akses Viewer');
-        $followResponse->assertSee('Anda telah berhasil keluar dari sesi Display Report.');
+        $followResponse->assertSee(__('Viewer Access Verification'));
+        $followResponse->assertSee(__('You have successfully logged out of the Display Report session.'));
     }
 
     public function test_unauthenticated_user_accessing_display_report_gets_404(): void
@@ -237,5 +237,68 @@ class GuestDisplayTest extends TestCase
         $response = $this->actingAs($user)->get(route('display-report'));
 
         $response->assertStatus(200);
+    }
+
+    public function test_admin_can_update_guest_display(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'EHSS',
+            'pin' => '1234',
+        ]);
+
+        $guest = GuestDisplay::create([
+            'name' => 'Initial Name',
+            'institution' => 'Initial Company',
+            'email' => 'initial@company.com',
+            'pin' => '1234',
+            'access_token' => 'token-update-test',
+            'valid_until' => Carbon::today()->addDays(3),
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->put(route('display-access.update', $guest), [
+            'name' => 'Updated Name',
+            'institution' => 'Updated Company',
+            'email' => 'updated@company.com',
+            'pin' => '9999',
+            'valid_until' => Carbon::today()->addDays(7)->format('Y-m-d'),
+            'is_active' => '1',
+        ]);
+
+        $response->assertRedirect(route('display-access.index'));
+        $this->assertDatabaseHas('guest_displays', [
+            'id' => $guest->id,
+            'name' => 'Updated Name',
+            'pin' => '9999',
+            'is_active' => true,
+        ]);
+    }
+
+    public function test_admin_can_toggle_guest_display_active_status(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'EHSS',
+            'pin' => '1234',
+        ]);
+
+        $guest = GuestDisplay::create([
+            'name' => 'Toggle Test',
+            'institution' => 'Toggle Inc',
+            'email' => 'toggle@inc.com',
+            'pin' => '4444',
+            'access_token' => 'token-toggle-test',
+            'valid_until' => Carbon::today()->addDays(5),
+            'is_active' => true,
+        ]);
+
+        // Toggle from active to inactive
+        $response = $this->actingAs($admin)->patch(route('display-access.toggle', $guest));
+        $response->assertRedirect();
+        $this->assertFalse($guest->fresh()->is_active);
+
+        // Toggle back to active
+        $response2 = $this->actingAs($admin)->patch(route('display-access.toggle', $guest));
+        $response2->assertRedirect();
+        $this->assertTrue($guest->fresh()->is_active);
     }
 }

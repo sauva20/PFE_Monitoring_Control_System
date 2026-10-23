@@ -49,7 +49,7 @@
 
         @foreach($chunks as $chunkIndex => $aparChunk)
             <h2>Daftar Periksa (Checklist) Inspeksi APAR</h2>
-            <p class="subtitle">Gedung: <strong>{{ $gedungName }}</strong> &nbsp;|&nbsp; Formulir Inspeksi Manual untuk Petugas Lapangan</p>
+            <p class="subtitle">Gedung: <strong>{{ $gedungName }}</strong> &nbsp;|&nbsp; Dicetak Oleh: <strong>{{ auth()->user()->name ?? 'System' }}</strong> &nbsp;|&nbsp; Formulir Inspeksi Manual untuk Petugas Lapangan</p>
             
             <table>
                 <thead>
@@ -68,8 +68,8 @@
                 </thead>
                 <tbody>
                     @php
-                        // Reorder indices: 15-24 first, then 0-14
-                        $orderedIndices = array_merge(range(15, 24), range(0, 14));
+                        // Reorder indices: 14-23 first, then 0-13
+                        $orderedIndices = array_merge(range(14, 23), range(0, 13));
                     @endphp
                     @foreach($orderedIndices as $displayIndex => $index)
                         @php $q = $pertanyaan[$index]; @endphp
@@ -77,15 +77,15 @@
                             <td class="q-text">{{ $displayIndex + 1 }}. {{ $q }}</td>
                             @foreach($aparChunk as $apar)
                                 <td class="text-center" style="vertical-align: middle;">
-                                    @if($index == 15) {{-- Jenis --}}
+                                    @if($index == 14) {{-- Jenis --}}
                                         {{ $apar->jenis->nama ?? '' }}
-                                    @elseif($index == 16) {{-- Kapasitas --}}
+                                    @elseif($index == 15) {{-- Kapasitas --}}
                                         {{ $apar->kapasitas->ukuran ?? '' }}
-                                    @elseif($index == 17) {{-- Tgl Isi Ulang --}}
+                                    @elseif($index == 16) {{-- Tgl Isi Ulang --}}
                                         {{ $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->format('d/m/Y') : '' }}
-                                    @elseif($index == 18) {{-- Tgl Kedaluwarsa --}}
+                                    @elseif($index == 17) {{-- Tgl Kedaluwarsa --}}
                                         {{ $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('d/m/Y') : '' }}
-                                    @elseif($index == 24) {{-- Lokasi --}}
+                                    @elseif($index == 23) {{-- Lokasi --}}
                                         {{ $apar->lokasi->nama ?? '' }}
                                     @else
                                         <!-- Blank for manual check -->
@@ -98,16 +98,7 @@
                         </tr>
                     @endforeach
                     <tr>
-                        <td style="font-weight:bold; padding: 6px;">Tanda Tangan PIC / Petugas</td>
-                        @foreach($aparChunk as $apar)
-                            <td style="height: 25px;"></td>
-                        @endforeach
-                        @for($i = 0; $i < (8 - $aparChunk->count()); $i++)
-                            <td style="height: 25px;"></td>
-                        @endfor
-                    </tr>
-                    <tr>
-                        <td style="font-weight:bold; padding: 6px;">Catatan (Notes)</td>
+                        <td style="font-weight:bold; padding: 6px;">Kondisi Akhir</td>
                         @foreach($aparChunk as $apar)
                             <td style="height: 25px;"></td>
                         @endforeach

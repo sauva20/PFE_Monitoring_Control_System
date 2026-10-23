@@ -32,6 +32,15 @@ Route::get('/favicon.ico', function () {
 });
 
 Route::get('/', function () {
+    if (session()->has('guest_display_token')) {
+        $token = session('guest_display_token');
+        if (session("guest_display_auth_{$token}")) {
+            return redirect()->route('display.access.view', ['token' => $token]);
+        }
+
+        return redirect()->route('display.access', ['token' => $token]);
+    }
+
     return view('index');
 })->name('login')->middleware(['guest', 'prevent-back-history']);
 
@@ -88,6 +97,7 @@ Route::middleware(['auth', 'prevent-back-history'])->group(function () {
         Route::post('/guest-display', [GuestDisplayController::class, 'store'])->name('display-access.store');
         Route::put('/guest-display/{guestDisplay}', [GuestDisplayController::class, 'update'])->name('display-access.update');
         Route::delete('/guest-display/{guestDisplay}', [GuestDisplayController::class, 'destroy'])->name('display-access.destroy');
+        Route::patch('/guest-display/{guestDisplay}/toggle', [GuestDisplayController::class, 'toggleActive'])->name('display-access.toggle');
         Route::post('/guest-display/{guestDisplay}/resend-email', [GuestDisplayController::class, 'resendEmail'])->name('display-access.resend');
 
         // Master Data Reference Routes

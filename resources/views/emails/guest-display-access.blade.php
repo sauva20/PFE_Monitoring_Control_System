@@ -21,7 +21,7 @@
                                             PFE Monitoring Control System
                                         </h1>
                                         <p style="margin: 4px 0 0 0; color: #d1fae5; font-size: 12px; font-weight: 600; letter-spacing: 0.5px;">
-                                            EHSS Department &bull; Environment, Health, Safety & Security
+                                            EHSS &bull; Environment, Health, Safety & Security
                                         </p>
                                     </td>
                                 </tr>
@@ -37,7 +37,7 @@
                             </p>
 
                             <p style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.6;">
-                                Anda telah diberikan akses resmi sebagai <strong>Viewer</strong> untuk memantau laporan pemantauan proteksi kebakaran (PFE Monitoring) Departemen EHSS.
+                                Anda telah diberikan akses resmi sebagai <strong>Viewer</strong> untuk memantau laporan pemantauan proteksi kebakaran (PFE Monitoring) EHSS.
                             </p>
 
                             <!-- Metadata Table -->
@@ -104,10 +104,10 @@
                     <tr>
                         <td style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 18px 30px; text-align: center;">
                             <p style="margin: 0 0 4px 0; font-size: 11px; color: #94a3b8; line-height: 1.5;">
-                                Email ini dikirimkan secara otomatis oleh PFE Monitoring Control System — EHSS Department. Harap tidak membalas email ini.
+                                Email ini dikirimkan secara otomatis oleh PFE Monitoring Control System — EHSS. Harap tidak membalas email ini.
                             </p>
                             <p style="margin: 0; font-size: 11px; font-weight: 600; color: #64748b;">
-                                &copy; {{ date('Y') }} Departemen EHSS. All rights reserved.
+                                &copy; {{ date('Y') }} EHSS — Environment, Health, Safety & Security. All rights reserved.
                             </p>
                         </td>
                     </tr>

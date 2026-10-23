@@ -134,7 +134,7 @@
         </div>
 
         <div class="footer">
-            <p>This email is sent automatically by the PFE Monitoring Control System — EHSS Department. Please do not reply to this email.</p>
+            <p>This email is sent automatically by the PFE Monitoring Control System — EHSS. Please do not reply to this email.</p>
         </div>
     </div>
 </body>

@@ -31,17 +31,21 @@
                 </div>
             </td>
             <td class="py-4 px-6 text-center">
-                @if($inspeksi->status === 'layak')
+                @if(in_array($inspeksi->status, ['sesuai', 'layak']))
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-teal-50 text-teal-600 border border-teal-100 uppercase tracking-wider">
-                        <i class="ph-fill ph-check-circle"></i> {{ __('Pass') }}
+                        <i class="ph-fill ph-check-circle"></i> {{ __('Sesuai') }}
                     </span>
-                @elseif($inspeksi->status === 'perbaikan' || $inspeksi->status === 'rusak')
+                @elseif(in_array($inspeksi->status, ['tidak_sesuai', 'perbaikan', 'rusak', 'tidak_layak']))
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-red-50 text-red-600 border border-red-100 uppercase tracking-wider">
-                        <i class="ph-fill ph-warning-circle"></i> {{ __('Repair') }}
+                        <i class="ph-fill ph-warning-circle"></i> {{ __('Tidak Sesuai') }}
+                    </span>
+                @elseif(in_array($inspeksi->status, ['perlu_refill', 'isi_ulang']))
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-wider">
+                        <i class="ph-fill ph-arrows-clockwise"></i> {{ __('Perlu Refill') }}
                     </span>
                 @else
-                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-600 border border-amber-100 uppercase tracking-wider">
-                        <i class="ph-fill ph-arrows-clockwise"></i> {{ str_replace('_', ' ', $inspeksi->status) }}
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-50 text-slate-600 border border-slate-100 uppercase tracking-wider">
+                        <span>{{ str_replace('_', ' ', $inspeksi->status) }}</span>
                     </span>
                 @endif
             </td>

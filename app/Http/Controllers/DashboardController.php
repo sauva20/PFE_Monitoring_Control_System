@@ -38,11 +38,11 @@ class DashboardController extends Controller
             $q->where('created_at', '<=', $endOfSelectedMonth)->latest();
         }, 'jenis'])->get();
 
-        $kondisiBaik = 0;
-        $rusakServis = 0;
+        $kondisiBaik = 0;     // Sesuai
+        $rusakServis = 0;     // Tidak Sesuai
+        $perluRefill = 0;     // Perlu Refill
         $akanKedaluwarsa = 0;
         $sudahKedaluwarsa = 0;
-        $aparKosong = $apars->where('qty', '<', 1)->count();
 
         $thirtyDaysFromSelected = $endOfSelectedMonth->copy()->addDays(30);
 
@@ -50,11 +50,15 @@ class DashboardController extends Controller
             // Status based on latest inspection up to selected month
             $latestInspeksi = $apar->inspeksis->first();
             if ($latestInspeksi) {
-                if ($latestInspeksi->status === 'layak') {
+                if (in_array($latestInspeksi->status, ['sesuai', 'layak', 'baik'])) {
                     $kondisiBaik++;
-                } elseif (in_array($latestInspeksi->status, ['rusak', 'perbaikan', 'service'])) {
+                } elseif (in_array($latestInspeksi->status, ['tidak_sesuai', 'rusak', 'perbaikan', 'service', 'tidak_layak'])) {
                     $rusakServis++;
+                } elseif (in_array($latestInspeksi->status, ['perlu_refill', 'isi_ulang'])) {
+                    $perluRefill++;
                 }
+            } elseif ($apar->qty < 1) {
+                $perluRefill++;
             }
 
             // Expiry Check relative to selected month
@@ -66,6 +70,8 @@ class DashboardController extends Controller
                 }
             }
         }
+
+        $aparKosong = $perluRefill;
 
         // 2. Chart Data: Jenis APAR
         $jenisData = $apars->groupBy(function ($item) {
@@ -129,6 +135,7 @@ class DashboardController extends Controller
             'totalApar',
             'kondisiBaik',
             'rusakServis',
+            'perluRefill',
             'akanKedaluwarsa',
             'sudahKedaluwarsa',
             'aparKosong',
@@ -157,6 +164,7 @@ class DashboardController extends Controller
                     'kondisiBaik' => $data['kondisiBaik'],
                     'kondisiBaikPercentage' => $data['totalApar'] > 0 ? round(($data['kondisiBaik'] / $data['totalApar']) * 100) : 0,
                     'rusakServis' => $data['rusakServis'],
+                    'perluRefill' => $data['perluRefill'],
                     'akanKedaluwarsa' => $data['akanKedaluwarsa'],
                     'sudahKedaluwarsa' => $data['sudahKedaluwarsa'],
                     'aparKosong' => $data['aparKosong'],

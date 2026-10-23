@@ -8,6 +8,61 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="icon" href="{{ asset('favicon.svg') }}?v=3" type="image/svg+xml">
 
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#009B77">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="PFE System">
+    <link rel="apple-touch-icon" href="/images/icons/icon-192.png">
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Check if running inside installed app window or marked installed
+        window.__isPFEInstalled = function() {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const isWco = window.matchMedia('(display-mode: window-controls-overlay)').matches;
+            const isMinimal = window.matchMedia('(display-mode: minimal-ui)').matches;
+            const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
+            const isNotBrowser = window.matchMedia('(display-mode: browser)').matches === false;
+            const isNavStandalone = window.navigator.standalone === true;
+
+            if (isStandalone || isWco || isMinimal || isFullscreen || isNotBrowser || isNavStandalone) {
+                return true;
+            }
+            if (localStorage.getItem('pfe_pwa_installed') === 'true') {
+                return true;
+            }
+            return false;
+        };
+
+        // Immediate capture of beforeinstallprompt at head parsing time
+        window.__pfeDeferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            window.__pfeDeferredPrompt = e;
+            if (window.matchMedia('(display-mode: browser)').matches) {
+                localStorage.removeItem('pfe_pwa_installed');
+            }
+            window.dispatchEvent(new CustomEvent('pfe:deferred-prompt-ready'));
+            console.log('[PFE PWA] Native beforeinstallprompt captured on login!');
+        });
+
+        // Listen for native appinstalled event
+        window.addEventListener('appinstalled', () => {
+            localStorage.setItem('pfe_pwa_installed', 'true');
+            window.__pfeDeferredPrompt = null;
+            window.dispatchEvent(new CustomEvent('pfe:installed'));
+        });
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(() => {});
+        }
+    </script>
+
     <!-- Tailwind CSS (via Vite) -->
     @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -122,7 +177,7 @@
                     {{ __('PFE MONITORING CONTROL SYSTEM') }}
                 </h1>
                 <p class="text-xs text-[#009B77] font-bold">
-                    ENVIRONMENT, HEALTH, SAFETY & SECURITY DEPARTMENT
+                    ENVIRONMENT, HEALTH, SAFETY & SECURITY
                 </p>
             </div>
 
@@ -191,15 +246,18 @@
 
                 @if(config('services.recaptcha.site_key'))
                     <!-- Google reCAPTCHA v2 Themed Wrapper -->
-                    <div class="bg-gray-50/80 border border-gray-200/90 rounded-2xl p-2.5 flex flex-col items-center gap-1.5 shadow-sm hover:border-[#009B77]/40 hover:bg-white transition-all">
+                    <div
+                        class="bg-gray-50/80 border border-gray-200/90 rounded-2xl p-2.5 flex flex-col items-center gap-1.5 shadow-sm hover:border-[#009B77]/40 hover:bg-white transition-all">
                         <div class="w-full flex items-center justify-between px-1 text-gray-500">
-                            <span class="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 text-gray-500">
+                            <span
+                                class="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 text-gray-500">
                                 <i class="ph-fill ph-shield-check text-[#009B77] text-xs"></i>
                                 <span>{{ __('Security Verification') }}</span>
                             </span>
                             <span class="text-[9px] text-gray-400 font-medium">Google reCAPTCHA</span>
                         </div>
-                        <div class="w-full flex justify-center overflow-hidden rounded-xl border border-gray-200/60 bg-white p-0.5 shadow-inner">
+                        <div
+                            class="w-full flex justify-center overflow-hidden rounded-xl border border-gray-200/60 bg-white p-0.5 shadow-inner">
                             <div class="g-recaptcha" data-sitekey="{{ config('services.recaptcha.site_key') }}"></div>
                         </div>
                     </div>
@@ -218,9 +276,10 @@
             <div class="mt-4 pt-3 border-t border-gray-100 flex flex-col items-center gap-0.5 text-center">
                 <div class="flex items-center gap-1.5">
                     <i class="ph-fill ph-shield-check text-[#009B77] text-xs"></i>
-                    <p class="text-[10px] text-gray-400 font-medium">PFE Monitoring Control System v1.0 | EHSS</p>
+                    <p class="text-[10px] text-gray-400 font-medium">PFE Monitoring Control System v1.0</p>
                 </div>
-                <p class="text-[10px] text-gray-400 font-medium">&copy; 2026 EHSS Department &bull; Environment, Health, Safety &amp; Security</p>
+                <p class="text-[10px] text-gray-400 font-medium">&copy; 2026 q.sauva &bull; Environment, Health,
+                    Safety &amp; Security</p>
             </div>
         </div>
     </div>

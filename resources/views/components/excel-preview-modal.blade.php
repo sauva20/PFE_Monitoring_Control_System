@@ -89,7 +89,7 @@ class="relative z-[100]" aria-labelledby="modal-title" role="dialog" aria-modal=
                     <button type="button" @click="showPreviewModal = false" class="px-5 py-2.5 text-sm font-bold text-slate-700 bg-white border-2 border-slate-200 rounded-xl">
                         {{ __('Cancel') }}
                     </button>
-                    <a :href="downloadUrl" @click="showPreviewModal = false" class="px-5 py-2.5 text-sm font-bold text-white bg-emerald-600 rounded-xl flex items-center gap-2">
+                    <a :href="downloadUrl" target="_blank" rel="noopener noreferrer" @click="showPreviewModal = false" class="px-5 py-2.5 text-sm font-bold text-white bg-emerald-600 rounded-xl flex items-center gap-2">
                         <i class="ph-bold ph-download-simple"></i>
                         {{ __('Download Excel') }}
                     </a>

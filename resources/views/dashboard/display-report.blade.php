@@ -149,11 +149,11 @@
             </div>
         </div>
 
-        <!-- Card 2: {{ __('GOOD CONDITION') }} -->
+        <!-- Card 2: {{ __('SESUAI') }} -->
         <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-1 border border-[#009B77]/40 flex flex-col justify-between transition-all duration-300 group cursor-pointer report-card relative overflow-hidden">
             <div class="absolute -right-6 -top-6 w-24 h-24 bg-teal-500/5 rounded-full blur-2xl group-hover:bg-teal-500/10 transition-colors"></div>
             <div class="flex items-center justify-between mb-3 relative z-10">
-                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ __('GOOD CONDITION') }}</h3>
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ __('SESUAI') }}</h3>
                 <div class="w-8 h-8 rounded-lg bg-teal-50 group-hover:bg-teal-100 group-hover:scale-110 transition-all duration-300 flex items-center justify-center text-teal-600">
                     <i class="ph-bold ph-check-circle text-lg"></i>
                 </div>
@@ -169,13 +169,13 @@
             </div>
         </div>
 
-        <!-- Card 3: {{ __('BROKEN / SERVICE') }} -->
+        <!-- Card 3: {{ __('TIDAK SESUAI') }} -->
         <div class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-1 border border-[#009B77]/40 flex flex-col justify-between transition-all duration-300 group cursor-pointer report-card relative overflow-hidden">
             <div class="absolute -right-6 -top-6 w-24 h-24 bg-red-500/5 rounded-full blur-2xl group-hover:bg-red-500/10 transition-colors"></div>
             <div class="flex items-center justify-between mb-3 relative z-10">
-                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ __('BROKEN / SERVICE') }}</h3>
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ __('TIDAK SESUAI') }}</h3>
                 <div class="w-8 h-8 rounded-lg bg-red-50 group-hover:bg-red-100 group-hover:scale-110 transition-all duration-300 flex items-center justify-center text-red-500">
-                    <i class="ph-fill ph-wrench text-lg"></i>
+                    <i class="ph-bold ph-warning-circle text-lg"></i>
                 </div>
             </div>
             <div class="flex items-end justify-between relative z-10">
@@ -201,7 +201,7 @@
                 <h2 id="stat-akanKedaluwarsa" class="text-2xl font-extrabold text-amber-500 transition-transform group-hover:scale-105 origin-left">{{ $akanKedaluwarsa }}</h2>
                 @if($akanKedaluwarsa > 0)
                 <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-1 rounded-lg mb-1.5 uppercase tracking-wider">
-                    <i class="ph-bold ph-calendar-blank"></i> &lt; 30 hr
+                    <i class="ph-bold ph-calendar-blank"></i> &lt; 30 {{ __('days') }}
                 </span>
                 @endif
             </div>
@@ -226,20 +226,20 @@
             </div>
         </div>
 
-        <!-- Card 6: {{ __('EMPTY PFE') }} -->
+        <!-- Card 6: {{ __('PERLU REFILL') }} -->
         <a href="{{ route('master-data.index', ['qty_status' => 'empty']) }}" class="bg-white rounded-2xl p-4 shadow-sm hover:shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:-translate-y-1 border border-[#009B77]/40 flex flex-col justify-between transition-all duration-300 group cursor-pointer report-card relative overflow-hidden block text-left">
-            <div class="absolute -right-6 -top-6 w-24 h-24 bg-rose-500/5 rounded-full blur-2xl group-hover:bg-rose-500/10 transition-colors"></div>
+            <div class="absolute -right-6 -top-6 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl group-hover:bg-amber-500/10 transition-colors"></div>
             <div class="flex items-center justify-between mb-3 relative z-10">
-                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ __('EMPTY PFE') }}</h3>
-                <div class="w-8 h-8 rounded-lg bg-rose-50 group-hover:bg-rose-100 group-hover:scale-110 transition-all duration-300 flex items-center justify-center text-rose-500">
-                    <i class="ph-bold ph-warning-octagon text-lg"></i>
+                <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider">{{ __('PERLU REFILL') }}</h3>
+                <div class="w-8 h-8 rounded-lg bg-amber-50 group-hover:bg-amber-100 group-hover:scale-110 transition-all duration-300 flex items-center justify-center text-amber-500">
+                    <i class="ph-bold ph-arrows-clockwise text-lg"></i>
                 </div>
             </div>
             <div class="flex items-end justify-between relative z-10">
-                <h2 id="stat-aparKosong" class="text-2xl font-extrabold text-rose-500 transition-transform group-hover:scale-105 origin-left">{{ $aparKosong }}</h2>
+                <h2 id="stat-aparKosong" class="text-2xl font-extrabold text-amber-500 transition-transform group-hover:scale-105 origin-left">{{ $aparKosong }}</h2>
                 @if($aparKosong > 0)
-                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-100 px-2 py-1 rounded-lg mb-1.5 uppercase tracking-wider">
-                    <i class="ph-bold ph-warning"></i> {{ __('Empty') }}
+                <span class="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-100 px-2 py-1 rounded-lg mb-1.5 uppercase tracking-wider">
+                    <i class="ph-bold ph-arrows-clockwise"></i> {{ __('Refill') }}
                 </span>
                 @endif
             </div>
@@ -499,11 +499,29 @@
             },
             labels: typeLabels,
             colors: colors,
+            plotOptions: {
+                pie: {
+                    expandOnClick: false
+                }
+            },
             dataLabels: { enabled: false },
             stroke: {
                 show: true,
                 colors: '#ffffff',
                 width: 3
+            },
+            states: {
+                hover: {
+                    filter: {
+                        type: 'lighten',
+                        value: 0.15
+                    }
+                },
+                active: {
+                    filter: {
+                        type: 'none'
+                    }
+                }
             },
             legend: {
                 position: 'bottom',
@@ -557,6 +575,7 @@
             colors: ['#ffffff', '#a7f3d0'],
             plotOptions: {
                 pie: {
+                    expandOnClick: false,
                     donut: {
                         size: '75%',
                         labels: {
@@ -595,17 +614,41 @@
             },
             dataLabels: { enabled: false },
             stroke: {
-                show: false,
-                width: 0
+                show: true,
+                colors: ['#009B77'],
+                width: 2.5
+            },
+            states: {
+                hover: {
+                    filter: {
+                        type: 'lighten',
+                        value: 0.2
+                    }
+                },
+                active: {
+                    allowMultipleDataPointsSelection: false,
+                    filter: {
+                        type: 'none'
+                    }
+                }
             },
             legend: { show: false },
             tooltip: {
-                theme: 'light',
-                fillSeriesColor: false,
-                y: {
-                    formatter: function (val) {
-                        return val + " APAR"
-                    }
+                enabled: true,
+                theme: 'dark',
+                custom: function({ series, seriesIndex, w }) {
+                    const label = w.globals.labels[seriesIndex];
+                    const val = series[seriesIndex];
+                    const percent = totalProgress > 0 ? Math.round((val / totalProgress) * 100) : 0;
+                    const isInspected = seriesIndex === 0;
+                    const dotColor = isInspected ? '#10b981' : '#38bdf8';
+                    
+                    return '<div style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; padding: 7px 12px; box-shadow: 0 12px 30px -4px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 8px; font-family: inherit; pointer-events: none;">' +
+                        '<span style="width: 8px; height: 8px; border-radius: 9999px; background: ' + dotColor + '; box-shadow: 0 0 8px ' + dotColor + ';"></span>' +
+                        '<span style="font-weight: 700; color: #e2e8f0; font-size: 11px;">' + label + ':</span>' +
+                        '<span style="font-weight: 800; color: #ffffff; font-size: 12px;">' + val + ' <span style="font-size: 10px; font-weight: 600; opacity: 0.85;">APAR</span></span>' +
+                        '<span style="font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,0.12); color: #a7f3d0; margin-left: 2px;">' + percent + '%</span>' +
+                    '</div>';
                 }
             }
         };

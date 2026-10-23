@@ -35,7 +35,7 @@
         </div>
         
         <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 24px; text-align: center; font-size: 13px; color: #64748b;">
-            <p style="margin: 0;">This email is sent automatically by the PFE Monitoring Control System — EHSS Department. Please do not reply to this email.</p>
+            <p style="margin: 0;">This email is sent automatically by the PFE Monitoring Control System — EHSS. Please do not reply to this email.</p>
         </div>
     </div>
 </body>

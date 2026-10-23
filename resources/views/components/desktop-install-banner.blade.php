@@ -2,7 +2,7 @@
      x-init="init()"
      @mouseenter="pauseTimer()"
      @mouseleave="resumeTimer()"
-     x-show="canInstall && !isDismissed && isDesktop && !isInstalled"
+     x-show="canInstall && !isDismissed && !isInstalled"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0 translate-y-8 scale-95"
      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
@@ -11,7 +11,7 @@
      x-transition:leave-end="opacity-0 translate-y-8 scale-95"
      x-cloak
      style="display: none;"
-     class="fixed bottom-6 right-6 z-[999] max-w-sm w-full bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-[0_12px_36px_rgba(0,0,0,0.15)] border border-slate-200/80 text-left">
+     class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-[999] max-w-sm w-[calc(100vw-2rem)] sm:w-full bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-[0_12px_36px_rgba(0,0,0,0.15)] border border-slate-200/80 text-left">
     
     <div class="flex items-start gap-3.5">
         <!-- Icon Badge -->
@@ -25,7 +25,7 @@
                 Install PFE Monitoring Control System
             </h4>
             <p class="text-xs text-slate-500 font-medium mt-0.5 leading-relaxed">
-                Akses lebih cepat & mudah langsung dari desktop komputer Anda.
+                Akses lebih cepat & praktis langsung dari perangkat Anda tanpa buka browser.
             </p>
         </div>
 
@@ -59,7 +59,7 @@
         </button>
         <button type="button" 
                 @click="install()" 
-                class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#009B77] hover:bg-[#008264] shadow-md shadow-[#009B77]/20 transition-all flex items-center gap-1.5 active:scale-95">
+                class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#009B77] hover:bg-[#008264] shadow-md shadow-[#009B77]/20 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer">
             <i class="ph-bold ph-download-simple"></i>
             <span>Install Sekarang</span>
         </button>
@@ -72,7 +72,6 @@ function desktopInstallPrompt() {
         deferredPrompt: window.__pfeDeferredPrompt || null,
         canInstall: false,
         isDismissed: false,
-        isDesktop: false,
         isInstalled: false,
         countdownInterval: null,
         totalSeconds: 15,
@@ -86,46 +85,17 @@ function desktopInstallPrompt() {
         },
 
         async init() {
-            // Strict check: ONLY desktop (non-mobile user agent, pointer fine)
-            const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const isTouchOnly = window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(pointer: fine)').matches;
-            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-
-            // 1. Check if opened inside standalone app or marked as installed
-            if (isStandalone || localStorage.getItem('pfe_pwa_installed') === 'true') {
+            if (window.__isPFEInstalled && window.__isPFEInstalled()) {
                 this.isInstalled = true;
                 return;
             }
 
-            // 2. Stop immediately if on mobile / tablet
-            if (isMobileUA || isTouchOnly) {
-                return;
+            // Check if dismissed in this session
+            if (sessionStorage.getItem('pfe_pwa_dismissed') === 'true') {
+                this.isDismissed = true;
             }
 
-            // 3. Check browser native getInstalledRelatedApps if supported
-            if ('getInstalledRelatedApps' in navigator) {
-                try {
-                    const relatedApps = await navigator.getInstalledRelatedApps();
-                    if (relatedApps && relatedApps.length > 0) {
-                        this.isInstalled = true;
-                        localStorage.setItem('pfe_pwa_installed', 'true');
-                        return;
-                    }
-                } catch (err) {}
-            }
-
-            this.isDesktop = true;
-
-            // 4. Check if manually dismissed in the last 7 days (clicked "Nanti Saja" or close "X")
-            const dismissedAt = localStorage.getItem('pfe_pwa_dismissed_v2');
-            if (dismissedAt) {
-                const diffDays = (Date.now() - parseInt(dismissedAt, 10)) / (1000 * 60 * 60 * 24);
-                if (diffDays < 7) {
-                    this.isDismissed = true;
-                }
-            }
-
-            // Register Service Worker on Desktop
+            // Register Service Worker
             if ('serviceWorker' in navigator) {
                 const registerSW = () => {
                     navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -146,15 +116,16 @@ function desktopInstallPrompt() {
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 this.deferredPrompt = e;
-                if (!this.isDismissed && this.isDesktop && !this.isInstalled) {
+                window.__pfeDeferredPrompt = e;
+                if (!this.isDismissed && !this.isInstalled) {
                     this.canInstall = true;
                 }
             });
 
-            window.addEventListener('pfe:beforeinstallprompt', () => {
+            window.addEventListener('pfe:deferred-prompt-ready', () => {
                 if (window.__pfeDeferredPrompt) {
                     this.deferredPrompt = window.__pfeDeferredPrompt;
-                    if (!this.isDismissed && this.isDesktop && !this.isInstalled) {
+                    if (!this.isDismissed && !this.isInstalled) {
                         this.canInstall = true;
                     }
                 }
@@ -163,7 +134,6 @@ function desktopInstallPrompt() {
             // Listen for manual trigger (from header button)
             window.addEventListener('pfe:trigger-install', () => {
                 this.isDismissed = false;
-                this.canInstall = true;
                 this.install();
             });
 
@@ -173,15 +143,17 @@ function desktopInstallPrompt() {
                 this.canInstall = false;
                 this.isInstalled = true;
                 this.deferredPrompt = null;
+                window.__pfeDeferredPrompt = null;
                 localStorage.setItem('pfe_pwa_installed', 'true');
+                window.dispatchEvent(new CustomEvent('pfe:installed'));
             });
 
-            // Auto show banner on desktop
+            // Auto show banner on dashboard after 1.5s delay if not dismissed and not installed
             this.scheduleShow();
         },
 
         scheduleShow() {
-            if (this.isDismissed || !this.isDesktop || this.isInstalled) {
+            if (this.isDismissed || this.isInstalled) {
                 return;
             }
             // Delay 1.5s so dashboard content renders smoothly first
@@ -238,6 +210,7 @@ function desktopInstallPrompt() {
                         this.canInstall = false;
                         this.isInstalled = true;
                         localStorage.setItem('pfe_pwa_installed', 'true');
+                        window.dispatchEvent(new CustomEvent('pfe:installed'));
                     }
                     this.deferredPrompt = null;
                     window.__pfeDeferredPrompt = null;
@@ -247,34 +220,54 @@ function desktopInstallPrompt() {
                 return;
             }
 
-            // Fallback: If browser (Chrome) held beforeinstallprompt due to security flag on trycloudflare URL
+            // Fallback: If browser held prompt or manual installation needed
+            const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            let guideHtml = '';
+            if (isIOS) {
+                guideHtml = `
+                    <div class="text-left text-sm text-slate-600 space-y-2.5 pt-1">
+                        <p>Pasang aplikasi ke layar utama iPhone/iPad Anda:</p>
+                        <div class="p-3 bg-teal-50 rounded-xl border border-teal-200 text-teal-900 text-xs font-medium space-y-1.5">
+                            <p>1. Ketuk tombol <strong>Share</strong> (ikon kotak panah ke atas) di bilah bawah Safari.</p>
+                            <p>2. Gulir ke bawah lalu pilih <strong>"Tambahkan ke Layar Utama" (Add to Home Screen)</strong>.</p>
+                        </div>
+                    </div>
+                `;
+            } else if (isMobile) {
+                guideHtml = `
+                    <div class="text-left text-sm text-slate-600 space-y-2.5 pt-1">
+                        <p>Pasang aplikasi (APK) langsung ke HP Android Anda:</p>
+                        <div class="p-3 bg-teal-50 rounded-xl border border-teal-200 text-teal-900 text-xs font-medium space-y-1.5">
+                            <p>1. Ketuk menu titik tiga (<strong>⋮</strong>) di pojok kanan atas browser Chrome.</p>
+                            <p>2. Pilih menu <strong>"Install aplikasi"</strong> atau <strong>"Tambahkan ke Layar Utama"</strong>.</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                guideHtml = `
+                    <div class="text-left text-sm text-slate-600 space-y-2.5 pt-1">
+                        <p>Pasang aplikasi ke Desktop komputer Anda:</p>
+                        <div class="p-3 bg-teal-50 rounded-xl border border-teal-200 text-teal-900 text-xs font-medium space-y-1.5">
+                            <p>1. Klik ikon <strong>Install</strong> di pojok kanan bilah alamat URL (Address Bar) Chrome/Edge.</p>
+                            <p>2. Atau klik menu titik tiga (<strong>⋮</strong>) browser &rarr; pilih <strong>"Install PFE Monitoring Control System"</strong>.</p>
+                        </div>
+                    </div>
+                `;
+            }
+
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
-                    title: 'Pemasangan Otomatis Ditahan Browser',
-                    html: `
-                        <div class="text-left text-sm text-slate-600 space-y-3 pt-2">
-                            <p>Google Chrome menahan pop-up otomatis karena domain trycloudflare acak ditandai <em>"Berbahaya"</em> oleh Safe Browsing.</p>
-                            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-xs font-medium space-y-1.5">
-                                <p><strong>2 Solusi Cepat:</strong></p>
-                                <p>1. Buka melalui <strong>http://localhost:8001</strong> (bebas peringatan, 1-klik otomatis langsung muncul!).</p>
-                                <p>2. Atau di URL ini, klik menu titik tiga (<strong>⋮</strong>) Chrome di pojok kanan atas &rarr; pilih <strong>"Install PFE Monitoring Control System"</strong>.</p>
-                            </div>
-                        </div>
-                    `,
-                    icon: 'warning',
+                    title: 'Petunjuk Pasang Aplikasi',
+                    html: guideHtml,
+                    icon: 'info',
                     confirmButtonColor: '#009B77',
-                    confirmButtonText: 'Buka via Localhost',
-                    showCancelButton: true,
-                    cancelButtonText: 'Tutup',
+                    confirmButtonText: 'Saya Mengerti',
                     customClass: {
                         popup: 'rounded-3xl shadow-2xl border border-slate-100',
                         title: 'text-slate-800 font-bold',
-                        confirmButton: 'rounded-xl font-bold px-6 py-2.5',
-                        cancelButton: 'rounded-xl font-bold px-6 py-2.5'
-                    }
-                }).then((res) => {
-                    if (res.isConfirmed) {
-                        window.location.href = 'http://localhost:8001/dashboard';
+                        confirmButton: 'rounded-xl font-bold px-6 py-2.5'
                     }
                 });
             }
@@ -284,12 +277,7 @@ function desktopInstallPrompt() {
             this.cleanupTimers();
             this.canInstall = false;
             this.isDismissed = true;
-
-            if (isAuto) {
-                sessionStorage.setItem('pfe_pwa_autohidden', 'true');
-            } else {
-                localStorage.setItem('pfe_pwa_dismissed_v2', Date.now().toString());
-            }
+            sessionStorage.setItem('pfe_pwa_dismissed', 'true');
         }
     };
 }

@@ -52,7 +52,7 @@
                         <div x-show="openExport" x-transition.opacity.duration.200ms
                             class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg shadow-slate-200/50 border border-slate-100 py-2"
                             x-cloak style="display: none;">
-                            <a href="{{ route('master-data.export-pdf', request()->all()) }}"
+                            <a href="{{ route('master-data.export-pdf', request()->all()) }}" target="_blank" rel="noopener noreferrer"
                                 class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-red-50 hover:text-red-600 flex items-center gap-2 transition-colors">
                                 <i class="ph-bold ph-file-pdf text-lg text-red-500"></i> {{ __('Export to PDF') }}
                             </a>
@@ -347,46 +347,44 @@
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-[#009B77] text-white divide-x divide-white/20 text-center">
-                                <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider w-12">No</th>
-                                <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('PFE ID') }}</th>
-                                <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('ROOM NO') }}</th>
-                                <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('LOCATION') }}</th>
-                                <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('BUILDING') }}</th>
-                                <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('Type') }}</th>
-                                <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('Capacity') }}</th>
-                                <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('Fire Class') }}</th>
-                                <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('Expired DATE') }}
-                                </th>
-                                <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('Last Refill') }}
-                                </th>
-                                <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider text-center">{{ __('Qty') }}
-                                </th>
-                                <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('PIC') }}</th>
+                                <th class="py-3 px-2 text-xs font-bold uppercase tracking-wider w-10 text-center whitespace-nowrap">{{ __('No') }}</th>
+                                <th class="py-3 px-3 text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap">{{ __('PFE ID') }}</th>
+                                <th class="py-3 px-2 text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap">{{ __('Room No') }}</th>
+                                <th class="py-3 px-3 text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap">{{ __('Location') }}</th>
+                                <th class="py-3 px-2.5 text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap">{{ __('Building') }}</th>
+                                <th class="py-3 px-3 text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap">{{ __('Type') }}</th>
+                                <th class="py-3 px-2.5 text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap">{{ __('Capacity') }}</th>
+                                <th class="py-3 px-2.5 text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap">{{ __('Fire Class') }}</th>
+                                <th class="py-3 px-3 text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap">{{ __('Expired Date') }}</th>
+                                <th class="py-3 px-3 text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap">{{ __('Last Refill') }}</th>
+                                <th class="py-3 px-2 text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap">{{ __('Qty') }}</th>
+                                <th class="py-3 px-3 text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap">{{ __('PIC') }}</th>
+                                <th class="py-3 px-3 text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap">{{ __('Final Status') }}</th>
                                 @if(auth()->user()->role !== 'Staff')
-                                    <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider">{{ __('ACTIONS') }}</th>
+                                    <th class="py-3 px-3 text-xs font-bold uppercase tracking-wider text-center whitespace-nowrap">{{ __('Actions') }}</th>
                                 @endif
                             </tr>
                         </thead>
-                        <tbody class="text-sm divide-y divide-slate-100">
+                        <tbody class="text-xs divide-y divide-slate-100">
                             @forelse($apars as $index => $apar)
-                                <tr class="hover:bg-slate-50 transition-colors divide-x divide-slate-100">
-                                    <td class="py-4 px-5 text-center font-semibold text-slate-500">{{ $index + 1 }}</td>
-                                    <td class="py-4 px-5">
+                                <tr class="hover:bg-slate-50/80 transition-colors divide-x divide-slate-100">
+                                    <td class="py-3 px-2 text-center font-semibold text-slate-500 whitespace-nowrap">{{ $index + 1 }}</td>
+                                    <td class="py-3 px-3 text-center whitespace-nowrap">
                                         <span class="font-bold text-slate-800">{{ $apar->kode }}</span>
                                     </td>
-                                    <td class="py-4 px-5 font-semibold text-slate-600">
+                                    <td class="py-3 px-2 text-center font-semibold text-slate-600 whitespace-nowrap">
                                         {{ $apar->nomor_ruangan ?? '-' }}
                                     </td>
-                                    <td class="py-4 px-5 font-semibold text-slate-600 capitalize">
+                                    <td class="py-3 px-3 font-semibold text-slate-700 capitalize whitespace-nowrap text-left">
                                         {{ $apar->lokasi->nama ?? 'n/a' }}
                                     </td>
-                                    <td class="py-4 px-5 font-semibold text-slate-600">
+                                    <td class="py-3 px-2.5 text-center font-semibold text-slate-700 whitespace-nowrap">
                                         {{ $apar->lokasi->gedung->nama ?? 'n/a' }}
                                     </td>
-                                    <td class="py-4 px-5 font-semibold text-slate-600">{{ $apar->jenis->nama ?? 'n/a' }}</td>
-                                    <td class="py-4 px-5 font-semibold text-slate-600">{{ $apar->kapasitas->ukuran ?? 'n/a' }}
+                                    <td class="py-3 px-3 font-semibold text-slate-700 whitespace-nowrap text-left">{{ $apar->jenis->nama ?? 'n/a' }}</td>
+                                    <td class="py-3 px-2.5 text-center font-semibold text-slate-700 whitespace-nowrap">{{ $apar->kapasitas->ukuran ?? 'n/a' }}
                                     </td>
-                                    <td class="py-4 px-5">
+                                    <td class="py-3 px-2.5 text-center whitespace-nowrap">
                                         @php
                                             $jenisNamaL = strtolower($apar->jenis->nama ?? '');
                                             $kelas = '-';
@@ -398,33 +396,33 @@
                                         @endphp
                                         @if($kelas != '-')
                                             <span
-                                                class="text-[10px] font-bold tracking-wider py-1 px-2.5 rounded-lg bg-orange-50 text-orange-600 border border-orange-100">{{ $kelas }}</span>
+                                                class="inline-flex items-center justify-center text-[10.5px] font-semibold tracking-wide py-0.5 px-2 rounded-md bg-orange-50 text-orange-600 border border-orange-200/80 whitespace-nowrap">{{ $kelas }}</span>
                                         @else
                                             <span class="font-semibold text-slate-400">-</span>
                                         @endif
                                     </td>
-                                    <td class="py-4 px-5">
+                                    <td class="py-3 px-3 text-center whitespace-nowrap">
                                         @if($apar->tgl_kedaluwarsa && $apar->tgl_kedaluwarsa->isPast())
-                                            <span class="font-semibold text-red-500">Expired
+                                            <span class="font-semibold text-red-500 whitespace-nowrap">Kedaluwarsa
                                                 ({{ $apar->tgl_kedaluwarsa->format('d M Y') }})</span>
                                         @else
                                             <span
-                                                class="font-semibold text-slate-600">{{ $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('d M Y') : '-' }}</span>
+                                                class="font-semibold text-slate-700 whitespace-nowrap">{{ $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('d M Y') : '-' }}</span>
                                         @endif
                                     </td>
-                                    <td class="py-4 px-5">
+                                    <td class="py-3 px-3 text-center whitespace-nowrap">
                                         <span
-                                            class="font-semibold text-slate-600">{{ $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->format('d M Y') : '-' }}</span>
+                                            class="font-semibold text-slate-700 whitespace-nowrap">{{ $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->format('d M Y') : '-' }}</span>
                                     </td>
-                                    <td class="py-4 px-5 text-center font-bold text-slate-800">
+                                    <td class="py-3 px-2 text-center font-bold text-slate-800 whitespace-nowrap">
                                         @if($apar->qty <= 0)
                                             <span
-                                                class="text-[10px] font-bold tracking-wider py-1 px-2.5 rounded-lg bg-red-50 text-red-600 border border-red-100 whitespace-nowrap">{{ __('OUT OF STOCK') }}</span>
+                                                class="text-[10px] font-bold tracking-wider py-0.5 px-1.5 rounded bg-red-50 text-red-600 border border-red-100 whitespace-nowrap">Habis</span>
                                         @else
                                             {{ $apar->qty }}
                                         @endif
                                     </td>
-                                    <td class="py-4 px-5 font-semibold text-slate-600">
+                                    <td class="py-3 px-3 font-semibold text-slate-700 whitespace-nowrap text-left">
                                         @php
                                             $lastInspeksi = $apar->latestInspeksi;
                                             $picUser = null;
@@ -438,51 +436,77 @@
                                         @if($picUser)
                                             <div class="flex items-center gap-2">
                                                 <div
-                                                    class="w-8 h-8 rounded-full bg-[#009B77]/10 flex items-center justify-center text-[#009B77] text-xs font-bold border border-[#009B77]/20">
+                                                    class="w-6 h-6 rounded-full bg-[#009B77]/10 flex items-center justify-center text-[#009B77] text-[10.5px] font-bold border border-[#009B77]/20 flex-shrink-0">
                                                     {{ strtoupper(substr($picUser->name, 0, 2)) }}
                                                 </div>
-                                                <span class="font-semibold text-slate-700">{{ $picUser->name }}</span>
+                                                <span class="font-semibold text-slate-700 whitespace-nowrap text-xs">{{ $picUser->name }}</span>
                                             </div>
                                         @else
                                             <span class="text-slate-400 font-medium">-</span>
                                         @endif
                                     </td>
+                                    <td class="py-3 px-3 text-center whitespace-nowrap">
+                                        @php
+                                            $statusRaw = $lastInspeksi ? strtolower($lastInspeksi->status) : null;
+                                            if ((int)$apar->qty <= 0) {
+                                                $statusRaw = 'perlu_refill';
+                                            }
+                                        @endphp
+                                        @if($statusRaw === 'sesuai' || $statusRaw === 'layak')
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                {{ __('Sesuai') }}
+                                            </span>
+                                        @elseif($statusRaw === 'tidak_sesuai' || in_array($statusRaw, ['perbaikan', 'rusak', 'service', 'tidak_layak']))
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200 whitespace-nowrap">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                                                {{ __('Tidak Sesuai') }}
+                                            </span>
+                                        @elseif($statusRaw === 'perlu_refill' || $statusRaw === 'isi_ulang')
+                                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                                {{ __('Perlu Refill') }}
+                                            </span>
+                                        @else
+                                            <span class="text-slate-400 font-medium">-</span>
+                                        @endif
+                                    </td>
                                     @if(auth()->user()->role !== 'Staff')
-                                        <td class="py-4 px-5">
+                                        <td class="py-3 px-3 text-center whitespace-nowrap">
                                             <div class="flex items-center justify-center gap-1">
                                                 <button type="button"
                                                     @click="editApar = { id: {{ $apar->id }}, kode: '{{ addslashes($apar->kode) }}', nomor_apar: '{{ addslashes($apar->kode) }}'.match(/\d+$/) ? '{{ addslashes($apar->kode) }}'.match(/\d+$/)[0] : '', nomor_ruangan: '{{ addslashes($apar->nomor_ruangan ?? '') }}', gedung_id: '{{ $apar->lokasi->gedung_id ?? '' }}', lokasi: '{{ addslashes($apar->lokasi->nama ?? '') }}', jenis_id: '{{ $apar->jenis_id }}', kapasitas_id: '{{ $apar->kapasitas_id }}', qty: {{ $apar->qty }}, tgl_kedaluwarsa: '{{ $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('Y-m-d') : '' }}', tgl_isi_ulang: '{{ $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->format('Y-m-d') : '' }}', gunakanCadangan: false, cadanganId: '' }; originalEditApar = JSON.stringify(editApar); showModalEditApar = true"
-                                                    class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-slate-400 hover:text-amber-500 hover:bg-amber-50 transition-colors"
-                                                    title="Edit">
-                                                    <i class="ph-bold ph-pencil-simple text-lg"></i>
+                                                    class="w-7.5 h-7.5 rounded-lg inline-flex items-center justify-center text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors"
+                                                    title="{{ __('Edit') }}">
+                                                    <i class="ph-bold ph-pencil-simple text-sm"></i>
                                                 </button>
                                                 <form action="/master-data/apar/{{ $apar->id }}" method="POST" class="inline"
                                                     onsubmit="confirmDelete(event, '{{ __('Are you sure you want to delete this PFE?') }}');">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit"
-                                                        class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                                                        title="Hapus">
-                                                        <i class="ph-bold ph-trash text-base"></i>
+                                                        class="w-7.5 h-7.5 rounded-lg inline-flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                                        title="{{ __('Delete') }}">
+                                                        <i class="ph-bold ph-trash text-sm"></i>
                                                     </button>
                                                 </form>
                                                 <button
                                                     @click="$dispatch('open-history', { id: {{ $apar->id }}, kode: '{{ addslashes($apar->kode) }}' })"
-                                                    class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-slate-400 hover:text-indigo-500 hover:bg-indigo-50 transition-colors"
-                                                    title="Riwayat Perubahan">
-                                                    <i class="ph-bold ph-clock-counter-clockwise text-base"></i>
+                                                    class="w-7.5 h-7.5 rounded-lg inline-flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors"
+                                                    title="{{ __('History') }}">
+                                                    <i class="ph-bold ph-clock-counter-clockwise text-sm"></i>
                                                 </button>
                                                 <button @click="
-                                                                        fetch('/master-data/apar/{{ $apar->id }}/qr-data')
-                                                                            .then(res => res.json())
-                                                                            .then(data => {
-                                                                                qrData = data;
-                                                                                showQrModal = true;
-                                                                            });
-                                                                    "
-                                                    class="w-8 h-8 rounded-lg inline-flex items-center justify-center text-slate-400 hover:text-[#009B77] hover:bg-[#009B77]/10 transition-colors"
+                                                        fetch('/master-data/apar/{{ $apar->id }}/qr-data')
+                                                            .then(res => res.json())
+                                                            .then(data => {
+                                                                qrData = data;
+                                                                showQrModal = true;
+                                                            });
+                                                    "
+                                                    class="w-7.5 h-7.5 rounded-lg inline-flex items-center justify-center text-slate-400 hover:text-[#009B77] hover:bg-[#009B77]/10 transition-colors"
                                                     title="QR Code">
-                                                    <i class="ph-bold ph-qr-code text-base"></i>
+                                                    <i class="ph-bold ph-qr-code text-sm"></i>
                                                 </button>
                                             </div>
                                         </td>
@@ -490,7 +514,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="13" class="py-8 text-center text-slate-500 font-semibold">
+                                    <td colspan="14" class="py-8 text-center text-slate-500 font-semibold">
                                         {{ __('No PFE data available.') }}
                                     </td>
                                 </tr>
@@ -789,9 +813,8 @@
                                             class="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
                                             <i class="ph-duotone ph-buildings text-2xl"></i>
                                         </div>
-                                        <h4 class="font-bold text-slate-700 text-sm">Belum ada data</h4>
-                                        <p class="text-xs text-slate-500 mt-1 max-w-[200px]">Tambahkan gedung dan lokasi pertama
-                                            Anda</p>
+                                        <h4 class="font-bold text-slate-700 text-sm">{{ __('No data available') }}</h4>
+                                        <p class="text-xs text-slate-500 mt-1 max-w-[200px]">{{ __('Add your first building and location') }}</p>
                                     </div>
                                 @endforelse
                             </div>
@@ -812,9 +835,9 @@
                                         class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-white flex items-center justify-center shadow-lg shadow-amber-500/30 mb-3">
                                         <i class="ph-fill ph-fire-extinguisher text-2xl"></i>
                                     </div>
-                                    <h3 class="font-black text-slate-800 text-lg tracking-wide uppercase">{{ __('Type') }} APAR
+                                    <h3 class="font-black text-slate-800 text-lg tracking-wide uppercase">{{ __('PFE Type') }}
                                     </h3>
-                                    <p class="text-xs font-semibold text-slate-500">Tipe Serbuk/Gas</p>
+                                    <p class="text-xs font-semibold text-slate-500">{{ __('Powder/Gas Type') }}</p>
                                 </div>
                                 <button @click="showModalJenis = true"
                                     class="bg-white/80 backdrop-blur border border-amber-200 text-amber-600 hover:bg-amber-500 hover:text-white hover:border-amber-500 rounded-xl px-3 py-2 flex items-center gap-1.5 transition-all shadow-sm">
@@ -845,7 +868,7 @@
                                         </div>
                                     </div>
                                 @empty
-                                    <div class="text-center py-4 text-xs font-semibold text-slate-400">Belum ada data</div>
+                                    <div class="text-center py-4 text-xs font-semibold text-slate-400">{{ __('No data available') }}</div>
                                 @endforelse
                             </div>
                         </div>
@@ -867,7 +890,7 @@
                                     </div>
                                     <h3 class="font-black text-slate-800 text-lg tracking-wide uppercase">{{ __('Capacity') }}
                                     </h3>
-                                    <p class="text-xs font-semibold text-slate-500">Ukuran Berat/Volume</p>
+                                    <p class="text-xs font-semibold text-slate-500">{{ __('Weight/Volume Size') }}</p>
                                 </div>
                                 <button @click="showModalKapasitas = true"
                                     class="bg-white/80 backdrop-blur border border-purple-200 text-purple-600 hover:bg-purple-500 hover:text-white hover:border-purple-500 rounded-xl px-3 py-2 flex items-center gap-1.5 transition-all shadow-sm">
@@ -898,7 +921,7 @@
                                         </div>
                                     </div>
                                 @empty
-                                    <div class="text-center py-4 text-xs font-semibold text-slate-400">Belum ada data</div>
+                                    <div class="text-center py-4 text-xs font-semibold text-slate-400">{{ __('No data available') }}</div>
                                 @endforelse
                             </div>
                         </div>

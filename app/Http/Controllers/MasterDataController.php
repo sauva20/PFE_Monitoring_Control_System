@@ -97,11 +97,10 @@ class MasterDataController extends Controller
 
         $resumeRows = [
             'APAR Keseluruhan' => fn ($a) => true,
-            'APAR Expired' => fn ($a) => $a->tgl_kedaluwarsa && Carbon::parse($a->tgl_kedaluwarsa)->isPast(),
-            'Sesuai' => fn ($a) => $a->latestInspeksi && in_array($a->latestInspeksi->status, ['layak', 'baik']),
-            'Perlu Perbaikan' => fn ($a) => $a->latestInspeksi && $a->latestInspeksi->status === 'perbaikan',
-            'Perlu Isi Ulang' => fn ($a) => $a->latestInspeksi && $a->latestInspeksi->status === 'isi_ulang',
-            'Rusak / Servis' => fn ($a) => $a->latestInspeksi && in_array($a->latestInspeksi->status, ['rusak', 'service']),
+            'APAR Kedaluwarsa' => fn ($a) => $a->tgl_kedaluwarsa && Carbon::parse($a->tgl_kedaluwarsa)->isPast(),
+            'Sesuai' => fn ($a) => $a->latestInspeksi && in_array($a->latestInspeksi->status, ['sesuai', 'layak', 'baik']),
+            'Tidak Sesuai' => fn ($a) => $a->latestInspeksi && in_array($a->latestInspeksi->status, ['tidak_sesuai', 'perbaikan', 'rusak', 'service', 'tidak_layak']),
+            'Perlu Refill' => fn ($a) => $a->latestInspeksi && in_array($a->latestInspeksi->status, ['perlu_refill', 'isi_ulang']),
         ];
 
         $resumeTable = [];
@@ -188,11 +187,10 @@ class MasterDataController extends Controller
 
         $resumeRows = [
             'APAR Keseluruhan' => fn ($a) => true,
-            'APAR Expired' => fn ($a) => $a->tgl_kedaluwarsa && Carbon::parse($a->tgl_kedaluwarsa)->isPast(),
-            'Sesuai' => fn ($a) => $a->latestInspeksi && in_array($a->latestInspeksi->status, ['layak', 'baik']),
-            'Perlu Perbaikan' => fn ($a) => $a->latestInspeksi && $a->latestInspeksi->status === 'perbaikan',
-            'Perlu Isi Ulang' => fn ($a) => $a->latestInspeksi && $a->latestInspeksi->status === 'isi_ulang',
-            'Rusak / Servis' => fn ($a) => $a->latestInspeksi && in_array($a->latestInspeksi->status, ['rusak', 'service']),
+            'APAR Kedaluwarsa' => fn ($a) => $a->tgl_kedaluwarsa && Carbon::parse($a->tgl_kedaluwarsa)->isPast(),
+            'Sesuai' => fn ($a) => $a->latestInspeksi && in_array($a->latestInspeksi->status, ['sesuai', 'layak', 'baik']),
+            'Tidak Sesuai' => fn ($a) => $a->latestInspeksi && in_array($a->latestInspeksi->status, ['tidak_sesuai', 'perbaikan', 'rusak', 'service', 'tidak_layak']),
+            'Perlu Refill' => fn ($a) => $a->latestInspeksi && in_array($a->latestInspeksi->status, ['perlu_refill', 'isi_ulang']),
         ];
 
         $resumeTable = [];
@@ -271,7 +269,7 @@ class MasterDataController extends Controller
             'Expires' => '0',
         ];
 
-        $columns = [__('No'), __('PFE ID'), __('Room No'), __('Location'), __('Building'), __('Type'), __('Capacity'), __('Fire Class'), __('Expiry Date'), __('Last Refill'), __('Qty'), __('PIC'), __('Last Inspection')];
+        $columns = ['No', 'Kode APAR', 'No. Ruangan', 'Lokasi', 'Gedung', 'Jenis APAR', 'Kapasitas', 'Kelas Kebakaran', 'Tgl Kedaluwarsa', 'Terakhir Isi Ulang', 'Qty', 'PIC', 'Status Akhir', 'Inspeksi Terakhir'];
 
         $callback = function () use ($apars, $columns) {
             $file = fopen('php://output', 'w');
@@ -296,6 +294,19 @@ class MasterDataController extends Controller
                     $picName = $apar->pic->name;
                 }
 
+                $statusRaw = $lastInspeksi ? strtolower($lastInspeksi->status) : null;
+                if ((int) $apar->qty <= 0) {
+                    $statusRaw = 'perlu_refill';
+                }
+                $statusLabel = '-';
+                if ($statusRaw === 'sesuai' || $statusRaw === 'layak') {
+                    $statusLabel = 'Sesuai';
+                } elseif ($statusRaw === 'tidak_sesuai' || in_array($statusRaw, ['perbaikan', 'rusak', 'service', 'tidak_layak'])) {
+                    $statusLabel = 'Tidak Sesuai';
+                } elseif ($statusRaw === 'perlu_refill' || $statusRaw === 'isi_ulang') {
+                    $statusLabel = 'Perlu Refill';
+                }
+
                 $row = [
                     $index + 1,
                     $apar->kode,
@@ -309,6 +320,7 @@ class MasterDataController extends Controller
                     $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->format('d M Y') : '-',
                     $apar->qty,
                     $picName,
+                    $statusLabel,
                     $lastInspeksi ? $lastInspeksi->created_at->format('d M Y') : '-',
                 ];
 

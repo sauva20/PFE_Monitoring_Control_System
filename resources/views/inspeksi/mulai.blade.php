@@ -79,7 +79,7 @@
     <div class="fixed bottom-10 right-[-10%] w-[50%] h-[40%] bg-[#8A4B9F] rounded-full mix-blend-multiply filter blur-[100px] opacity-15 pointer-events-none"></div>
 
     <div class="w-full {{ (request('source') === 'schedule') ? 'max-w-6xl' : 'max-w-xl' }} mx-auto relative z-10 flex flex-col p-4 sm:p-6 lg:p-8 space-y-6" x-data="{
-    statusAkhir: $persist('{{ old('status', 'layak') }}').using(sessionStorage).as('inspeksi_status_{{ $apar->id }}'),
+    statusAkhir: $persist('{{ old('status', 'sesuai') }}').using(sessionStorage).as('inspeksi_status_{{ $apar->id }}'),
     qty: $persist('{{ old('qty', $apar->qty ?? 0) }}').using(sessionStorage).as('inspeksi_qty_{{ $apar->id }}'),
     tgl_kedaluwarsa: $persist('{{ old('tgl_kedaluwarsa', $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('Y-m-d') : '') }}').using(sessionStorage).as('inspeksi_tgl_{{ $apar->id }}'),
     catatan_tambahan: $persist('{{ addslashes(old('catatan_tambahan', '')) }}').using(sessionStorage).as('inspeksi_catatan_{{ $apar->id }}'),
@@ -96,7 +96,7 @@
         vendor: '{{ addslashes($apar->vendor) }}',
         tgl_kedaluwarsa: '{{ $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('Y-m-d') : '' }}'
     }
-}" x-init="$watch('qty', value => { if (value !== '' && value <= 0) statusAkhir = 'isi_ulang'; }); if (qty !== '' && qty <= 0) statusAkhir = 'isi_ulang';">
+}" x-init="if (statusAkhir === 'layak') statusAkhir = 'sesuai'; if (statusAkhir === 'perbaikan' || statusAkhir === 'rusak' || statusAkhir === 'tidak_layak') statusAkhir = 'tidak_sesuai'; if (statusAkhir === 'isi_ulang') statusAkhir = 'perlu_refill'; $watch('qty', value => { if (value === '' || Number(value) < 1) statusAkhir = 'perlu_refill'; }); if (qty === '' || Number(qty) < 1) statusAkhir = 'perlu_refill';">
     <!-- Header Area -->
     <div class="flex items-center justify-between gap-4 {{ (request('source') === 'schedule') ? 'bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm' : '' }}">
         <div class="flex items-center gap-3">
@@ -252,9 +252,10 @@
                     
                     <div class="space-y-3 {{ (request('source') === 'schedule') ? 'lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0' : '' }}">
                         @foreach($pertanyaan as $index => $tanya)
-                        @if($index >= 15)
+                        @if($index >= 14)
                         
-                        @if($index === 15)
+                        @if($index === 14)
+                        {{-- 1. Jenis APAR --}}
                         <div class="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ (request('source') === 'schedule') ? 'lg:col-span-2' : '' }}" 
                              x-data="{ 
                                  selectedJenis: $persist('{{ old('jenis_id', $apar->jenis_id) }}').using(sessionStorage).as('inspeksi_jenis_{{ $apar->id }}'), 
@@ -266,9 +267,12 @@
                             <div class="flex-1 flex gap-3">
                                 <div class="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] flex-shrink-0 transition-colors"
                                      :class="selectedJenis == expectedJenis ? 'bg-[#009B77] text-white' : 'bg-red-500 text-white'">
-                                    {{ $index - 14 }}
+                                    {{ $index - 13 }}
                                 </div>
-                                <p class="font-bold text-slate-700 text-xs leading-relaxed pt-0.5">{{ $tanya }}</p>
+                                <div>
+                                    <p class="font-bold text-slate-700 text-xs leading-relaxed pt-0.5">{{ $tanya }}</p>
+                                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">Master: <strong class="text-slate-600">{{ $apar->jenis->nama ?? '-' }}</strong></p>
+                                </div>
                             </div>
                             
                             <!-- Toggle Buttons -->
@@ -298,7 +302,8 @@
                                 </div>
                             </div>
                         </div>
-                        @elseif($index === 16)
+                        @elseif($index === 15)
+                        {{-- 2. Kapasitas --}}
                         <div class="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ (request('source') === 'schedule') ? 'lg:col-span-2' : '' }}" 
                              x-data="{ 
                                  selectedKapasitas: $persist('{{ old('kapasitas_id', $apar->kapasitas_id) }}').using(sessionStorage).as('inspeksi_kapasitas_{{ $apar->id }}'), 
@@ -310,9 +315,12 @@
                             <div class="flex-1 flex gap-3">
                                 <div class="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] flex-shrink-0 transition-colors"
                                      :class="selectedKapasitas == expectedKapasitas ? 'bg-[#009B77] text-white' : 'bg-red-500 text-white'">
-                                    {{ $index - 14 }}
+                                    {{ $index - 13 }}
                                 </div>
-                                <p class="font-bold text-slate-700 text-xs leading-relaxed pt-0.5">{{ $tanya }}</p>
+                                <div>
+                                    <p class="font-bold text-slate-700 text-xs leading-relaxed pt-0.5">{{ $tanya }}</p>
+                                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">Master: <strong class="text-slate-600">{{ $apar->kapasitas->ukuran ?? '-' }}</strong></p>
+                                </div>
                             </div>
                             
                             <!-- Toggle Buttons -->
@@ -342,7 +350,8 @@
                                 </div>
                             </div>
                         </div>
-                        @elseif($index === 17)
+                        @elseif($index === 16)
+                        {{-- 3. Tanggal isi ulang terakhir --}}
                         @php
                             $tglIsiUlangStr = $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->format('Y-m-d') : '';
                         @endphp
@@ -357,9 +366,12 @@
                             <div class="flex-1 flex gap-3">
                                 <div class="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] flex-shrink-0 transition-colors"
                                      :class="(selectedTgl == expectedTgl && expectedTgl !== '') ? 'bg-[#009B77] text-white' : 'bg-red-500 text-white'">
-                                    {{ $index - 14 }}
+                                    {{ $index - 13 }}
                                 </div>
-                                <p class="font-bold text-slate-700 text-xs leading-relaxed pt-0.5">{{ $tanya }}</p>
+                                <div>
+                                    <p class="font-bold text-slate-700 text-xs leading-relaxed pt-0.5">{{ $tanya }}</p>
+                                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">Master: <strong class="text-slate-600">{{ $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->format('d/m/Y') : '-' }}</strong></p>
+                                </div>
                             </div>
                             
                             <!-- Date Input -->
@@ -386,16 +398,64 @@
                                 </div>
                             </div>
                         </div>
-                        @else
+                        @elseif($index === 17)
+                        {{-- 4. Tanggal masa berlaku (Expired) --}}
                         @php
-                            $expected = ($index === 20) ? 'tidak ada' : 'ada';
+                            $tglKedaluwarsaStr = $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('Y-m-d') : '';
+                        @endphp
+                        <div class="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ (request('source') === 'schedule') ? 'lg:col-span-2' : '' }}" 
+                             x-data="{ 
+                                 expectedTgl: '{{ $tglKedaluwarsaStr }}',
+                                 keterangan: $persist('{{ addslashes(old('checklist.'.$index.'.keterangan', '')) }}').using(sessionStorage).as('inspeksi_ket_{{ $index }}_{{ $apar->id }}')
+                             }"
+                             :class="(tgl_kedaluwarsa == expectedTgl && expectedTgl !== '') ? 'bg-teal-50/50 border-teal-200/60' : 'bg-red-50/80 border-red-200'">
+                            <!-- Number & Question -->
+                            <div class="flex-1 flex gap-3">
+                                <div class="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] flex-shrink-0 transition-colors"
+                                     :class="(tgl_kedaluwarsa == expectedTgl && expectedTgl !== '') ? 'bg-[#009B77] text-white' : 'bg-red-500 text-white'">
+                                    {{ $index - 13 }}
+                                </div>
+                                <div>
+                                    <p class="font-bold text-slate-700 text-xs leading-relaxed pt-0.5">{{ $tanya }}</p>
+                                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">Master: <strong class="text-slate-600">{{ $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('d/m/Y') : '-' }}</strong></p>
+                                </div>
+                            </div>
+                            
+                            <!-- Date Input -->
+                            <div class="flex flex-col gap-2 w-full sm:w-[340px] sm:shrink-0">
+                                <div class="relative w-full">
+                                    <input type="hidden" name="checklist[{{ $index }}][jawaban]" :value="(tgl_kedaluwarsa == expectedTgl && expectedTgl !== '') ? 'ada' : 'tidak ada'">
+                                    <i class="ph-bold ph-calendar-blank absolute left-3 top-1/2 -translate-y-1/2 text-base pointer-events-none transition-colors"
+                                       :class="(tgl_kedaluwarsa == expectedTgl && expectedTgl !== '') ? 'text-[#009B77]' : 'text-red-500'"></i>
+                                    <input type="text" name="tgl_kedaluwarsa" x-model="tgl_kedaluwarsa" required
+                                           x-init="flatpickr($el, { dateFormat: 'Y-m-d', disableMobile: 'true', defaultDate: tgl_kedaluwarsa, onChange: (s, d) => { tgl_kedaluwarsa = d; } })"
+                                           class="w-full bg-white border-2 rounded-xl py-2 pl-9 pr-3 text-xs font-bold transition-all outline-none shadow-sm cursor-pointer"
+                                           :class="(tgl_kedaluwarsa == expectedTgl && expectedTgl !== '') ? 'border-teal-200/90 text-teal-900 bg-teal-50/50 focus:border-[#009B77] focus:ring-2 focus:ring-[#009B77]/15' : 'border-red-300 text-red-700 bg-red-50/50 focus:border-red-400 focus:ring-2 focus:ring-red-100'">
+                                </div>
+                                
+                                <!-- Input Keterangan -->
+                                <div x-show="tgl_kedaluwarsa !== '' && (tgl_kedaluwarsa != expectedTgl || expectedTgl === '')" x-collapse>
+                                    <div class="relative">
+                                        <i class="ph-bold absolute left-2.5 top-1/2 -translate-y-1/2 text-base" :class="(tgl_kedaluwarsa != expectedTgl || expectedTgl === '') ? 'ph-warning-circle text-red-400' : 'ph-note-pencil text-slate-400'"></i>
+                                        <input type="text" name="checklist[{{ $index }}][keterangan]" x-model="keterangan" 
+                                               placeholder="{{ __('Kondisi / Keterangan (Opsional)...') }}" 
+                                               class="w-full text-[11px] py-2 pl-8 pr-3 border-2 bg-white rounded-lg focus:ring-2 outline-none transition-all font-medium shadow-sm"
+                                               :class="(tgl_kedaluwarsa != expectedTgl || expectedTgl === '') ? 'border-red-200 focus:border-red-400 focus:ring-red-100 placeholder:text-red-300 text-red-700' : 'border-slate-200 focus:border-[#009B77] focus:ring-[#009B77]/15 placeholder:text-slate-300 text-slate-700'">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @else
+                        {{-- 5-10: Segel, Karat, Kepadatan, Nozzle, Pin, Lokasi --}}
+                        @php
+                            $expected = ($index === 19) ? 'tidak ada' : 'ada';
                         @endphp
                         <div x-data="{ 
                                 jawaban: $persist('{{ old('checklist.'.$index.'.jawaban', '') }}').using(sessionStorage).as('inspeksi_jawaban_{{ $index }}_{{ $apar->id }}'), 
                                 keterangan: $persist('{{ addslashes(old('checklist.'.$index.'.keterangan', '')) }}').using(sessionStorage).as('inspeksi_ket_{{ $index }}_{{ $apar->id }}'),
                                 expected: '{{ $expected }}' 
                              }" 
-                             @if($index === 24)
+                             @if($index === 23)
                               x-effect="if ($refs.lokasiInput) {
                                 if (jawaban === 'tidak ada' && keterangan.trim().toLowerCase() === '{{ strtolower($apar->lokasi->nama) }}') {
                                     $refs.lokasiInput.setCustomValidity('Lokasi yang dimasukkan sama dengan lokasi saat ini.');
@@ -404,16 +464,21 @@
                                 }
                               }"
                              @endif
-                             class="group flex flex-col sm:flex-row gap-3 p-3 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ ($index === 24 && (request('source') === 'schedule')) ? 'lg:col-span-2' : '' }}" 
+                             class="group flex flex-col sm:flex-row gap-3 p-3 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ ($index === 23 && (request('source') === 'schedule')) ? 'lg:col-span-2' : '' }}" 
                              :class="jawaban === expected ? 'bg-teal-50/50 border-teal-200/60' : (jawaban !== '' ? 'bg-red-50/80 border-red-200' : 'bg-white border-slate-100 hover:border-slate-200')">
                              
                             <!-- Number & Question -->
                             <div class="flex-1 flex gap-3">
                                 <div class="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] flex-shrink-0 transition-colors"
                                      :class="jawaban === expected ? 'bg-[#009B77] text-white' : (jawaban !== '' ? 'bg-red-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:bg-[#009B77] group-hover:text-white')">
-                                    {{ $index - 14 }}
+                                    {{ $index - 13 }}
                                 </div>
-                                <p class="font-bold text-slate-700 text-xs leading-relaxed pt-0.5">{{ $tanya }}</p>
+                                <div>
+                                    <p class="font-bold text-slate-700 text-xs leading-relaxed pt-0.5">{{ $tanya }}</p>
+                                    @if($index === 23)
+                                    <p class="text-[10px] text-slate-500 font-semibold mt-0.5">Master: <strong class="text-slate-700">{{ $apar->lokasi->nama ?? '-' }}</strong></p>
+                                    @endif
+                                </div>
                             </div>
                             
                             <!-- Toggle Ya / Tidak -->
@@ -423,12 +488,12 @@
                                     <button type="button" @click="jawaban = 'ada'" 
                                             class="flex-1 px-3 py-1.5 rounded text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5" 
                                             :class="jawaban === 'ada' ? (expected === 'ada' ? 'bg-[#009B77] text-white shadow-sm scale-[1.02]' : 'bg-red-500 text-white shadow-sm scale-[1.02]') : 'text-slate-500 hover:bg-white hover:text-slate-700 hover:shadow-sm'">
-                                        <i class="ph-bold ph-check text-[10px]"></i> {{ $index === 21 ? __('Padat') : ($index === 24 ? __('Sesuai') : __('Ada')) }}
+                                        <i class="ph-bold ph-check text-[10px]"></i> {{ $index === 20 ? __('Padat') : ($index === 23 ? __('Sesuai') : __('Ada')) }}
                                     </button>
                                     <button type="button" @click="jawaban = 'tidak ada'" 
                                             class="flex-1 px-3 py-1.5 rounded text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5" 
                                             :class="jawaban === 'tidak ada' ? (expected === 'tidak ada' ? 'bg-[#009B77] text-white shadow-sm scale-[1.02]' : 'bg-red-500 text-white shadow-sm scale-[1.02]') : 'text-slate-500 hover:bg-white hover:text-slate-700 hover:shadow-sm'">
-                                        <i class="ph-bold ph-x text-[10px]"></i> {{ $index === 21 ? __('Tidak') : ($index === 24 ? __('Tidak Sesuai') : __('Tidak Ada')) }}
+                                        <i class="ph-bold ph-x text-[10px]"></i> {{ $index === 20 ? __('Tidak') : ($index === 23 ? __('Tidak Sesuai') : __('Tidak Ada')) }}
                                     </button>
                                 </div>
                                 
@@ -437,13 +502,13 @@
                                     <div class="relative">
                                         <i class="ph-bold absolute left-2.5 top-1/2 -translate-y-1/2 text-base" :class="jawaban !== expected ? 'ph-warning-circle text-red-400' : 'ph-note-pencil text-slate-400'"></i>
                                         <input type="text" name="checklist[{{ $index }}][keterangan]" x-model="keterangan" 
-                                               @if($index === 24) x-ref="lokasiInput" @endif 
-                                               placeholder="{{ $index === 24 ? __('Masukkan lokasi yang tepat...') : __('Kondisi / Keterangan (Opsional)...') }}" 
-                                               :required="jawaban === 'tidak ada' && {{ $index === 24 ? 'true' : 'false' }}"
+                                               @if($index === 23) x-ref="lokasiInput" @endif 
+                                               placeholder="{{ $index === 23 ? __('Masukkan lokasi yang tepat...') : __('Kondisi / Keterangan (Opsional)...') }}" 
+                                               :required="jawaban === 'tidak ada' && {{ $index === 23 ? 'true' : 'false' }}"
                                                class="w-full text-[11px] py-2 pl-8 pr-3 border-2 bg-white rounded-lg focus:ring-2 outline-none transition-all font-medium shadow-sm"
                                                :class="jawaban !== expected ? 'border-red-200 focus:border-red-400 focus:ring-red-100 placeholder:text-red-300 text-red-700' : 'border-slate-200 focus:border-[#009B77] focus:ring-[#009B77]/15 placeholder:text-slate-300 text-slate-700'">
                                     </div>
-                                    @if($index === 24)
+                                    @if($index === 23)
                                     <div x-show="jawaban === 'tidak ada' && keterangan.trim().toLowerCase() === '{{ strtolower($apar->lokasi->nama) }}'" x-collapse>
                                         <div class="mt-1.5 flex items-start gap-1.5 text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
                                             <i class="ph-bold ph-warning text-sm mt-0.5"></i>
@@ -514,7 +579,7 @@
                     
                     <div class="space-y-3 {{ (request('source') === 'schedule') ? 'lg:grid lg:grid-cols-2 lg:gap-3.5 lg:space-y-0' : '' }}">
                         @foreach($pertanyaan as $index => $tanya)
-                        @if($index < 15)
+                        @if($index < 14)
                         <div x-data="{ 
                                 jawaban: $persist('{{ old('checklist.'.$index.'.jawaban', '') }}').using(sessionStorage).as('inspeksi_jawaban_{{ $index }}_{{ $apar->id }}'),
                                 keterangan: $persist('{{ addslashes(old('checklist.'.$index.'.keterangan', '')) }}').using(sessionStorage).as('inspeksi_ket_{{ $index }}_{{ $apar->id }}')
@@ -574,18 +639,30 @@
                         <!-- Status Akhir -->
                         <div class="{{ (request('source') === 'schedule') ? 'lg:col-span-6' : 'md:col-span-2' }}">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ __('Overall Status') }}</label>
-                            <div x-data="{ open: false, options: { 'layak': '{{ __('Good Condition') }}', 'perbaikan': '{{ __('Needs Repair') }}', 'isi_ulang': '{{ __('Needs Refill') }}', 'rusak': '{{ __('Broken / Service') }}' } }" class="relative">
-                                <input type="hidden" name="status" :value="statusAkhir">
-                                <i class="ph-bold ph-shield-check absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg transition-colors z-10" :class="statusAkhir === 'layak' ? 'text-[#009B77]' : 'text-red-500'"></i>
-                                <button type="button" @click="open = !open" @click.away="open = false" 
-                                        class="w-full bg-white border-2 border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm font-bold text-slate-800 focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none cursor-pointer text-left flex items-center justify-between"
-                                        :class="open ? 'border-[#009B77] ring-4 ring-[#009B77]/15' : ''">
-                                    <span x-text="options[statusAkhir]" class="truncate block"></span>
-                                    <i class="ph-bold ph-caret-down text-slate-400 transition-transform duration-200 flex-shrink-0" :class="open ? 'rotate-180 text-[#009B77]' : ''"></i>
+                            <div x-data="{ open: false, options: { 'sesuai': '{{ __('Sesuai') }}', 'tidak_sesuai': '{{ __('Tidak Sesuai') }}', 'perlu_refill': '{{ __('Perlu Refill') }}' } }" class="relative">
+                                <input type="hidden" name="status" :value="Number(qty) < 1 ? 'perlu_refill' : statusAkhir">
+                                <i class="ph-bold absolute left-4 top-1/2 -translate-y-1/2 text-lg transition-colors z-10"
+                                   :class="{
+                                       'ph-shield-check text-[#009B77]': Number(qty) >= 1 && statusAkhir === 'sesuai',
+                                       'ph-warning-circle text-red-500': Number(qty) >= 1 && statusAkhir === 'tidak_sesuai',
+                                       'ph-arrows-clockwise text-amber-500': Number(qty) < 1 || statusAkhir === 'perlu_refill'
+                                   }"></i>
+                                <button type="button" 
+                                        :disabled="Number(qty) < 1"
+                                        @click="if (Number(qty) >= 1) open = !open" 
+                                        @click.away="open = false" 
+                                        class="w-full border-2 rounded-xl py-3 pl-11 pr-4 text-sm font-bold transition-all outline-none text-left flex items-center justify-between"
+                                        :class="{
+                                            'bg-slate-100/80 border-slate-200 text-slate-500 cursor-not-allowed select-none': Number(qty) < 1,
+                                            'bg-white border-slate-200 text-slate-800 cursor-pointer focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15': Number(qty) >= 1,
+                                            'border-[#009B77] ring-4 ring-[#009B77]/15': open && Number(qty) >= 1
+                                        }">
+                                    <span x-text="Number(qty) < 1 ? options['perlu_refill'] : (options[statusAkhir] || options['sesuai'])" class="truncate block"></span>
+                                    <i class="ph-bold ph-caret-down text-slate-400 transition-transform duration-200 flex-shrink-0" :class="{ 'rotate-180 text-[#009B77]': open && Number(qty) >= 1, 'opacity-40': Number(qty) < 1 }"></i>
                                 </button>
                                 
-                                <!-- Dropdown Menu -->
-                                <div x-show="open" 
+                                <!-- Dropdown Menu (Hanya aktif jika Qty >= 1) -->
+                                <div x-show="open && Number(qty) >= 1" 
                                      x-transition:enter="transition ease-out duration-200"
                                      x-transition:enter-start="opacity-0 scale-95"
                                      x-transition:enter-end="opacity-100 scale-100"
@@ -613,13 +690,12 @@
                             </div>
                         </div>
                         
-                        <!-- Tgl Kedaluwarsa -->
+                        <!-- Tgl Kedaluwarsa Display/Confirmed -->
                         <div class="{{ (request('source') === 'schedule') ? 'lg:col-span-3' : '' }}">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Expired</label>
                             <div class="relative">
-                                <input type="text" name="tgl_kedaluwarsa" x-model="tgl_kedaluwarsa" required
-                                       x-init="flatpickr($el, { dateFormat: 'Y-m-d', disableMobile: 'true', defaultDate: tgl_kedaluwarsa, onChange: (s, d) => { tgl_kedaluwarsa = d; } })"
-                                       class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-700 focus:bg-white focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none appearance-none">
+                                <input type="text" :value="tgl_kedaluwarsa" readonly
+                                       class="w-full bg-slate-100 border-2 border-slate-200 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-700 outline-none cursor-default">
                             </div>
                         </div>
 
@@ -681,7 +757,7 @@
                                                      'bg-red-50 text-red-600 border-red-200': gpsStatus === 'error' || gpsStatus === 'idle'
                                                  }">
                                                 <i class="bi" :class="gpsStatus === 'success' ? 'bi-check-circle-fill text-emerald-600' : (gpsStatus === 'locating' ? 'bi-arrow-repeat animate-spin text-amber-600' : 'bi-geo-alt-fill text-red-500')"></i>
-                                                <span x-text="gpsStatus === 'success' ? (mapAddress ? 'Maps: ' + mapAddress : 'GPS Terhubung') : (gpsStatus === 'locating' ? 'Mencari sinyal GPS...' : 'GPS belum terhubung (Klik untuk aktifkan)')"></span>
+                                                <span x-text="gpsStatus === 'success' ? 'GPS Terhubung (±' + (gpsAccuracy || 0) + 'm)' : (gpsStatus === 'locating' ? 'Mencari sinyal GPS...' : 'GPS belum terhubung (Klik untuk aktifkan)')"></span>
                                             </div>
                                         </template>
                                     </label>
@@ -781,15 +857,6 @@
                                             </div>
                                         </div>
 
-                                        <!-- Metode / Lokasi Riil -->
-                                        <div class="bg-white p-2 rounded-lg border border-slate-200/70 flex items-start gap-2">
-                                            <i class="bi" :class="isSystemSource ? 'bi-pc-display text-blue-600' : 'bi-geo-alt-fill text-emerald-600'" mt-0.5 text-sm></i>
-                                            <div>
-                                                <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider" x-text="isSystemSource ? '{{ __('Metode Inspeksi') }}' : '{{ __('Lokasi GPS Riil') }}'"></span>
-                                                <span class="font-bold text-slate-800" x-text="isSystemSource ? '{{ __('System Record / Desktop Entry') }}' : (mapAddress || 'Lokasi tidak terjangkau')"></span>
-                                            </div>
-                                        </div>
-
                                         <!-- Status Validasi / Koordinat -->
                                         <div class="bg-white p-2 rounded-lg border border-slate-200/70 flex items-start gap-2">
                                             <i class="bi" :class="isSystemSource ? 'bi-shield-check text-[#009B77]' : 'bi-crosshair text-amber-600'" mt-0.5 text-sm></i>
@@ -809,7 +876,7 @@
                                         </div>
 
                                         <!-- Waktu Pengambilan -->
-                                        <div class="bg-white p-2 rounded-lg border border-slate-200/70 flex items-start gap-2 sm:col-span-2">
+                                        <div class="bg-white p-2 rounded-lg border border-slate-200/70 flex items-start gap-2">
                                             <i class="bi bi-clock-history text-slate-600 mt-0.5 text-sm"></i>
                                             <div>
                                                 <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ __('Waktu Pencatatan') }}</span>
@@ -1151,7 +1218,6 @@
                 gpsLat: null,
                 gpsLng: null,
                 gpsAccuracy: null,
-                mapAddress: null,
                 lokasiTerdaftar: @json(($apar->lokasi->gedung->nama ?? '') . ' - ' . ($apar->lokasi->nama ?? '')),
                 kodeApar: @json($apar->kode ?? 'APAR'),
                 picName: @json(auth()->user()->name ?? 'Petugas'),
@@ -1176,7 +1242,6 @@
                                 this.gpsLng = pos.coords.longitude;
                                 this.gpsAccuracy = Math.round(pos.coords.accuracy);
                                 this.gpsStatus = 'success';
-                                this.fetchMapAddress(this.gpsLat, this.gpsLng);
                             },
                             (err) => {
                                 console.warn('GPS Notice/Error:', err.message);
@@ -1186,21 +1251,6 @@
                         );
                     } else {
                         this.gpsStatus = 'error';
-                    }
-                },
-
-                async fetchMapAddress(lat, lon) {
-                    if (this.isSystemSource) return;
-                    try {
-                        let res = await fetch(`/inspeksi/reverse-geocode?lat=${lat}&lon=${lon}`);
-                        if (res.ok) {
-                            let data = await res.json();
-                            if (data && data.address) {
-                                this.mapAddress = data.address;
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('Reverse geocode error:', e);
                     }
                 },
 
@@ -1247,12 +1297,11 @@
                             const datePart = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                             const dateStr = `${datePart}, ${timeStr}`;
 
-                            // Siapkan baris data metadata (Label dan Nilai)
+                            // Siapkan baris data metadata (Label dan Nilai) - 4 Tipe Watermark
                             const rows = [];
                             if (this.isSystemSource) {
                                 rows.push({ label: 'LOKASI TERDAFTAR', value: this.lokasiTerdaftar || '-', highlight: true });
                                 rows.push({ label: 'METODE', value: 'SYSTEM RECORD / DESKTOP ENTRY' });
-                                rows.push({ label: 'VALIDASI', value: 'VERIFIED BY SYSTEM DATA', highlight: true });
                                 rows.push({ label: 'PIC', value: this.picName || '-' });
                                 rows.push({ label: 'WAKTU', value: dateStr });
                             } else {
@@ -1260,10 +1309,8 @@
                                 if (this.gpsLat && this.gpsLng) {
                                     coordStr = `${this.gpsLat.toFixed(6)}, ${this.gpsLng.toFixed(6)} (±${this.gpsAccuracy || 0}m)`;
                                 }
-                                let realMapLocation = this.mapAddress ? this.mapAddress : (this.gpsStatus === 'success' ? 'Memproses nama lokasi...' : 'Lokasi tidak terjangkau');
 
                                 rows.push({ label: 'LOKASI TERDAFTAR', value: this.lokasiTerdaftar || '-', highlight: true });
-                                rows.push({ label: 'LOKASI GPS', value: realMapLocation, multiline: true });
                                 rows.push({ label: 'KOORDINAT', value: coordStr });
                                 rows.push({ label: 'PIC', value: this.picName || '-' });
                                 rows.push({ label: 'WAKTU', value: dateStr });

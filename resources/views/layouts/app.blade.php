@@ -6,21 +6,52 @@
     <title>@yield('title', 'PFE Monitoring Control System')</title>
     <link rel="icon" href="{{ asset('favicon.svg') }}?v=3" type="image/svg+xml">
     
-    <!-- PWA Desktop Configuration -->
+    <!-- PWA Configuration -->
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#009B77">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="PFE System">
+    <link rel="apple-touch-icon" href="/images/icons/icon-192.png">
     <script>
+        // Check if running inside installed app window or marked installed
+        window.__isPFEInstalled = function() {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const isWco = window.matchMedia('(display-mode: window-controls-overlay)').matches;
+            const isMinimal = window.matchMedia('(display-mode: minimal-ui)').matches;
+            const isFullscreen = window.matchMedia('(display-mode: fullscreen)').matches;
+            const isNotBrowser = window.matchMedia('(display-mode: browser)').matches === false;
+            const isNavStandalone = window.navigator.standalone === true;
+
+            if (isStandalone || isWco || isMinimal || isFullscreen || isNotBrowser || isNavStandalone) {
+                return true;
+            }
+            if (localStorage.getItem('pfe_pwa_installed') === 'true') {
+                return true;
+            }
+            return false;
+        };
+
         // Immediate capture of beforeinstallprompt at head parsing time
         window.__pfeDeferredPrompt = null;
         window.addEventListener('beforeinstallprompt', (e) => {
-            const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            const isTouchOnly = window.matchMedia('(pointer: coarse)').matches && !window.matchMedia('(pointer: fine)').matches;
-            if (isMobileUA || isTouchOnly) return;
-
             e.preventDefault();
             window.__pfeDeferredPrompt = e;
+            // If beforeinstallprompt is fired by browser, it confirms the app is NOT currently installed in this browser
+            if (window.matchMedia('(display-mode: browser)').matches) {
+                localStorage.removeItem('pfe_pwa_installed');
+            }
             window.dispatchEvent(new CustomEvent('pfe:deferred-prompt-ready'));
             console.log('[PFE PWA] Native beforeinstallprompt captured!');
+        });
+
+        // Listen for native appinstalled event
+        window.addEventListener('appinstalled', () => {
+            localStorage.setItem('pfe_pwa_installed', 'true');
+            window.__pfeDeferredPrompt = null;
+            window.dispatchEvent(new CustomEvent('pfe:installed'));
+            console.log('[PFE PWA] App was successfully installed!');
         });
 
         // Register Service Worker immediately in head
@@ -114,42 +145,73 @@
             background: #94a3b8;
         }
 
-        /* Global UI Animations */
+        /* Global UI Animations & Polish */
         .report-card {
             position: relative;
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
+                        box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
+                        border-color 0.25s ease;
+            will-change: transform, box-shadow;
         }
-        .report-card::after {
-            content: '';
-            position: absolute;
-            top: -4px; right: -4px; bottom: -4px; left: -4px;
-            border: 2px solid #009B77;
-            border-radius: 20px;
-            opacity: 0;
-            transform: scale(0.96);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none;
+        .report-card:hover {
+            transform: translateY(-4px);
+            border-color: #009B77 !important;
+            box-shadow: 0 0 0 2px #009B77, 0 14px 28px -4px rgba(0, 155, 119, 0.22) !important;
         }
-        .report-card:hover::after {
-            opacity: 1;
-            transform: scale(1);
+        .report-card.bg-gradient-to-br:hover {
+            transform: translateY(-4px);
+            border-color: #ffffff !important;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 14px 28px -4px rgba(0, 155, 119, 0.45) !important;
         }
         
         .btn-smooth-ring {
             position: relative;
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), 
+                        box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform, box-shadow;
         }
-        .btn-smooth-ring::after {
-            content: '';
-            position: absolute;
-            top: -4px; right: -4px; bottom: -4px; left: -4px;
-            border: 2px solid #009B77;
-            border-radius: 16px;
-            opacity: 1;
-            transform: scale(1);
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none;
+        .btn-smooth-ring:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 0 3px rgba(0, 155, 119, 0.35), 0 8px 20px -2px rgba(0, 155, 119, 0.3) !important;
         }
         .btn-smooth-ring:active {
-            transform: scale(0.95);
+            transform: translateY(0) scale(0.97);
+            box-shadow: 0 0 0 2px rgba(0, 155, 119, 0.6) !important;
+        }
+
+        #progressPieChart {
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease;
+            cursor: pointer;
+        }
+        #progressPieChart:hover {
+            transform: scale(1.04);
+            filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.2));
+        }
+
+        /* Clean ApexCharts Tooltip */
+        .apexcharts-tooltip {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04) !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+            font-family: inherit !important;
+        }
+        .apexcharts-tooltip-title {
+            background: #f8fafc !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            font-weight: 700 !important;
+            font-size: 11px !important;
+            color: #334155 !important;
+            padding: 6px 10px !important;
+        }
+        .apexcharts-tooltip-series-group {
+            padding: 4px 10px !important;
+        }
+        .apexcharts-tooltip-text {
+            font-size: 12px !important;
+            font-weight: 600 !important;
+            color: #1e293b !important;
         }
     </style>
     <script>
@@ -217,9 +279,9 @@
             
             <!-- Group 1: Dashboard & Data Admin -->
             <div class="p-4 flex flex-col gap-1.5">
-                <a href="/dashboard" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('dashboard') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="Dashboard">
+                <a href="/dashboard" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('dashboard') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="{{ __('Dashboard') }}">
                     <i class="ph-fill ph-squares-four text-xl flex-shrink-0"></i>
-                    <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">Dashboard</span>
+                    <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">{{ __('Dashboard') }}</span>
                 </a>
 
                 @if(auth()->user()->role !== 'Staff')
@@ -227,9 +289,9 @@
                     <i class="ph-duotone ph-users text-xl flex-shrink-0"></i>
                     <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">{{ __('User Management') }}</span>
                 </a>
-                <a href="/guest-display" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('guest-display*') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="Akses Guest Display">
+                <a href="/guest-display" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('guest-display*') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="{{ __('Display Access') }}">
                     <i class="ph-duotone ph-broadcast text-xl flex-shrink-0"></i>
-                    <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">Akses Display</span>
+                    <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">{{ __('Display Access') }}</span>
                 </a>
                 @endif
                 
@@ -241,15 +303,15 @@
 
             <!-- Group 3: Inspections & Reports -->
             <div class="p-4 border-t border-slate-200 flex flex-col gap-1.5">
-                <a href="/inspection-schedule" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('inspection-schedule') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="Inspection Schedule">
+                <a href="/inspection-schedule" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('inspection-schedule') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="{{ __('Inspection Schedule') }}">
                     <i class="ph-duotone ph-calendar-blank text-xl flex-shrink-0"></i>
-                    <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">Inspection Schedule</span>
+                    <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">{{ __('Inspection Schedule') }}</span>
                 </a>
 
                 @if(auth()->user()->role !== 'Staff')
-                <a href="/reports" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('reports') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="Reports">
+                <a href="/reports" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('reports') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="{{ __('Inspection Reports') }}">
                     <i class="ph-duotone ph-file-text text-xl flex-shrink-0"></i>
-                    <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">Inspection Reports</span>
+                    <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">{{ __('Inspection Reports') }}</span>
                 </a>
                 @endif
             </div>
@@ -257,9 +319,9 @@
             <!-- Group 4: Audit Trail -->
             @if(auth()->user()->role !== 'Staff')
             <div class="p-4 border-t border-slate-200 flex flex-col gap-1.5">
-                <a href="/activity-log" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('activity-log') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="Audit Trail">
+                <a href="/activity-log" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('activity-log') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="{{ __('Audit Trail') }}">
                     <i class="ph-bold ph-clock-counter-clockwise text-xl flex-shrink-0"></i>
-                    <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">Audit Trail</span>
+                    <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">{{ __('Audit Trail') }}</span>
                 </a>
             </div>
             @endif
@@ -392,22 +454,36 @@
 
             <!-- Right Actions -->
             <div class="flex-1 flex items-center justify-end gap-3">
-                <!-- Desktop Install PWA Button (Desktop Only) -->
+                <!-- Install PWA / APK Button (Desktop & Mobile, hides when installed) -->
                 <button type="button" 
-                        x-data="{ showBtn: false }"
-                        x-init="
-                            const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-                            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-                            if (!isMobileUA && !isStandalone && localStorage.getItem('pfe_pwa_installed') !== 'true') {
-                                showBtn = true;
+                        x-data="{
+                            isInstalled: window.__isPFEInstalled ? window.__isPFEInstalled() : false,
+                            init() {
+                                this.isInstalled = window.__isPFEInstalled ? window.__isPFEInstalled() : false;
+                                window.addEventListener('appinstalled', () => {
+                                    this.isInstalled = true;
+                                });
+                                window.addEventListener('pfe:installed', () => {
+                                    this.isInstalled = true;
+                                });
+                                if ('getInstalledRelatedApps' in navigator) {
+                                    navigator.getInstalledRelatedApps().then(apps => {
+                                        if (apps && apps.length > 0) {
+                                            this.isInstalled = true;
+                                            localStorage.setItem('pfe_pwa_installed', 'true');
+                                        }
+                                    }).catch(() => {});
+                                }
                             }
-                        "
-                        x-show="showBtn"
+                        }"
+                        x-show="!isInstalled"
+                        x-cloak
                         @click="window.dispatchEvent(new CustomEvent('pfe:trigger-install'))"
-                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#009B77]/10 hover:bg-[#009B77] text-[#009B77] hover:text-white font-bold text-xs transition-all border border-[#009B77]/20 cursor-pointer shadow-sm active:scale-95"
-                        title="Install PFE Monitoring Control System ke Desktop">
+                        class="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#009B77]/10 hover:bg-[#009B77] text-[#009B77] hover:text-white font-bold text-xs transition-all border border-[#009B77]/20 cursor-pointer shadow-sm active:scale-95"
+                        title="Install PFE Monitoring Control System (Aplikasi / APK)">
                     <i class="ph-bold ph-download-simple text-sm"></i>
-                    <span>Install App</span>
+                    <span class="hidden sm:inline">Install App</span>
+                    <span class="sm:hidden text-[11px]">Install</span>
                 </button>
 
                 @php
@@ -758,7 +834,7 @@
                                     </div>
                                     <div class="flex flex-col">
                                         <span class="text-sm font-bold text-slate-700 group-hover:text-indigo-600 transition-colors">{{ __('Open Display Report') }}</span>
-                                        <span class="text-[10px] font-semibold text-slate-500 mt-0.5">Mode Kiosk layar penuh (Kredensial Sesi Aktif)</span>
+                                        <span class="text-[10px] font-semibold text-slate-500 mt-0.5">{{ __('Full screen kiosk mode (Active Session Credential)') }}</span>
                                     </div>
                                 </div>
                                 <i class="ph-bold ph-arrow-square-out text-slate-400 group-hover:text-indigo-500 transition-colors"></i>
@@ -770,8 +846,8 @@
                                         <i class="ph-bold ph-key text-lg"></i>
                                     </div>
                                     <div class="flex flex-col">
-                                        <span class="text-sm font-bold text-slate-700 group-hover:text-[#009B77] transition-colors">Kelola Akses Viewer (PIN & Durasi)</span>
-                                        <span class="text-[10px] font-semibold text-slate-500 mt-0.5">Buat kredensial PIN dan atur tanggal aktif untuk viewer</span>
+                                        <span class="text-sm font-bold text-slate-700 group-hover:text-[#009B77] transition-colors">{{ __('Manage Viewer Access (PIN & Duration)') }}</span>
+                                        <span class="text-[10px] font-semibold text-slate-500 mt-0.5">{{ __('Create PIN credentials and configure active duration for viewers') }}</span>
                                     </div>
                                 </div>
                                 <i class="ph-bold ph-caret-right text-slate-400 group-hover:text-[#009B77] transition-colors"></i>
@@ -964,6 +1040,21 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') closeGlobalPhotoModal();
         });
+
+        // Pastikan seluruh unduhan, export, PDF, dan dokumen cetak selalu dibuka di tab/layar baru
+        // agar pengguna desktop PWA / standalone tidak terjebak tanpa tombol kembali.
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (!link) return;
+            const href = link.getAttribute('href') || link.href || '';
+            if (!href || href === '#' || href.startsWith('javascript:')) return;
+
+            const isDownloadOrDoc = /export-pdf|export-excel|export-checklist|print-all-qr|print-qr|download-qr|\.pdf(\?|$)/i.test(href) || link.hasAttribute('download');
+            if (isDownloadOrDoc) {
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+            }
+        }, true);
     </script>
     @stack('scripts')
 

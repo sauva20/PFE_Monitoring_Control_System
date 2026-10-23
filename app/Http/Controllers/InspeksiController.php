@@ -33,11 +33,10 @@ class InspeksiController extends Controller
             __('Apakah selang pemadam pada APAR tidak terdapat kerusakan, sobek, atau kebocoran?'),
             __('Apakah label instruksi penggunaan APAR masih terpasang dan mudah dibaca?'),
             __('Apakah tanggal terakhir inspeksi APAR telah dicatat dan sesuai dengan jadwal inspeksi yang ditetapkan?'),
-            __('Apakah APAR tersebut dilengkapi dengan segala perlengkapan tambahan yang diperlukan, seperti penyangga dinding atau bracket pemasangan?'),
+            __('Apakah APAR tersebut dilengkapi dengan segala perlengkapan tambahan yang diperlukan, seperti stand APAR?'),
             __('Apakah petunjuk penggunaan APAR dan tanda peringatan bahaya terkait penggunaan APAR tersedia dan mudah diakses?'),
             __('Apakah petugas yang bertanggung jawab terhadap APAR terlatih dalam penggunaan dan pemeliharaan APAR?'),
             __('Apakah daerah sekitar APAR bebas dari bahan yang mudah terbakar atau bahan yang dapat menghambat akses ke APAR?'),
-            __('Apakah APAR tersebut telah diuji atau dirakit kembali setelah digunakan sebelumnya?'),
 
             // 10 Item Pemeriksaan Fisik (Langkah 1)
             __('Jenis APAR'),
@@ -69,6 +68,8 @@ class InspeksiController extends Controller
 
         $gedungs = $query->with([
             'lokasi.apar',
+            'lokasi.apar.jenis',
+            'lokasi.apar.kapasitas',
             'lokasi.apar.inspeksis' => function ($query) use ($currentMonth, $currentYear) {
                 $query->whereMonth('created_at', $currentMonth)
                     ->whereYear('created_at', $currentYear)
@@ -269,7 +270,7 @@ class InspeksiController extends Controller
             : 'Ambil foto kondisi APAR secara langsung dari lokasi menggunakan kamera.';
 
         $request->validate([
-            'checklist' => 'required|array|size:25',
+            'checklist' => 'required|array|size:24',
             'checklist.*.jawaban' => 'required|in:ya,tidak,ada,tidak ada',
             'checklist.*.keterangan' => 'nullable|string',
             'status' => 'required|string',
@@ -312,9 +313,9 @@ class InspeksiController extends Controller
             $updateData['foto'] = $path;
         }
 
-        // Jika Lokasi APAR (index 24) "Tidak Sesuai", update master data lokasi
-        if (isset($request->checklist[24]) && $request->checklist[24]['jawaban'] === 'tidak ada' && ! empty($request->checklist[24]['keterangan'])) {
-            $newLokasiName = trim($request->checklist[24]['keterangan']);
+        // Jika Lokasi APAR (index 23) "Tidak Sesuai", update master data lokasi
+        if (isset($request->checklist[23]) && $request->checklist[23]['jawaban'] === 'tidak ada' && ! empty($request->checklist[23]['keterangan'])) {
+            $newLokasiName = trim($request->checklist[23]['keterangan']);
             $lokasi = Lokasi::firstOrCreate([
                 'nama' => $newLokasiName,
                 'gedung_id' => $apar->lokasi->gedung_id,
@@ -327,7 +328,13 @@ class InspeksiController extends Controller
 
         $status = $request->status;
         if ((int) $request->qty <= 0) {
-            $status = 'isi_ulang';
+            $status = 'perlu_refill';
+        } elseif ($status === 'layak') {
+            $status = 'sesuai';
+        } elseif ($status === 'isi_ulang') {
+            $status = 'perlu_refill';
+        } elseif (in_array($status, ['perbaikan', 'rusak', 'tidak_layak', 'service'])) {
+            $status = 'tidak_sesuai';
         }
 
         $apar->inspeksis()->create([

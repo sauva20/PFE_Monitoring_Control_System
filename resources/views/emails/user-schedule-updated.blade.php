@@ -52,7 +52,7 @@
         </div>
 
         <div style="background-color: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 24px; text-align: center; font-size: 13px; color: #64748b;">
-            <p style="margin: 0;">Email ini dikirim otomatis oleh PFE Monitoring Control System — EHSS Department. Harap tidak membalas email ini.</p>
+            <p style="margin: 0;">Email ini dikirim otomatis oleh PFE Monitoring Control System — EHSS. Harap tidak membalas email ini.</p>
         </div>
     </div>
 </body>

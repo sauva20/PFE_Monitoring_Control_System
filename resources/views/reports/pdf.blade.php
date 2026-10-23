@@ -138,10 +138,14 @@
                     <td>{{ $inspeksi->user->name ?? 'n/a' }}</td>
                     <td>
                         @if($inspeksi)
-                            @if($inspeksi->status == 'layak')
-                                <span style="color: #009B77; font-weight: bold;">{{ __('Pass') }}</span>
+                            @if(in_array($inspeksi->status, ['sesuai', 'layak']))
+                                <span style="color: #009B77; font-weight: bold;">{{ __('Sesuai') }}</span>
+                            @elseif(in_array($inspeksi->status, ['tidak_sesuai', 'perbaikan', 'rusak', 'tidak_layak']))
+                                <span style="color: #EF4444; font-weight: bold;">{{ __('Tidak Sesuai') }}</span>
+                            @elseif(in_array($inspeksi->status, ['perlu_refill', 'isi_ulang']))
+                                <span style="color: #F59E0B; font-weight: bold;">{{ __('Perlu Refill') }}</span>
                             @else
-                                <span style="color: #EF4444; font-weight: bold;">{{ __('Repair') }}</span>
+                                <span style="color: #64748B; font-weight: bold;">{{ str_replace('_', ' ', $inspeksi->status) }}</span>
                             @endif
                         @else
                             n/a

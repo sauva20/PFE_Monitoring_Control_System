@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Masa Akses Viewer Berakhir - PFE Monitoring Control System</title>
+    <title>{{ $isInactive ? __('Viewer Access Deactivated - PFE Monitoring Control System') : __('Viewer Access Expired - PFE Monitoring Control System') }}</title>
     <link rel="icon" href="{{ asset('favicon.svg') }}?v=3" type="image/svg+xml">
     
     <!-- Tailwind CSS -->
@@ -36,7 +36,7 @@
 </head>
 <body class="min-h-screen w-screen flex flex-col justify-between relative overflow-x-hidden text-slate-800 bg-[#F8FAFC]">
 
-    <!-- Decorative Blurs -->
+    <!-- Decorative Gradients -->
     <div class="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[500px] max-h-[500px] bg-rose-500 rounded-full mix-blend-multiply filter blur-[140px] opacity-10 pointer-events-none"></div>
     <div class="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] max-w-[500px] max-h-[500px] bg-amber-500 rounded-full mix-blend-multiply filter blur-[140px] opacity-10 pointer-events-none"></div>
 
@@ -51,12 +51,20 @@
                 <p class="text-[11px] font-semibold text-slate-500 tracking-wider">Environment, Health, Safety & Security</p>
             </div>
         </div>
+
+        <div class="flex items-center gap-3">
+            <!-- Language Switcher -->
+            <div class="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm text-xs font-bold">
+                <a href="{{ route('set-locale', 'id') }}" class="px-2.5 py-1 rounded-lg transition-all {{ app()->getLocale() === 'id' ? 'bg-[#009B77] text-white shadow-xs' : 'text-slate-500 hover:text-slate-800' }}">ID</a>
+                <a href="{{ route('set-locale', 'en') }}" class="px-2.5 py-1 rounded-lg transition-all {{ app()->getLocale() === 'en' ? 'bg-[#009B77] text-white shadow-xs' : 'text-slate-500 hover:text-slate-800' }}">EN</a>
+            </div>
+        </div>
     </header>
 
     <!-- Main Container -->
     <main class="flex-1 flex items-center justify-center p-4 sm:p-6 relative z-10 my-6">
         
-        <div class="w-full max-w-md bg-white/95 backdrop-blur-xl rounded-[28px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-slate-200/70 overflow-hidden text-center p-8 sm:p-10">
+        <div class="w-full max-w-md bg-white rounded-[28px] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-slate-200/70 overflow-hidden text-center p-8 sm:p-10">
             
             @if(session('success'))
             <div class="mb-6 bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 flex items-center gap-2.5 text-left shadow-sm">
@@ -78,20 +86,20 @@
 
             <!-- Title & Subtitle -->
             @if($isInactive)
-                <h2 class="text-xl font-bold text-slate-900 tracking-tight">Akses Viewer Dinonaktifkan</h2>
+                <h2 class="text-xl font-bold text-slate-900 tracking-tight">{{ __('Viewer Access Deactivated') }}</h2>
                 <p class="text-xs text-slate-500 font-medium mt-2 leading-relaxed">
-                    Tautan akses display report ini telah dinonaktifkan oleh Administrator EHSS. Silakan hubungi tim EHSS jika Anda memerlukan aktivasi kembali.
+                    {{ __('This display report access link has been deactivated by the EHSS Administrator. Please contact the EHSS team if you require reactivation.') }}
                 </p>
             @else
-                <h2 class="text-xl font-bold text-slate-900 tracking-tight">Masa Berlaku Akses Telah Berakhir</h2>
+                <h2 class="text-xl font-bold text-slate-900 tracking-tight">{{ __('Access Validity Period Has Ended') }}</h2>
                 <p class="text-xs text-slate-500 font-medium mt-2 leading-relaxed">
-                    Masa aktif tautan display untuk Viewer ini telah kedaluwarsa pada tanggal <strong class="text-slate-800">{{ \Carbon\Carbon::parse($guest->valid_until)->translatedFormat('d F Y') }}</strong> (23:59 WIB).
+                    {{ __('The display link validity for this Viewer expired on :date (23:59 WIB).', ['date' => \Carbon\Carbon::parse($guest->valid_until)->translatedFormat('d F Y')]) }}
                 </p>
             @endif
 
             <!-- Guest Card -->
             <div class="my-6 bg-slate-50 rounded-2xl p-4 border border-slate-200 text-left">
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Informasi Viewer</p>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ __('Viewer Information') }}</p>
                 <h4 class="text-sm font-bold text-slate-800 mt-1">{{ $guest->name }}</h4>
                 <p class="text-xs text-slate-600 font-medium flex items-center gap-1.5 mt-0.5">
                     <i class="ph-bold ph-buildings text-slate-400"></i>
@@ -107,17 +115,9 @@
             <div class="bg-amber-50/80 border border-amber-200/80 rounded-2xl p-4 text-xs text-amber-900 leading-relaxed text-left flex items-start gap-3">
                 <i class="ph-fill ph-info text-amber-600 text-base mt-0.5 flex-shrink-0"></i>
                 <div>
-                    <strong class="font-bold block mb-0.5">{{ __('Perpanjangan Akses') }}</strong>
-                    <span>Jika Anda masih memerlukan akses pemantauan ini, silakan hubungi tim EHSS (Environment, Health, Safety & Security) untuk memperpanjang durasi akses.</span>
+                    <strong class="font-bold block mb-0.5">{{ __('Access Extension') }}</strong>
+                    <span>{{ __('If you still require monitoring access, please contact the EHSS team (Environment, Health, Safety & Security) to extend access duration.') }}</span>
                 </div>
-            </div>
-
-            <!-- Action Button -->
-            <div class="mt-8">
-                <a href="{{ url('/') }}" class="inline-flex items-center justify-center gap-2 w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-3.5 px-6 rounded-2xl shadow-sm transition-all text-xs uppercase tracking-wider">
-                    <i class="ph-bold ph-arrow-left"></i>
-                    <span>{{ __('Kembali ke Halaman Utama') }}</span>
-                </a>
             </div>
 
         </div>
@@ -126,7 +126,7 @@
 
     <!-- Page Footer -->
     <footer class="w-full text-center py-4 text-xs font-semibold text-slate-400 relative z-10">
-        &copy; {{ date('Y') }} EHSS Department — Environment, Health, Safety & Security. All rights reserved.
+        &copy; {{ date('Y') }} EHSS — Environment, Health, Safety & Security. All rights reserved.
     </footer>
 
 </body>

@@ -144,7 +144,7 @@ class InspectionFlowTest extends TestCase
 
         // 3. User menyelesaikan inspeksi APAR 1
         $checklist = [];
-        for ($i = 0; $i < 25; $i++) {
+        for ($i = 0; $i < 24; $i++) {
             $checklist[$i] = [
                 'jawaban' => 'ya',
                 'keterangan' => null,
@@ -153,7 +153,7 @@ class InspectionFlowTest extends TestCase
 
         $resStore = $this->post(route('inspeksi.store', ['apar' => $apar1->id]), [
             'checklist' => $checklist,
-            'status' => 'layak',
+            'status' => 'sesuai',
             'foto_base64' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
             'qty' => 1,
             'tgl_kedaluwarsa' => now()->addYear()->format('Y-m-d'),

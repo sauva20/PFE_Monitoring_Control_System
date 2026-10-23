@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="{{ app()->getLocale() }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Verifikasi PIN Viewer - PFE Monitoring Control System</title>
+    <title>{{ __('Viewer PIN Verification - PFE Monitoring Control System') }}</title>
     <link rel="icon" href="{{ asset('favicon.svg') }}?v=3" type="image/svg+xml">
     
     <!-- Tailwind CSS -->
@@ -49,7 +49,7 @@
 </head>
 <body class="min-h-screen w-screen flex flex-col justify-between relative overflow-x-hidden text-slate-800 bg-[#F8FAFC]">
 
-    <!-- Decorative Blurs -->
+    <!-- Decorative Gradients -->
     <div class="fixed top-[-10%] left-[-10%] w-[50vw] h-[50vw] max-w-[450px] max-h-[450px] bg-[#009B77] rounded-full mix-blend-multiply filter blur-[120px] opacity-15 pointer-events-none"></div>
     <div class="fixed bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] max-w-[450px] max-h-[450px] bg-emerald-600 rounded-full mix-blend-multiply filter blur-[120px] opacity-10 pointer-events-none"></div>
 
@@ -65,9 +65,16 @@
             </div>
         </div>
 
-        <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-sm text-xs text-slate-600 font-semibold">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>EHSS Public Display Portal</span>
+        <div class="flex items-center gap-3">
+            <div class="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-slate-200 shadow-sm text-xs text-slate-600 font-semibold">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>EHSS Public Display Portal</span>
+            </div>
+            <!-- Language Switcher -->
+            <div class="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm text-xs font-bold">
+                <a href="{{ route('set-locale', 'id') }}" class="px-2.5 py-1 rounded-lg transition-all {{ app()->getLocale() === 'id' ? 'bg-[#009B77] text-white shadow-xs' : 'text-slate-500 hover:text-slate-800' }}">ID</a>
+                <a href="{{ route('set-locale', 'en') }}" class="px-2.5 py-1 rounded-lg transition-all {{ app()->getLocale() === 'en' ? 'bg-[#009B77] text-white shadow-xs' : 'text-slate-500 hover:text-slate-800' }}">EN</a>
+            </div>
         </div>
     </header>
 
@@ -200,16 +207,16 @@
             
             <!-- Top Branding Area -->
             <div class="bg-gradient-to-br from-[#009B77] to-[#008264] px-6 py-7 text-white text-center relative overflow-hidden">
-                <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 mx-auto flex items-center justify-center text-white mb-3 shadow-inner">
+                <div class="w-12 h-12 rounded-2xl bg-white/15 border border-white/20 mx-auto flex items-center justify-center text-white mb-3 shadow-inner">
                     <i class="ph-bold ph-shield-check text-2xl"></i>
                 </div>
                 
-                <h2 class="text-lg sm:text-xl font-bold tracking-tight">Verifikasi Akses Viewer</h2>
-                <p class="text-xs text-emerald-100 font-medium mt-1">Masukkan 4 digit PIN yang tertera pada email Anda</p>
+                <h2 class="text-lg sm:text-xl font-bold tracking-tight">{{ __('Viewer Access Verification') }}</h2>
+                <p class="text-xs text-emerald-100 font-medium mt-1">{{ __('Enter the 4-digit PIN provided in your email') }}</p>
 
                 <!-- Viewer Identity Pill -->
                 <div class="mt-4 pt-3 border-t border-white/15 flex flex-col items-center">
-                    <span class="text-[10px] font-bold text-emerald-100 uppercase tracking-wider">Viewer Terdaftar</span>
+                    <span class="text-[10px] font-bold text-emerald-100 uppercase tracking-wider">{{ __('Registered Viewer') }}</span>
                     <span class="text-sm font-bold text-white mt-0.5">{{ $guest->name }}</span>
                     <span class="text-xs text-emerald-200 font-semibold mt-0.5">{{ $guest->institution }}</span>
                 </div>
@@ -220,9 +227,9 @@
 
                 <!-- Validity Info Bar -->
                 <div class="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between text-xs">
-                    <span class="font-bold text-slate-500 uppercase tracking-wider text-[11px]">Masa Berlaku</span>
+                    <span class="font-bold text-slate-500 uppercase tracking-wider text-[11px]">{{ __('Validity Period') }}</span>
                     <span class="font-bold text-slate-700">
-                        s.d. {{ \Carbon\Carbon::parse($guest->valid_until)->translatedFormat('d F Y') }} <span class="text-[10px] text-slate-400 font-normal">(23:59 WIB)</span>
+                        {{ __('until') }} {{ \Carbon\Carbon::parse($guest->valid_until)->translatedFormat('d F Y') }} <span class="text-[10px] text-slate-400 font-normal">(23:59 WIB)</span>
                     </span>
                 </div>
 
@@ -230,9 +237,9 @@
                 <div class="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-start gap-2.5 shadow-sm text-left">
                     <i class="ph-bold ph-lock text-amber-600 text-lg flex-shrink-0 mt-0.5 leading-none"></i>
                     <div>
-                        <strong class="text-xs text-amber-900 font-bold block mb-0.5">Perangkat Diblokir</strong>
+                        <strong class="text-xs text-amber-900 font-bold block mb-0.5">{{ __('Device Blocked') }}</strong>
                         <span class="text-xs text-amber-800 font-medium leading-relaxed block">
-                            Akses verifikasi PIN diblokir karena telah mencapai batas maksimal percobaan salah dari perangkat ini.
+                            {{ __('PIN verification access is blocked due to reaching maximum failed attempts from this device.') }}
                         </span>
                     </div>
                 </div>
@@ -266,11 +273,11 @@
                     <div>
                         <div class="flex items-center justify-between mb-3 px-1">
                             <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider">
-                                PIN Akses Viewer (4 Digit)
+                                {{ __('Access PIN (4 Digits)') }}
                             </label>
                             <button type="button" @click="showPin = !showPin" class="text-xs font-semibold text-[#009B77] hover:underline flex items-center gap-1 focus:outline-none">
                                 <i class="ph-bold" :class="showPin ? 'ph-eye-slash' : 'ph-eye'"></i>
-                                <span x-text="showPin ? 'Sembunyikan' : 'Lihat PIN'"></span>
+                                <span x-text="showPin ? '{{ __('Hide') }}' : '{{ __('Show PIN') }}'"></span>
                             </button>
                         </div>
 
@@ -326,7 +333,7 @@
                         </div>
 
                         <p class="text-[11px] text-slate-400 text-center mt-3 font-medium">
-                            Ketik 4 digit angka PIN atau tempel (paste) langsung dari email.
+                            {{ __('Type your 4-digit PIN or paste it directly from email.') }}
                         </p>
                     </div>
 
@@ -337,14 +344,14 @@
                                 class="w-full bg-[#009B77] hover:bg-[#008264] disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold py-3.5 px-6 rounded-2xl shadow-[0_6px_20px_rgba(0,155,119,0.25)] disabled:shadow-none transition-all flex items-center justify-center gap-2 text-sm uppercase tracking-wider active:scale-[0.98]">
                             <template x-if="!loading">
                                 <span class="flex items-center gap-2">
-                                    <span>Buka Laporan Display</span>
+                                    <span>{{ __('Open Display Report') }}</span>
                                     <i class="ph-bold ph-arrow-right"></i>
                                 </span>
                             </template>
                             <template x-if="loading">
                                 <span class="flex items-center gap-2">
                                     <i class="ph-bold ph-spinner animate-spin"></i>
-                                    <span>Memverifikasi...</span>
+                                    <span>{{ __('Verifying...') }}</span>
                                 </span>
                             </template>
                         </button>
@@ -356,7 +363,7 @@
             <!-- Footer Card Note -->
             <div class="bg-slate-50 border-t border-slate-100 px-6 py-4 text-center">
                 <p class="text-[11px] text-slate-400 font-medium leading-relaxed">
-                    Akses display ini diawasi oleh Departemen EHSS (Environment, Health, Safety & Security).
+                    {{ __('This display access is monitored by EHSS (Environment, Health, Safety & Security).') }}
                 </p>
             </div>
 
@@ -366,7 +373,7 @@
 
     <!-- Page Footer -->
     <footer class="w-full text-center py-4 text-xs font-semibold text-slate-400 relative z-10">
-        &copy; {{ date('Y') }} EHSS Department — Environment, Health, Safety & Security. All rights reserved.
+        &copy; {{ date('Y') }} EHSS — Environment, Health, Safety & Security. All rights reserved.
     </footer>
 
 </body>
