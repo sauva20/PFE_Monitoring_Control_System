@@ -144,7 +144,7 @@ class InspectionFlowTest extends TestCase
 
         // 3. User menyelesaikan inspeksi APAR 1
         $checklist = [];
-        for ($i = 0; $i < 24; $i++) {
+        for ($i = 0; $i < 23; $i++) {
             $checklist[$i] = [
                 'jawaban' => 'ya',
                 'keterangan' => null,
@@ -165,13 +165,13 @@ class InspectionFlowTest extends TestCase
         $this->assertAuthenticatedAs($user);
         $resStore->assertRedirect(route('inspeksi.sukses', ['apar' => $apar1->id]));
 
-        // 4. Petugas menscan APAR 2
+        // 4. Petugas menscan APAR 2 / kembali ke halaman scan
         $resScan2 = $this->get(route('scan.apar', ['kode' => $apar2->kode]));
 
-        // Petugas tetap login dan diarahkan ke link inspeksi langsung tanpa modal PIN
-        $this->assertAuthenticatedAs($user);
+        // Sesi login dihapus langsung agar wajib memasukkan PIN kembali dan tidak ada manual logout ke form login
+        $this->assertGuest();
         $resScan2->assertStatus(200);
-        $resScan2->assertSee(route('inspeksi.pedoman', $apar2->id));
-        $resScan2->assertSee('Petugas Lapangan');
+        $resScan2->assertSee('showPinModal = true', false);
+        $resScan2->assertDontSee(route('logout'));
     }
 }

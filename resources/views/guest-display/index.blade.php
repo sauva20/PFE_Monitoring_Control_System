@@ -3,86 +3,7 @@
 @section('title', __('Viewer Display Access - PFE Monitoring Control System'))
 
 @section('content')
-<div class="space-y-6" x-data="{
-    showAddModal: {{ old('form_type') === 'add' && $errors->any() ? 'true' : 'false' }},
-    showEditModal: {{ old('form_type') === 'edit' && $errors->any() ? 'true' : 'false' }},
-    showDeleteModal: false,
-    deleteUrl: '',
-    deleteGuestName: '',
-    showResendModal: false,
-    resendUrl: '',
-    resendGuestName: '',
-    resendGuestEmail: '',
-    copiedToken: null,
-    editGuest: {
-        id: '{{ old('form_type') === 'edit' ? old('id') : '' }}',
-        name: '{{ old('form_type') === 'edit' ? old('name') : '' }}',
-        institution: '{{ old('form_type') === 'edit' ? old('institution') : '' }}',
-        email: '{{ old('form_type') === 'edit' ? old('email') : '' }}',
-        pin: '{{ old('form_type') === 'edit' ? old('pin') : '' }}',
-        valid_until: '{{ old('form_type') === 'edit' ? old('valid_until') : '' }}',
-        is_active: {{ old('form_type') === 'edit' ? (old('is_active') ? 'true' : 'false') : 'true' }}
-    },
-    newGuest: {
-        pin: '{{ old('form_type') === 'add' ? old('pin') : '' }}'
-    },
-    generatePin(target) {
-        const randomPin = Math.floor(1000 + Math.random() * 9000).toString();
-        if (target === 'new') {
-            this.newGuest.pin = randomPin;
-        } else if (target === 'edit') {
-            this.editGuest.pin = randomPin;
-        }
-    },
-    copyToClipboard(text, id) {
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(text).then(() => {
-                this.copiedToken = id;
-                setTimeout(() => this.copiedToken = null, 2500);
-            });
-        } else {
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            textArea.style.position = 'fixed';
-            textArea.style.left = '-999999px';
-            textArea.style.top = '-999999px';
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select();
-            try {
-                document.execCommand('copy');
-                this.copiedToken = id;
-                setTimeout(() => this.copiedToken = null, 2500);
-            } catch (err) {
-                console.error('Failed to copy link:', err);
-            }
-            textArea.remove();
-        }
-    },
-    openEdit(guest) {
-        this.editGuest = {
-            id: guest.id,
-            name: guest.name,
-            institution: guest.institution,
-            email: guest.email,
-            pin: guest.pin,
-            valid_until: guest.valid_until ? (typeof guest.valid_until === 'string' ? guest.valid_until.substring(0, 10) : '') : '',
-            is_active: Boolean(guest.is_active)
-        };
-        this.showEditModal = true;
-    },
-    openDelete(url, name) {
-        this.deleteUrl = url;
-        this.deleteGuestName = name;
-        this.showDeleteModal = true;
-    },
-    openResend(url, name, email) {
-        this.resendUrl = url;
-        this.resendGuestName = name;
-        this.resendGuestEmail = email;
-        this.showResendModal = true;
-    }
-}">
+<div class="space-y-6" x-data="guestDisplayManager">
 
     <!-- Header Area -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200/60">
@@ -113,13 +34,6 @@
     </div>
 
     <!-- Stats Quick Cards -->
-    @php
-        $totalGuestCount = \App\Models\GuestDisplay::count();
-        $activeGuestCount = \App\Models\GuestDisplay::where('is_active', true)->whereDate('valid_until', '>=', \Carbon\Carbon::today())->count();
-        $inactiveOrExpiredGuestCount = \App\Models\GuestDisplay::where(function($q) {
-            $q->where('is_active', false)->orWhereDate('valid_until', '<', \Carbon\Carbon::today());
-        })->count();
-    @endphp
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm flex items-center gap-4">
             <div class="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
@@ -127,7 +41,7 @@
             </div>
             <div>
                 <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">{{ __('Total Viewer Access') }}</p>
-                <h3 class="text-2xl font-black text-slate-800 mt-0.5">{{ $totalGuestCount }}</h3>
+                <h3 class="text-2xl font-black text-slate-800 mt-0.5">{{ $totalGuestCount ?? 0 }}</h3>
             </div>
         </div>
 
@@ -220,6 +134,7 @@
                         <th class="py-4 px-4 text-xs font-bold uppercase tracking-wider">{{ __('PIN (4 Digits)') }}</th>
                         <th class="py-4 px-4 text-xs font-bold uppercase tracking-wider">{{ __('Validity Period') }}</th>
                         <th class="py-4 px-4 text-xs font-bold uppercase tracking-wider">{{ __('Status') }}</th>
+                        <th class="py-4 px-4 text-xs font-bold uppercase tracking-wider">{{ __('Created By') }}</th>
                         <th class="py-4 px-4 text-xs font-bold uppercase tracking-wider">{{ __('Last Accessed') }}</th>
                         <th class="py-4 px-5 text-xs font-bold uppercase tracking-wider w-48">{{ __('Action') }}</th>
                     </tr>
@@ -320,10 +235,24 @@
                             @endif
                         </td>
 
+                        <!-- Created By -->
+                        <td class="py-4 px-4 text-center">
+                            @if($guest->creator)
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200/80 text-xs font-bold text-slate-700">
+                                    <div class="w-5 h-5 rounded-full bg-[#009B77]/10 text-[#009B77] flex items-center justify-center text-[10px] font-black">
+                                        {{ strtoupper(substr($guest->creator->name, 0, 1)) }}
+                                    </div>
+                                    <span>{{ $guest->creator->name }}</span>
+                                </div>
+                            @else
+                                <span class="text-slate-400 text-xs italic">{{ __('System / Admin') }}</span>
+                            @endif
+                        </td>
+
                         <!-- Last Accessed -->
                         <td class="py-4 px-4 text-center text-xs">
                             @if($guest->last_accessed_at)
-                                <span class="font-bold text-slate-700">{{ \Carbon\Carbon::parse($guest->last_accessed_at)->translatedFormat('d M Y') }}</span>
+                                <span class="font-bold text-slate-700">{{ \Carbon\Carbon::parse($guest->last_accessed_at)->locale(app()->getLocale())->translatedFormat('d M Y') }}</span>
                                 <span class="block text-[10px] text-slate-400 font-semibold">{{ \Carbon\Carbon::parse($guest->last_accessed_at)->format('H:i') }} WIB</span>
                             @else
                                 <span class="text-slate-400 font-medium italic">{{ __('Never') }}</span>
@@ -375,7 +304,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="py-12 text-center text-slate-400">
+                        <td colspan="9" class="py-12 text-center text-slate-400">
                             <div class="flex flex-col items-center justify-center">
                                 <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-300 mb-3">
                                     <i class="ph-bold ph-identification-card text-3xl"></i>
@@ -487,8 +416,12 @@
                                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
                                     <i class="ph-bold ph-key text-base"></i>
                                 </div>
-                                <input type="text" name="pin" x-model="newGuest.pin" required maxlength="4" pattern="[0-9]{4}" placeholder="1234" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold tracking-widest focus:bg-white focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all @error('pin') border-rose-500 @enderror">
+                                <input type="text" name="pin" x-model="newGuest.pin" required maxlength="4" pattern="[0-9]{4}" placeholder="1234" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono font-bold tracking-widest focus:bg-white focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all @error('pin') border-rose-500 @enderror" :class="isPinDuplicate(newGuest.pin) ? 'border-rose-500 bg-rose-50/50' : 'border-slate-200'">
                             </div>
+                            <p x-show="isPinDuplicate(newGuest.pin)" class="text-rose-500 text-xs mt-1 font-semibold flex items-center gap-1" x-cloak>
+                                <i class="ph-bold ph-warning"></i>
+                                <span>{{ __('PIN ini sudah terdaftar dalam sistem. Silakan gunakan atau acak PIN lain.') }}</span>
+                            </p>
                             @error('pin')
                                 <p class="text-rose-500 text-xs mt-1 font-semibold">{{ $message }}</p>
                             @enderror
@@ -497,11 +430,11 @@
                         <!-- Batas Tanggal Berlaku -->
                         <div>
                             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">{{ __('Valid Until') }} <span class="text-rose-500">*</span></label>
-                            <div class="relative">
-                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                            <div class="relative" x-data x-init="flatpickr($refs.validUntilAddInput, { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd F Y', minDate: 'today', defaultDate: '{{ old('valid_until', date('Y-m-d', strtotime('+7 days'))) }}', disableMobile: true })">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 z-10">
                                     <i class="ph-bold ph-calendar text-base"></i>
                                 </div>
-                                <input type="date" name="valid_until" value="{{ old('valid_until', date('Y-m-d', strtotime('+7 days'))) }}" min="{{ date('Y-m-d') }}" required class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all @error('valid_until') border-rose-500 @enderror">
+                                <input type="text" x-ref="validUntilAddInput" name="valid_until" required class="datepicker w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all @error('valid_until') border-rose-500 @enderror">
                             </div>
                             @error('valid_until')
                                 <p class="text-rose-500 text-xs mt-1 font-semibold">{{ $message }}</p>
@@ -520,7 +453,7 @@
                         <button type="button" @click="showAddModal = false" class="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                             {{ __('Cancel') }}
                         </button>
-                        <button type="submit" class="btn-smooth-ring bg-[#009B77] hover:bg-[#008264] text-white font-bold py-2.5 px-6 rounded-xl shadow-[0_4px_12px_rgba(0,155,119,0.25)] transition-all flex items-center gap-2 text-sm">
+                        <button type="submit" :disabled="isPinDuplicate(newGuest.pin)" :class="isPinDuplicate(newGuest.pin) ? 'opacity-50 cursor-not-allowed' : ''" class="btn-smooth-ring bg-[#009B77] hover:bg-[#008264] text-white font-bold py-2.5 px-6 rounded-xl shadow-[0_4px_12px_rgba(0,155,119,0.25)] transition-all flex items-center gap-2 text-sm">
                             <i class="ph-bold ph-paper-plane-tilt"></i>
                             <span>{{ __('Save & Send Email') }}</span>
                         </button>
@@ -592,7 +525,16 @@
                                     <i class="ph-bold ph-arrows-clockwise"></i> {{ __('Randomize') }}
                                 </button>
                             </div>
-                            <input type="text" name="pin" x-model="editGuest.pin" required maxlength="4" pattern="[0-9]{4}" placeholder="1234" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono font-bold tracking-widest focus:bg-white focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all">
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                                    <i class="ph-bold ph-key text-base"></i>
+                                </div>
+                                <input type="text" name="pin" x-model="editGuest.pin" required maxlength="4" pattern="[0-9]{4}" placeholder="1234" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4)" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-xl text-sm font-mono font-bold tracking-widest focus:bg-white focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all" :class="isPinDuplicate(editGuest.pin, true) ? 'border-rose-500 bg-rose-50/50' : 'border-slate-200'">
+                            </div>
+                            <p x-show="isPinDuplicate(editGuest.pin, true)" class="text-rose-500 text-xs mt-1 font-semibold flex items-center gap-1" x-cloak>
+                                <i class="ph-bold ph-warning"></i>
+                                <span>{{ __('PIN ini sudah terdaftar dalam sistem. Silakan pilih atau acak PIN lain.') }}</span>
+                            </p>
                         </div>
 
                         <div>
@@ -605,7 +547,22 @@
                                     <i class="ph-bold ph-calendar-plus"></i> +7 {{ __('Days') }}
                                 </button>
                             </div>
-                            <input type="date" name="valid_until" x-model="editGuest.valid_until" required class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all">
+                            <div class="relative" x-data x-init="
+                                let fpEdit = flatpickr($refs.validUntilEditInput, { 
+                                    dateFormat: 'Y-m-d', 
+                                    altInput: true, 
+                                    altFormat: 'd F Y', 
+                                    minDate: 'today', 
+                                    disableMobile: true,
+                                    onChange: (s, d) => { editGuest.valid_until = d; } 
+                                });
+                                $watch('editGuest.valid_until', val => { if(fpEdit && val) fpEdit.setDate(val, false); });
+                            ">
+                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 z-10">
+                                    <i class="ph-bold ph-calendar text-base"></i>
+                                </div>
+                                <input type="text" x-ref="validUntilEditInput" name="valid_until" :value="editGuest.valid_until" required class="datepicker w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all">
+                            </div>
                             <p x-show="editGuest.valid_until && editGuest.valid_until < new Date().toISOString().split('T')[0]" class="text-[11px] text-amber-600 font-semibold mt-1 flex items-center gap-1">
                                 <i class="ph-bold ph-warning"></i>
                                 <span>{{ __('Access is currently expired. Please extend date to reactivate.') }}</span>
@@ -613,8 +570,31 @@
                         </div>
                     </div>
 
+                    <!-- Last Accessed Date Field -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">{{ __('Last Accessed') }}</label>
+                            <span class="text-[10px] text-slate-400 font-medium">{{ __('Recorded automatically upon viewer access or edit') }}</span>
+                        </div>
+                        <div class="relative" x-data x-init="
+                            let fpLast = flatpickr($refs.lastAccessedEditInput, { 
+                                dateFormat: 'Y-m-d', 
+                                altInput: true, 
+                                altFormat: 'd F Y', 
+                                disableMobile: true,
+                                onChange: (s, d) => { editGuest.last_accessed_at = d; } 
+                            });
+                            $watch('editGuest.last_accessed_at', val => { if(fpLast) fpLast.setDate(val || '', false); });
+                        ">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 z-10">
+                                <i class="ph-bold ph-clock-counter-clockwise text-base"></i>
+                            </div>
+                            <input type="text" x-ref="lastAccessedEditInput" name="last_accessed_at" :value="editGuest.last_accessed_at" placeholder="{{ __('Belum pernah diakses / Never') }}" class="datepicker w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all">
+                        </div>
+                    </div>
+
                     <!-- Toggle Status Aktif -->
-                    <div class="pt-2">
+                    <div class="pt-1">
                         <label class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100/70 transition-colors">
                             <input type="hidden" name="is_active" value="0">
                             <input type="checkbox" name="is_active" value="1" x-model="editGuest.is_active" class="w-4 h-4 text-[#009B77] border-slate-300 rounded focus:ring-[#009B77]">
@@ -630,7 +610,7 @@
                         <button type="button" @click="showEditModal = false" class="px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
                             {{ __('Cancel') }}
                         </button>
-                        <button type="submit" class="btn-smooth-ring bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition-all flex items-center gap-2 text-sm">
+                        <button type="submit" :disabled="isPinDuplicate(editGuest.pin, true)" :class="isPinDuplicate(editGuest.pin, true) ? 'opacity-50 cursor-not-allowed' : ''" class="btn-smooth-ring bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 px-6 rounded-xl shadow-md transition-all flex items-center gap-2 text-sm">
                             <i class="ph-bold ph-floppy-disk"></i>
                             <span>{{ __('Save Changes') }}</span>
                         </button>
@@ -716,4 +696,105 @@
     </template>
 
 </div>
+
+<script>
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('guestDisplayManager', () => ({
+            showAddModal: {{ old('form_type') === 'add' && $errors->any() ? 'true' : 'false' }},
+            showEditModal: {{ old('form_type') === 'edit' && $errors->any() ? 'true' : 'false' }},
+            showDeleteModal: false,
+            deleteUrl: '',
+            deleteGuestName: '',
+            showResendModal: false,
+            resendUrl: '',
+            resendGuestName: '',
+            resendGuestEmail: '',
+            copiedToken: null,
+            existingPins: @json($allExistingPins ?? []),
+            editGuestOriginalPin: '{{ old('form_type') === 'edit' ? old('pin') : '' }}',
+            editGuest: {
+                id: '{{ old('form_type') === 'edit' ? old('id') : '' }}',
+                name: '{{ old('form_type') === 'edit' ? old('name') : '' }}',
+                institution: '{{ old('form_type') === 'edit' ? old('institution') : '' }}',
+                email: '{{ old('form_type') === 'edit' ? old('email') : '' }}',
+                pin: '{{ old('form_type') === 'edit' ? old('pin') : '' }}',
+                valid_until: '{{ old('form_type') === 'edit' ? old('valid_until') : '' }}',
+                last_accessed_at: '{{ old('form_type') === 'edit' ? old('last_accessed_at') : '' }}',
+                is_active: {{ old('form_type') === 'edit' ? (old('is_active') ? 'true' : 'false') : 'true' }}
+            },
+            newGuest: {
+                pin: '{{ old('form_type') === 'add' ? old('pin') : '' }}'
+            },
+            generatePin(target) {
+                let randomPin = '';
+                let attempts = 0;
+                do {
+                    randomPin = Math.floor(1000 + Math.random() * 9000).toString();
+                    attempts++;
+                } while (this.existingPins.includes(randomPin) && attempts < 1000);
+
+                if (target === 'new') {
+                    this.newGuest.pin = randomPin;
+                } else if (target === 'edit') {
+                    this.editGuest.pin = randomPin;
+                }
+            },
+            isPinDuplicate(pin, isEdit = false) {
+                if (!pin || pin.length !== 4) return false;
+                if (isEdit && pin === this.editGuestOriginalPin) return false;
+                return this.existingPins.includes(pin);
+            },
+            copyToClipboard(text, id) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        this.copiedToken = id;
+                        setTimeout(() => this.copiedToken = null, 2500);
+                    });
+                } else {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'fixed';
+                    textArea.style.left = '-999999px';
+                    textArea.style.top = '-999999px';
+                    document.body.appendChild(textArea);
+                    textArea.focus();
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        this.copiedToken = id;
+                        setTimeout(() => this.copiedToken = null, 2500);
+                    } catch (err) {
+                        console.error('Failed to copy link:', err);
+                    }
+                    textArea.remove();
+                }
+            },
+            openEdit(guest) {
+                this.editGuestOriginalPin = guest.pin;
+                this.editGuest = {
+                    id: guest.id,
+                    name: guest.name,
+                    institution: guest.institution,
+                    email: guest.email,
+                    pin: guest.pin,
+                    valid_until: guest.valid_until ? (typeof guest.valid_until === 'string' ? guest.valid_until.substring(0, 10) : '') : '',
+                    last_accessed_at: guest.last_accessed_at ? (typeof guest.last_accessed_at === 'string' ? guest.last_accessed_at.substring(0, 10) : '') : '',
+                    is_active: Boolean(guest.is_active)
+                };
+                this.showEditModal = true;
+            },
+            openDelete(url, name) {
+                this.deleteUrl = url;
+                this.deleteGuestName = name;
+                this.showDeleteModal = true;
+            },
+            openResend(url, name, email) {
+                this.resendUrl = url;
+                this.resendGuestName = name;
+                this.resendGuestEmail = email;
+                this.showResendModal = true;
+            }
+        }));
+    });
+</script>
 @endsection

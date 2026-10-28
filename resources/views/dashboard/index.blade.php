@@ -116,8 +116,16 @@
                 <i class="ph-bold ph-calendar-blank text-lg"></i>
             </div>
             <div>
-                <h2 class="text-base font-bold text-slate-800 leading-tight">{{ __('Today\'s Statistics') }}</h2>
-                <p class="text-xs font-semibold text-slate-500 mt-0.5">{{ \Carbon\Carbon::now()->locale(app()->getLocale())->translatedFormat('l, d F Y') }}</p>
+                @php
+                    $isCurrentMonthYear = ((int)$selectedMonth == (int)now()->month && (int)$selectedYear == (int)now()->year);
+                    $selectedDateObj = \Carbon\Carbon::createFromDate((int)$selectedYear, (int)$selectedMonth, 1)->locale(app()->getLocale());
+                @endphp
+                <h2 class="text-base font-bold text-slate-800 leading-tight">
+                    {{ $isCurrentMonthYear ? __('Today\'s Statistics') : __('Monthly Statistics') }}
+                </h2>
+                <p class="text-xs font-semibold text-slate-500 mt-0.5">
+                    {{ $isCurrentMonthYear ? \Carbon\Carbon::now()->locale(app()->getLocale())->translatedFormat('l, d F Y') : $selectedDateObj->translatedFormat('F Y') }}
+                </p>
             </div>
         </div>
 
@@ -437,35 +445,35 @@
     </div>
 
     <!-- Charts Section -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
         <!-- Monthly Inspections Chart -->
-        <div class="lg:col-span-2 print-col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200/60 p-4 flex flex-col h-full chart-container">
-            <div class="flex items-center justify-between mb-3">
+        <div class="lg:col-span-2 print-col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 flex flex-col justify-between h-full chart-container">
+            <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-lg font-bold text-slate-800">{{ __('Inspection Trend Year') }} {{ $selectedYear }}</h3>
-                    <p class="text-xs text-slate-500 mt-1">{{ __('Comparison of INSPECTED and UNINSPECTED PFE every month') }}</p>
+                    <h3 class="text-base font-bold text-slate-800 leading-tight">{{ __('Inspection Trend Year') }} {{ $selectedYear }}</h3>
+                    <p class="text-xs font-semibold text-slate-500 mt-1">{{ __('Comparison of INSPECTED and UNINSPECTED PFE every month') }}</p>
                 </div>
-                <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500">
+                <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-500 flex-shrink-0">
                     <i class="ph-bold ph-chart-bar text-lg"></i>
                 </div>
             </div>
-            <div class="flex-1 w-full relative min-h-[240px]">
-                <div id="monthlyChart" class="absolute inset-0"></div>
+            <div class="flex-1 w-full relative min-h-[250px] flex items-center justify-center">
+                <div id="monthlyChart" class="w-full"></div>
             </div>
         </div>
 
         <!-- APAR by Type Donut Chart -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-4 flex flex-col h-full chart-container">
-            <div class="flex items-center justify-between mb-3">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 flex flex-col justify-between h-full chart-container">
+            <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h3 class="text-lg font-bold text-slate-800">{{ __('PFE Type Distribution') }}</h3>
-                    <p class="text-xs font-semibold text-slate-500">{{ __('Based on media / agent') }}</p>
+                    <h3 class="text-base font-bold text-slate-800 leading-tight">{{ __('PFE Type Distribution') }}</h3>
+                    <p class="text-xs font-semibold text-slate-500 mt-1">{{ __('Based on media / agent') }}</p>
                 </div>
-                <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-500">
+                <div class="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center text-purple-500 flex-shrink-0">
                     <i class="ph-bold ph-chart-pie-slice text-lg"></i>
                 </div>
             </div>
-            <div class="flex-1 w-full relative min-h-[180px] flex items-start justify-center mt-2 print:mt-0">
+            <div class="flex-1 w-full relative min-h-[250px] flex items-center justify-center">
                 <div id="typeChart" class="w-full"></div>
             </div>
         </div>
@@ -516,7 +524,7 @@
             }],
             chart: {
                 type: 'bar',
-                height: 200,
+                height: 240,
                 fontFamily: 'inherit',
                 toolbar: { show: false },
                 animations: {
@@ -605,7 +613,7 @@
             series: typeSeries,
             chart: {
                 type: 'pie',
-                height: 210,
+                height: 240,
                 fontFamily: 'inherit',
                 animations: {
                     enabled: true,

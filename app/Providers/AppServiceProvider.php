@@ -41,16 +41,17 @@ class AppServiceProvider extends ServiceProvider
                 if ($user->role === 'EHSS') {
                     $notifications = $query->orderBy('updated_at', 'desc')->get();
                 } elseif ($user->role === 'Staff') {
-                    $assignedGedungIds = $user->gedungs()->pluck('gedung.id')->toArray();
+                    $assignedGedungIds = $user->gedungs->pluck('id')->toArray();
+                    $assignedLokasiIds = $user->lokasis->pluck('id')->toArray();
 
-                    if (empty($assignedGedungIds)) {
-                        // Sometimes pluck('gedung.id') doesn't work if table names are weird, let's use the safer route:
-                        $assignedGedungIds = $user->gedungs->pluck('id')->toArray();
-                    }
-
-                    if (! empty($assignedGedungIds)) {
-                        $notifications = $query->whereHas('lokasi', function ($q) use ($assignedGedungIds) {
-                            $q->whereIn('gedung_id', $assignedGedungIds);
+                    if (! empty($assignedGedungIds) || ! empty($assignedLokasiIds)) {
+                        $notifications = $query->where(function ($sub) use ($assignedGedungIds, $assignedLokasiIds) {
+                            if (! empty($assignedGedungIds)) {
+                                $sub->whereHas('lokasi', fn ($q) => $q->whereIn('gedung_id', $assignedGedungIds));
+                            }
+                            if (! empty($assignedLokasiIds)) {
+                                $sub->orWhereIn('lokasi_id', $assignedLokasiIds);
+                            }
                         })->orderBy('updated_at', 'desc')->get();
                     }
                 }

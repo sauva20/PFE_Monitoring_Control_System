@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Mail\NewUserRegistered;
 use App\Mail\UserScheduleUpdated;
 use App\Models\Gedung;
+use App\Models\GuestDisplay;
+use App\Models\Lokasi;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -32,9 +34,20 @@ class UserController extends Controller
             $query->where('role', $request->role);
         }
 
-        $users = $query->with('gedungs')->latest()->paginate(10)->withQueryString();
+        $users = $query->with(['gedungs', 'lokasis.gedung'])->latest()->paginate(10)->withQueryString();
         $roles = User::select('role')->whereNotNull('role')->distinct()->pluck('role');
-        $gedungs = Gedung::with('users:id,name')->orderBy('nama')->get();
+        $gedungs = Gedung::whereHas('lokasi.apar')
+            ->with([
+                'users:id,name',
+                'lokasi' => function ($query) {
+                    $query->has('apar')
+                        ->withCount('apar')
+                        ->with('users:id,name')
+                        ->orderBy('nama');
+                },
+            ])
+            ->orderBy('nama')
+            ->get();
         $allUsersForValidation = User::select('id', 'employee_id', 'email')->get();
 
         return view('users.index', compact('users', 'roles', 'gedungs', 'allUsersForValidation'));
@@ -56,7 +69,7 @@ class UserController extends Controller
             $query->where('role', $request->role);
         }
 
-        $users = $query->with('gedungs')->latest()->get();
+        $users = $query->with(['gedungs', 'lokasis.gedung'])->latest()->get();
 
         $pdf = Pdf::loadView('users.pdf', compact('users'))->setPaper('a4', 'portrait');
 
@@ -79,7 +92,7 @@ class UserController extends Controller
             $query->where('role', $request->role);
         }
 
-        $users = $query->with('gedungs')->latest()->get();
+        $users = $query->with(['gedungs', 'lokasis.gedung'])->latest()->get();
 
         $filename = 'Data_User_'.date('Ymd_His').'.csv';
 
@@ -91,7 +104,15 @@ class UserController extends Controller
             'Expires' => '0',
         ];
 
-        $columns = [__('No'), __('User ID'), __('Name'), __('Email'), __('Building'), __('Role'), __('Inspection Schedule')];
+        $columns = [
+            'No',
+            'User ID / ID Pengguna',
+            'Name / Nama',
+            'Email',
+            'Building / Gedung',
+            'Role / Peran',
+            'Inspection Schedule / Jadwal Inspeksi',
+        ];
 
         $callback = function () use ($users, $columns) {
             $file = fopen('php://output', 'w');
@@ -100,7 +121,15 @@ class UserController extends Controller
             fputcsv($file, $columns);
 
             foreach ($users as $index => $user) {
-                $gedungsStr = $user->gedungs->pluck('nama')->implode(', ');
+                $areas = [];
+                foreach ($user->gedungs as $g) {
+                    $areas[] = $g->nama;
+                }
+                foreach ($user->lokasis as $l) {
+                    $areas[] = ($l->gedung->nama ?? '').': '.($l->nomor_ruangan ? '['.$l->nomor_ruangan.'] ' : '').$l->nama;
+                }
+                $gedungsStr = implode(', ', $areas);
+
                 $row = [
                     $index + 1,
                     $user->employee_id ?? 'n/a',
@@ -134,13 +163,29 @@ class UserController extends Controller
             $query->where('role', $request->role);
         }
 
-        $users = $query->with('gedungs')->latest()->get();
+        $users = $query->with(['gedungs', 'lokasis.gedung'])->latest()->get();
 
-        $columns = [__('No'), __('User ID'), __('Name'), __('Email'), __('Building'), __('Role'), __('Inspection Schedule')];
+        $columns = [
+            'No',
+            'User ID / ID Pengguna',
+            'Name / Nama',
+            'Email',
+            'Building / Gedung',
+            'Role / Peran',
+            'Inspection Schedule / Jadwal Inspeksi',
+        ];
         $rows = [];
 
         foreach ($users as $index => $user) {
-            $gedungsStr = $user->gedungs->pluck('nama')->implode(', ');
+            $areas = [];
+            foreach ($user->gedungs as $g) {
+                $areas[] = $g->nama;
+            }
+            foreach ($user->lokasis as $l) {
+                $areas[] = ($l->gedung->nama ?? '').': '.($l->nomor_ruangan ? '['.$l->nomor_ruangan.'] ' : '').$l->nama;
+            }
+            $gedungsStr = implode(', ', $areas);
+
             $rows[] = [
                 $index + 1,
                 $user->employee_id ?? 'n/a',
@@ -158,6 +203,36 @@ class UserController extends Controller
         ]);
     }
 
+    public function checkPin(Request $request)
+    {
+        $pin = $request->query('pin');
+        $userId = $request->query('user_id');
+
+        if (! $pin || strlen($pin) !== 4 || ! ctype_digit($pin)) {
+            return response()->json(['safe' => true]);
+        }
+
+        if (GuestDisplay::where('pin', $pin)->exists()) {
+            return response()->json([
+                'safe' => false,
+                'message' => __('PIN yang anda buat berbahaya dan tidak aman'),
+            ]);
+        }
+
+        $allUsers = User::whereNotNull('pin')
+            ->when($userId, fn ($q) => $q->where('id', '!=', $userId))
+            ->get();
+
+        $exists = $allUsers->contains(function ($u) use ($pin) {
+            return $u->matchesPin($pin);
+        });
+
+        return response()->json([
+            'safe' => ! $exists,
+            'message' => $exists ? __('PIN yang anda buat berbahaya dan tidak aman') : null,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -165,25 +240,44 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'role' => 'required|string|in:EHSS,Staff',
+            'pin' => ['nullable', 'string', 'size:4', 'regex:/^[0-9]+$/', 'unique:users,pin'],
             'jadwal_rutin_tanggal' => 'nullable|integer|min:1|max:31',
             'gedungs' => 'nullable|array',
             'gedungs.*' => 'exists:gedung,id',
+            'lokasis' => 'nullable|array',
+            'lokasis.*' => 'exists:lokasi,id',
         ], [
             'employee_id.required' => __('User ID field is required.'),
             'employee_id.unique' => __('This User ID is already registered. Please use a different User ID.'),
             'email.required' => __('Email field is required.'),
             'email.unique' => __('This Email is already registered. Please use a different Email.'),
             'email.email' => __('The email format is invalid.'),
+            'pin.unique' => __('PIN yang anda buat berbahaya dan tidak aman'),
+            'pin.size' => __('PIN inspeksi harus terdiri dari 4 digit angka.'),
+            'pin.regex' => __('PIN inspeksi hanya boleh berisi angka (0-9).'),
         ]);
 
-        // Auto-generate unique 4-digit PIN
         $allUsers = User::whereNotNull('pin')->get();
-        do {
-            $pin = str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);
-            $exists = $allUsers->contains(function ($u) use ($pin) {
-                return Hash::check($pin, $u->pin) || $u->pin === $pin;
+
+        if ($request->filled('pin')) {
+            $pin = $request->pin;
+            $existsInGuest = GuestDisplay::where('pin', $pin)->exists();
+            $existsInUsers = $allUsers->contains(function ($u) use ($pin) {
+                return $u->matchesPin($pin);
             });
-        } while ($exists);
+
+            if ($existsInGuest || $existsInUsers) {
+                return redirect()->back()->withErrors(['pin' => __('PIN yang anda buat berbahaya dan tidak aman')])->withInput();
+            }
+        } else {
+            // Auto-generate unique 4-digit PIN
+            do {
+                $pin = str_pad(random_int(0, 9999), 4, '0', STR_PAD_LEFT);
+                $exists = GuestDisplay::where('pin', $pin)->exists() || $allUsers->contains(function ($u) use ($pin) {
+                    return $u->matchesPin($pin);
+                });
+            } while ($exists);
+        }
 
         // Default password for all users (will be changed on setup)
         $password = Str::random(16);
@@ -194,12 +288,18 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => Hash::make($password),
             'role' => $request->role,
-            'pin' => Hash::make($pin),
+            'pin' => $pin,
             'jadwal_rutin_tanggal' => $request->role === 'Staff' ? $request->jadwal_rutin_tanggal : null,
         ]);
 
-        if ($request->role === 'Staff' && $request->has('gedungs')) {
-            $user->gedungs()->sync($request->gedungs);
+        if ($request->role === 'Staff') {
+            if ($request->has('gedungs')) {
+                $user->gedungs()->sync($request->gedungs);
+            }
+            if ($request->has('lokasis')) {
+                $validLokasis = Lokasi::has('apar')->whereIn('id', $request->lokasis)->pluck('id');
+                $user->lokasis()->sync($validLokasis);
+            }
         }
 
         // Create signed setup URL
@@ -210,7 +310,8 @@ class UserController extends Controller
         );
 
         // Send Email
-        Mail::to($user->email)->send(new NewUserRegistered($user, $setupUrl));
+        $user->withoutRelations()->load(['gedungs', 'lokasis.gedung']);
+        Mail::to($user->email)->send(new NewUserRegistered($user, $setupUrl, $pin));
 
         return redirect()->back()->with('success', __('User berhasil ditambahkan! Email setup telah dikirim.'));
     }
@@ -222,16 +323,21 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
             'role' => 'required|string|in:EHSS,Staff',
-            'pin' => ['nullable', 'string', 'size:4', 'regex:/^[0-9]+$/'],
+            'pin' => ['nullable', 'string', 'size:4', 'regex:/^[0-9]+$/', Rule::unique('users', 'pin')->ignore($user->id)],
             'jadwal_rutin_tanggal' => 'nullable|integer|min:1|max:31',
             'gedungs' => 'nullable|array',
             'gedungs.*' => 'exists:gedung,id',
+            'lokasis' => 'nullable|array',
+            'lokasis.*' => 'exists:lokasi,id',
         ], [
             'employee_id.required' => __('User ID field is required.'),
             'employee_id.unique' => __('This User ID is already registered. Please use a different User ID.'),
             'email.required' => __('Email field is required.'),
             'email.unique' => __('This Email is already registered. Please use a different Email.'),
             'email.email' => __('The email format is invalid.'),
+            'pin.unique' => __('PIN yang anda buat berbahaya dan tidak aman'),
+            'pin.size' => __('PIN inspeksi harus terdiri dari 4 digit angka.'),
+            'pin.regex' => __('PIN inspeksi hanya boleh berisi angka (0-9).'),
         ]);
 
         $data = [
@@ -242,30 +348,36 @@ class UserController extends Controller
             'jadwal_rutin_tanggal' => $request->role === 'Staff' ? $request->jadwal_rutin_tanggal : null,
         ];
 
+        $plainPin = null;
         if ($request->filled('pin')) {
             $pin = $request->pin;
-            $exists = User::whereNotNull('pin')->where('id', '!=', $user->id)->get()->contains(function ($u) use ($pin) {
-                return Hash::check($pin, $u->pin) || $u->pin === $pin;
+            $existsInGuest = GuestDisplay::where('pin', $pin)->exists();
+            $existsInUsers = User::whereNotNull('pin')->where('id', '!=', $user->id)->get()->contains(function ($u) use ($pin) {
+                return $u->matchesPin($pin);
             });
 
-            if ($exists) {
-                return redirect()->back()->withErrors(['pin' => __('The PIN has already been taken.')])->withInput();
+            if ($existsInGuest || $existsInUsers) {
+                return redirect()->back()->withErrors(['pin' => __('PIN yang anda buat berbahaya dan tidak aman')])->withInput();
             }
 
-            $data['pin'] = Hash::make($pin);
+            $data['pin'] = $pin;
+            $plainPin = $pin;
         }
 
         $user->update($data);
 
         if ($request->role === 'Staff') {
             $user->gedungs()->sync($request->gedungs ?? []);
-
-            // Kirim email notifikasi ke user setelah perubahan profil/jadwal/gedung
-            $buildings = Gedung::whereIn('id', $request->gedungs ?? [])->get();
-            Mail::to($user->email)->send(new UserScheduleUpdated($user, $buildings));
+            $validLokasis = Lokasi::has('apar')->whereIn('id', $request->lokasis ?? [])->pluck('id');
+            $user->lokasis()->sync($validLokasis);
         } else {
             $user->gedungs()->detach();
+            $user->lokasis()->detach();
         }
+
+        // Kirim email notifikasi ke user setelah perubahan profil/jadwal/gedung
+        $user->withoutRelations()->load(['gedungs', 'lokasis.gedung']);
+        Mail::to($user->email)->send(new UserScheduleUpdated($user, null, $plainPin));
 
         return redirect()->back()->with('success', __('Data user berhasil diperbarui!'));
     }

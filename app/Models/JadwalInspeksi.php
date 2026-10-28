@@ -27,7 +27,17 @@ class JadwalInspeksi extends Model
         return LogOptions::defaults()
             ->logFillable()
             ->logOnlyDirty()
-            ->setDescriptionForEvent(fn (string $eventName) => "Jadwal Inspeksi telah di-{$eventName}");
+            ->setDescriptionForEvent(function (string $eventName) {
+                $gedung = $this->gedung?->nama ?? 'Gedung';
+                $petugas = $this->user?->name ?? 'Petugas';
+
+                return match ($eventName) {
+                    'created' => "Menetapkan jadwal inspeksi gedung {$gedung} kepada {$petugas}",
+                    'updated' => "Memperbarui jadwal inspeksi gedung {$gedung} untuk {$petugas}",
+                    'deleted' => "Menghapus jadwal inspeksi gedung {$gedung}",
+                    default => "Jadwal inspeksi gedung {$gedung} telah di-{$eventName}",
+                };
+            });
     }
 
     public function user()

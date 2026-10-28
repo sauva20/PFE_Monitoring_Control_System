@@ -28,7 +28,17 @@ class Inspeksi extends Model
         return LogOptions::defaults()
             ->logFillable()
             ->logOnlyDirty()
-            ->setDescriptionForEvent(fn (string $eventName) => "Inspeksi telah di-{$eventName}");
+            ->setDescriptionForEvent(function (string $eventName) {
+                $kode = $this->apar?->kode ?? 'APAR';
+                $status = ucfirst(str_replace('_', ' ', $this->status ?? ''));
+
+                return match ($eventName) {
+                    'created' => "Melakukan inspeksi rutin APAR [{$kode}] - Status: {$status}",
+                    'updated' => "Memperbarui hasil inspeksi APAR [{$kode}] - Status: {$status}",
+                    'deleted' => "Menghapus riwayat inspeksi APAR [{$kode}]",
+                    default => "Inspeksi APAR [{$kode}] telah di-{$eventName}",
+                };
+            });
     }
 
     public function apar()

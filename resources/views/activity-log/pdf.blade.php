@@ -68,23 +68,20 @@
 
     <div class="header">
         <h1>Audit Trail PFE Monitoring Control System</h1>
-        <p>Comprehensive Record of System Activities</p>
+        <p>Comprehensive Record of System Activities &bull; {{ $currentPeriod ?? \Carbon\Carbon::now()->translatedFormat('F Y') }}</p>
     </div>
 
     @php
         $activeFilters = [];
-        // Add filters here if Activity Log filtering is implemented in the future
     @endphp
 
     <table style="width: 100%; margin-bottom: 8px; border: none;">
         <tr>
-            <td style="text-align: left; font-size: 11px; border: none !important; padding: 0 !important; background: transparent;">
+            <td style="text-align: left; font-size: 10px; border: none !important; padding: 0 !important; background: transparent; color: #555;">
                 Identification Date: {{ \Carbon\Carbon::now()->translatedFormat('d F Y H:i:s') }}
             </td>
-            <td style="text-align: right; font-size: 11px; border: none !important; padding: 0 !important; background: transparent;">
-                @if(count($activeFilters) > 0)
-                    {{ implode(' | ', $activeFilters) }}
-                @endif
+            <td style="text-align: right; font-size: 10px; border: none !important; padding: 0 !important; background: transparent; color: #009B77; font-weight: bold;">
+                Period / Periode: {{ $currentPeriod ?? \Carbon\Carbon::now()->translatedFormat('F Y') }}
             </td>
         </tr>
     </table>
@@ -92,27 +89,54 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 20%;">{{ __('Time') }}</th>
-                <th style="width: 20%;">{{ __('User') }}</th>
-                <th class="text-center" style="width: 15%;">{{ __('Action') }}</th>
-                <th style="width: 15%;">{{ __('Module') }}</th>
-                <th style="width: 30%;">{{ __('Description') }}</th>
+                <th style="width: 18%;">
+                    <div>Time</div>
+                    <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px;">Waktu</div>
+                </th>
+                <th style="width: 18%;">
+                    <div>User</div>
+                    <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px;">Pengguna</div>
+                </th>
+                <th class="text-center" style="width: 14%;">
+                    <div>Action</div>
+                    <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px;">Aksi</div>
+                </th>
+                <th style="width: 18%;">
+                    <div>Module</div>
+                    <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px;">Modul</div>
+                </th>
+                <th style="width: 32%;">
+                    <div>Description</div>
+                    <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px;">Keterangan</div>
+                </th>
             </tr>
         </thead>
         <tbody>
             @foreach($activities as $activity)
+                @php
+                    $moduleName = class_basename($activity->subject_type);
+                    $moduleLabel = match ($moduleName) {
+                        'Apar' => 'Master Data APAR',
+                        'Inspeksi' => 'Inspeksi APAR',
+                        'JadwalInspeksi' => 'Jadwal Inspeksi',
+                        'User' => 'Manajemen User',
+                        'AparCadangan' => 'Stok Cadangan',
+                        'Lokasi' => 'Data Lokasi',
+                        default => preg_replace('/([a-z])([A-Z])/s', '$1 $2', $moduleName ?: 'System'),
+                    };
+                @endphp
                 <tr>
                     <td class="font-bold">{{ $activity->created_at->format('d M Y H:i:s') }}</td>
-                    <td>{{ $activity->causer->name ?? __('System / Guest') }}</td>
+                    <td>{{ $activity->causer->name ?? 'Sistem / System' }}</td>
                     <td class="text-center font-bold">{{ strtoupper($activity->event) }}</td>
-                    <td>{{ __(preg_replace('/([a-z])([A-Z])/s', '$1 $2', class_basename($activity->subject_type))) }}</td>
-                    <td>{{ __($activity->description) }}</td>
+                    <td>{{ $moduleLabel }}</td>
+                    <td>{{ $activity->description }}</td>
                 </tr>
             @endforeach
             
             @if($activities->isEmpty())
                 <tr>
-                    <td colspan="5" class="text-center" style="padding: 20px;">{{ __('No activity log yet.') }}</td>
+                    <td colspan="5" class="text-center" style="padding: 20px;">{{ __('No activity log for this month yet / Belum ada riwayat aktivitas untuk bulan ini.') }}</td>
                 </tr>
             @endif
         </tbody>

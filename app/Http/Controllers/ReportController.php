@@ -16,12 +16,54 @@ class ReportController extends Controller
     private function getReportData(Request $request)
     {
         $now = Carbon::now();
-        $selectedYear = $request->input('year', $now->year);
-        $selectedMonth = $request->input('month', $now->month);
+        $requestedYear = (int) $request->input('year', $now->year);
+        $requestedMonth = (int) $request->input('month', $now->month);
+
+        // Validasi: tidak boleh melihat masa depan (bulan/tahun lebih dari saat ini)
+        if ($requestedYear > $now->year) {
+            $selectedYear = $now->year;
+            $selectedMonth = $now->month;
+        } elseif ($requestedYear == $now->year && $requestedMonth > $now->month) {
+            $selectedYear = $now->year;
+            $selectedMonth = $now->month;
+        } else {
+            $selectedYear = $requestedYear;
+            $selectedMonth = $requestedMonth;
+        }
+
         $selectedGedung = $request->input('gedung_id');
         $status = $request->input('status', 'all');
 
+        $user = auth()->user();
+        $isStaff = $user && $user->role === 'Staff';
+
+        $reportData = collect();
+
+        // 1. Ambil daftar ID APAR yang sudah diinspeksi pada bulan & tahun terpilih
+        $inspeksiQuery = Inspeksi::whereMonth('created_at', $selectedMonth)
+            ->whereYear('created_at', $selectedYear);
+
+        if ($isStaff) {
+            $inspeksiQuery->where('user_id', $user->id);
+        }
+
+        $inspeksiBulanIniAparIds = $inspeksiQuery->pluck('apar_id')->unique()->toArray();
+
+        // 2. Query APAR sesuai hak akses role
         $query = Apar::with(['lokasi.gedung', 'jenis', 'kapasitas']);
+
+        if ($isStaff) {
+            // Staff dibatasi hanya pada APAR yang ditugaskan ke dirinya atau yang diinspeksi olehnya
+            $query->where(function ($sub) use ($user, $inspeksiBulanIniAparIds) {
+                $sub->whereHas('lokasi.gedung.users', fn ($q) => $q->where('user_id', $user->id))
+                    ->orWhereHas('lokasi.users', fn ($q) => $q->where('user_id', $user->id))
+                    ->orWhere('pic_id', $user->id);
+
+                if (! empty($inspeksiBulanIniAparIds)) {
+                    $sub->orWhereIn('id', $inspeksiBulanIniAparIds);
+                }
+            });
+        }
 
         if ($selectedGedung) {
             $query->whereHas('lokasi', function ($q) use ($selectedGedung) {
@@ -31,14 +73,7 @@ class ReportController extends Controller
 
         $apars = $query->orderBy('kode', 'asc')->get();
 
-        $inspeksiBulanIniAparIds = Inspeksi::whereMonth('created_at', $selectedMonth)
-            ->whereYear('created_at', $selectedYear)
-            ->pluck('apar_id')
-            ->unique()
-            ->toArray();
-
-        $reportData = collect();
-
+        // 3. Bangun data baris laporan
         foreach ($apars as $apar) {
             $isInspected = in_array($apar->id, $inspeksiBulanIniAparIds);
 
@@ -51,11 +86,15 @@ class ReportController extends Controller
 
             $inspeksi = null;
             if ($isInspected) {
-                $inspeksi = Inspeksi::with('user')->where('apar_id', $apar->id)
+                $detailQuery = Inspeksi::with('user')->where('apar_id', $apar->id)
                     ->whereMonth('created_at', $selectedMonth)
-                    ->whereYear('created_at', $selectedYear)
-                    ->latest()
-                    ->first();
+                    ->whereYear('created_at', $selectedYear);
+
+                if ($isStaff) {
+                    $detailQuery->where('user_id', $user->id);
+                }
+
+                $inspeksi = $detailQuery->latest()->first();
             }
 
             $reportData->push([
@@ -76,7 +115,17 @@ class ReportController extends Controller
 
     public function index(Request $request)
     {
-        $gedungs = Gedung::all();
+        $user = auth()->user();
+        if ($user && $user->role === 'Staff') {
+            $gedungs = Gedung::where(function ($sub) use ($user) {
+                $sub->whereHas('users', fn ($q) => $q->where('user_id', $user->id))
+                    ->orWhereHas('lokasi.users', fn ($q) => $q->where('user_id', $user->id))
+                    ->orWhereHas('lokasi.apar.inspeksis', fn ($q) => $q->where('user_id', $user->id));
+            })->get();
+        } else {
+            $gedungs = Gedung::all();
+        }
+
         $reportParams = $this->getReportData($request);
         $reportData = $reportParams['data'];
 
@@ -133,10 +182,23 @@ class ReportController extends Controller
             'Expires' => '0',
         ];
 
-        $columns = [__('No'), __('PFE ID'), __('Building'), __('Location'), __('Type'), __('Capacity'), __('Inspection Status'), __('Inspection Date'), __('Inspector'), __('Condition'), __('Additional Notes')];
+        $columns = [
+            'No',
+            'PFE Code / Kode APAR',
+            'Building / Gedung',
+            'Location / Lokasi',
+            'Fire Extinguisher Type / Jenis APAR',
+            'Fill Capacity / Kapasitas Isi',
+            'Inspection Status / Status Inspeksi',
+            'Inspection Date / Tanggal Inspeksi',
+            'Inspector / Petugas',
+            'Condition / Kondisi',
+            'Additional Notes / Catatan Tambahan',
+        ];
 
         $callback = function () use ($reportData, $columns) {
             $file = fopen('php://output', 'w');
+            fwrite($file, $bom = (chr(0xEF).chr(0xBB).chr(0xBF)));
             fputcsv($file, $columns);
 
             $no = 1;
@@ -145,6 +207,19 @@ class ReportController extends Controller
                 $inspeksi = $row['inspeksi'];
                 $isInspected = $row['status'] === 'Sudah Diinspeksi';
 
+                $conditionLabel = 'n/a';
+                if ($inspeksi && $inspeksi->status) {
+                    if (in_array($inspeksi->status, ['sesuai', 'layak'])) {
+                        $conditionLabel = 'Compliant / Sesuai';
+                    } elseif (in_array($inspeksi->status, ['tidak_sesuai', 'perbaikan', 'rusak', 'tidak_layak'])) {
+                        $conditionLabel = 'Non-Compliant / Tidak Sesuai';
+                    } elseif (in_array($inspeksi->status, ['perlu_refill', 'isi_ulang'])) {
+                        $conditionLabel = 'Needs Refill / Perlu Refill';
+                    } else {
+                        $conditionLabel = str_replace('_', ' ', $inspeksi->status);
+                    }
+                }
+
                 fputcsv($file, [
                     $no++,
                     $apar->kode,
@@ -152,10 +227,10 @@ class ReportController extends Controller
                     $apar->lokasi->nama ?? 'n/a',
                     $apar->jenis->nama ?? 'n/a',
                     $apar->kapasitas->ukuran ?? 'n/a',
-                    $isInspected ? 'Sudah Diinspeksi' : 'Belum Diinspeksi',
+                    $isInspected ? 'Inspected / Sudah Diinspeksi' : 'Uninspected / Belum Diinspeksi',
                     $inspeksi ? Carbon::parse($inspeksi->created_at)->format('d M Y H:i') : 'n/a',
                     $inspeksi?->user?->name ?? 'n/a',
-                    $inspeksi?->status ?? 'n/a',
+                    $conditionLabel,
                     $inspeksi?->catatan_tambahan ?? 'n/a',
                 ]);
             }
@@ -168,32 +243,22 @@ class ReportController extends Controller
 
     public function previewExcel(Request $request)
     {
-        $bulan = $request->bulan ?? date('m');
-        $tahun = $request->tahun ?? date('Y');
+        $reportParams = $this->getReportData($request);
+        $reportData = $reportParams['data'];
 
-        $apars = Apar::with(['lokasi.gedung', 'jenis', 'kapasitas', 'inspeksis' => function ($q) use ($bulan, $tahun) {
-            $q->whereYear('created_at', $tahun)
-                ->whereMonth('created_at', $bulan);
-        }])->get();
-
-        $reportData = collect();
-        foreach ($apars as $apar) {
-            $inspeksiThisMonth = $apar->inspeksis->first();
-            $reportData->push([
-                'apar' => $apar,
-                'status' => $inspeksiThisMonth ? 'Sudah Diinspeksi' : 'Belum Diinspeksi',
-                'inspeksi' => $inspeksiThisMonth,
-            ]);
-        }
-
-        if ($request->filled('status')) {
-            $statusFilter = $request->status;
-            $reportData = $reportData->filter(function ($item) use ($statusFilter) {
-                return $item['status'] === $statusFilter;
-            });
-        }
-
-        $columns = [__('No'), __('PFE ID'), __('Building'), __('Location'), __('Type'), __('Capacity'), __('Inspection Status'), __('Inspection Date'), __('Inspector'), __('Condition'), __('Additional Notes')];
+        $columns = [
+            'No',
+            'PFE Code / Kode APAR',
+            'Building / Gedung',
+            'Location / Lokasi',
+            'Fire Extinguisher Type / Jenis APAR',
+            'Fill Capacity / Kapasitas Isi',
+            'Inspection Status / Status Inspeksi',
+            'Inspection Date / Tanggal Inspeksi',
+            'Inspector / Petugas',
+            'Condition / Kondisi',
+            'Additional Notes / Catatan Tambahan',
+        ];
         $rows = [];
 
         $no = 1;
@@ -202,6 +267,19 @@ class ReportController extends Controller
             $inspeksi = $row['inspeksi'];
             $isInspected = $row['status'] === 'Sudah Diinspeksi';
 
+            $conditionLabel = 'n/a';
+            if ($inspeksi && $inspeksi->status) {
+                if (in_array($inspeksi->status, ['sesuai', 'layak'])) {
+                    $conditionLabel = __('Sesuai');
+                } elseif (in_array($inspeksi->status, ['tidak_sesuai', 'perbaikan', 'rusak', 'tidak_layak'])) {
+                    $conditionLabel = __('Tidak Sesuai');
+                } elseif (in_array($inspeksi->status, ['perlu_refill', 'isi_ulang'])) {
+                    $conditionLabel = __('Perlu Refill');
+                } else {
+                    $conditionLabel = str_replace('_', ' ', $inspeksi->status);
+                }
+            }
+
             $rows[] = [
                 $no++,
                 $apar->kode,
@@ -209,10 +287,10 @@ class ReportController extends Controller
                 $apar->lokasi->nama ?? 'n/a',
                 $apar->jenis->nama ?? 'n/a',
                 $apar->kapasitas->ukuran ?? 'n/a',
-                $isInspected ? 'Sudah Diinspeksi' : 'Belum Diinspeksi',
+                $isInspected ? __('Inspected') : __('Uninspected'),
                 $inspeksi ? Carbon::parse($inspeksi->created_at)->format('d M Y H:i') : 'n/a',
                 $inspeksi?->user?->name ?? 'n/a',
-                $inspeksi?->status ?? 'n/a',
+                $conditionLabel,
                 $inspeksi?->catatan_tambahan ?? 'n/a',
             ];
         }

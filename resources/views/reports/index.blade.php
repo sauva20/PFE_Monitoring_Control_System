@@ -40,11 +40,20 @@
                     </button>
                     <div x-show="open" x-transition.opacity.duration.200ms style="display: none;" class="absolute left-0 z-50 w-full mt-2 bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-slate-100 py-2 max-h-60 overflow-y-auto" x-cloak>
                         @foreach(range(1, 12) as $m)
-                            @php $mName = __(\Carbon\Carbon::create()->month($m)->format('F')); @endphp
-                            <button type="button" @click="selected = '{{ $mName }}'; open = false; $refs.month_input.value = '{{ $m }}'; $refs.month_input.form.submit();" class="w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-between" :class="selected === '{{ $mName }}' ? 'text-[#009B77] bg-[#009B77]/5' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
-                                <span>{{ $mName }}</span>
-                                <i class="ph-bold ph-check text-[#009B77]" x-show="selected === '{{ $mName }}'" x-cloak></i>
-                            </button>
+                            @php 
+                                $mName = __(\Carbon\Carbon::create()->month($m)->format('F')); 
+                                $isDisabled = ($selectedYear >= now()->year && $m > now()->month);
+                            @endphp
+                            @if($isDisabled)
+                                <div class="w-full text-left px-4 py-2.5 text-sm font-medium text-slate-300 cursor-not-allowed flex items-center justify-between">
+                                    <span>{{ $mName }}</span>
+                                </div>
+                            @else
+                                <button type="button" @click="selected = '{{ $mName }}'; open = false; $refs.month_input.value = '{{ $m }}'; $refs.month_input.form.submit();" class="w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-between" :class="selected === '{{ $mName }}' ? 'text-[#009B77] bg-[#009B77]/5' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
+                                    <span>{{ $mName }}</span>
+                                    <i class="ph-bold ph-check text-[#009B77]" x-show="selected === '{{ $mName }}'" x-cloak></i>
+                                </button>
+                            @endif
                         @endforeach
                     </div>
                 </div>
@@ -60,7 +69,7 @@
                     </button>
                     <div x-show="open" x-transition.opacity.duration.200ms style="display: none;" class="absolute left-0 z-50 w-full mt-2 bg-white rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.1)] border border-slate-100 py-2 max-h-60 overflow-y-auto" x-cloak>
                         @foreach(range(now()->year - 2, now()->year) as $y)
-                            <button type="button" @click="selected = '{{ $y }}'; open = false; $refs.year_input.value = '{{ $y }}'; $refs.year_input.form.submit();" class="w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-between" :class="selected === '{{ $y }}' ? 'text-[#009B77] bg-[#009B77]/5' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
+                            <button type="button" @click="selected = '{{ $y }}'; open = false; $refs.year_input.value = '{{ $y }}'; if ('{{ $y }}' >= {{ now()->year }} && parseInt(document.querySelector('input[name=month]').value) > {{ now()->month }}) { document.querySelector('input[name=month]').value = '{{ now()->month }}'; } $refs.year_input.form.submit();" class="w-full text-left px-4 py-2.5 text-sm font-medium transition-colors flex items-center justify-between" :class="selected === '{{ $y }}' ? 'text-[#009B77] bg-[#009B77]/5' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
                                 <span>{{ $y }}</span>
                                 <i class="ph-bold ph-check text-[#009B77]" x-show="selected === '{{ $y }}'" x-cloak></i>
                             </button>

@@ -68,8 +68,8 @@
                 </thead>
                 <tbody>
                     @php
-                        // Reorder indices: 14-23 first, then 0-13
-                        $orderedIndices = array_merge(range(14, 23), range(0, 13));
+                        // Reorder indices: 14-22 first, then 0-13
+                        $orderedIndices = array_merge(range(14, 22), range(0, 13));
                     @endphp
                     @foreach($orderedIndices as $displayIndex => $index)
                         @php $q = $pertanyaan[$index]; @endphp
@@ -83,9 +83,7 @@
                                         {{ $apar->kapasitas->ukuran ?? '' }}
                                     @elseif($index == 16) {{-- Tgl Isi Ulang --}}
                                         {{ $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->format('d/m/Y') : '' }}
-                                    @elseif($index == 17) {{-- Tgl Kedaluwarsa --}}
-                                        {{ $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('d/m/Y') : '' }}
-                                    @elseif($index == 23) {{-- Lokasi --}}
+                                    @elseif($index == 22) {{-- Lokasi --}}
                                         {{ $apar->lokasi->nama ?? '' }}
                                     @else
                                         <!-- Blank for manual check -->

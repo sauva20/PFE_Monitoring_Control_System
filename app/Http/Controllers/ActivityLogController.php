@@ -3,32 +3,62 @@
 namespace App\Http\Controllers;
 
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Spatie\Activitylog\Models\Activity;
 
 class ActivityLogController extends Controller
 {
+    private function purgePreviousMonthLogs(): void
+    {
+        // Bersihkan data log dari bulan-bulan sebelumnya
+        Activity::where('created_at', '<', Carbon::now()->startOfMonth())->delete();
+    }
+
     public function index()
     {
+        $this->purgePreviousMonthLogs();
+
+        $now = Carbon::now();
         $activities = Activity::with('causer')
+            ->whereYear('created_at', $now->year)
+            ->whereMonth('created_at', $now->month)
             ->latest()
             ->paginate(15)
             ->onEachSide(1);
 
-        return view('activity-log.index', compact('activities'));
+        $currentPeriod = $now->translatedFormat('F Y');
+
+        return view('activity-log.index', compact('activities', 'currentPeriod'));
     }
 
     public function exportPdf()
     {
-        $activities = Activity::with('causer')->latest()->get();
+        $this->purgePreviousMonthLogs();
 
-        $pdf = Pdf::loadView('activity-log.pdf', compact('activities'))->setPaper('a4', 'portrait');
+        $now = Carbon::now();
+        $activities = Activity::with('causer')
+            ->whereYear('created_at', $now->year)
+            ->whereMonth('created_at', $now->month)
+            ->latest()
+            ->get();
+
+        $currentPeriod = $now->translatedFormat('F Y');
+        $pdf = Pdf::loadView('activity-log.pdf', compact('activities', 'currentPeriod'))->setPaper('a4', 'portrait');
 
         return $pdf->stream('Audit_Trail_'.date('Ymd_His').'.pdf');
     }
 
     public function exportExcel()
     {
-        $activities = Activity::with('causer')->latest()->get();
+        $this->purgePreviousMonthLogs();
+
+        $now = Carbon::now();
+        $activities = Activity::with('causer')
+            ->whereYear('created_at', $now->year)
+            ->whereMonth('created_at', $now->month)
+            ->latest()
+            ->get();
+
         $filename = 'Audit_Trail_'.date('Ymd_His').'.csv';
 
         $headers = [
@@ -39,7 +69,13 @@ class ActivityLogController extends Controller
             'Expires' => '0',
         ];
 
-        $columns = [__('Time'), __('User'), __('Action'), __('Module'), __('Description')];
+        $columns = [
+            'Time / Waktu',
+            'User / Pengguna',
+            'Action / Aksi',
+            'Module / Modul',
+            'Description / Keterangan',
+        ];
 
         $callback = function () use ($activities, $columns) {
             $file = fopen('php://output', 'w');
@@ -48,11 +84,22 @@ class ActivityLogController extends Controller
             fputcsv($file, $columns);
 
             foreach ($activities as $activity) {
+                $moduleName = class_basename($activity->subject_type);
+                $moduleLabel = match ($moduleName) {
+                    'Apar' => 'Master Data APAR',
+                    'Inspeksi' => 'Inspeksi APAR',
+                    'JadwalInspeksi' => 'Jadwal Inspeksi',
+                    'User' => 'Manajemen User',
+                    'AparCadangan' => 'Stok Cadangan',
+                    'Lokasi' => 'Data Lokasi',
+                    default => preg_replace('/([a-z])([A-Z])/s', '$1 $2', $moduleName ?: 'System'),
+                };
+
                 $row = [
                     $activity->created_at->format('d M Y H:i:s'),
-                    $activity->causer->name ?? 'Sistem / Guest',
+                    $activity->causer->name ?? 'Sistem / System',
                     strtoupper($activity->event),
-                    preg_replace('/([a-z])([A-Z])/s', '$1 $2', class_basename($activity->subject_type)),
+                    $moduleLabel,
                     $activity->description,
                 ];
                 fputcsv($file, $row);
@@ -65,17 +112,41 @@ class ActivityLogController extends Controller
 
     public function previewExcel()
     {
-        $activities = Activity::with('causer')->latest()->get();
+        $this->purgePreviousMonthLogs();
 
-        $columns = [__('Time'), __('User'), __('Action'), __('Module'), __('Description')];
+        $now = Carbon::now();
+        $activities = Activity::with('causer')
+            ->whereYear('created_at', $now->year)
+            ->whereMonth('created_at', $now->month)
+            ->latest()
+            ->get();
+
+        $columns = [
+            'Time / Waktu',
+            'User / Pengguna',
+            'Action / Aksi',
+            'Module / Modul',
+            'Description / Keterangan',
+        ];
         $rows = [];
 
         foreach ($activities as $activity) {
+            $moduleName = class_basename($activity->subject_type);
+            $moduleLabel = match ($moduleName) {
+                'Apar' => 'Master Data APAR',
+                'Inspeksi' => 'Inspeksi APAR',
+                'JadwalInspeksi' => 'Jadwal Inspeksi',
+                'User' => 'Manajemen User',
+                'AparCadangan' => 'Stok Cadangan',
+                'Lokasi' => 'Data Lokasi',
+                default => preg_replace('/([a-z])([A-Z])/s', '$1 $2', $moduleName ?: 'System'),
+            };
+
             $rows[] = [
                 $activity->created_at->format('d M Y H:i:s'),
-                $activity->causer->name ?? 'Sistem / Guest',
+                $activity->causer->name ?? 'Sistem / System',
                 strtoupper($activity->event),
-                preg_replace('/([a-z])([A-Z])/s', '$1 $2', class_basename($activity->subject_type)),
+                $moduleLabel,
                 $activity->description,
             ];
         }

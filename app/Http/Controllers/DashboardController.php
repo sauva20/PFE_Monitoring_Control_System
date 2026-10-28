@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Apar;
 use App\Models\AparCadangan;
 use App\Models\Inspeksi;
+use App\Models\Lokasi;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -15,57 +16,57 @@ class DashboardController extends Controller
         $now = Carbon::now();
 
         // 0. Filter Parameters
-        $requestedYear = $request->input('year', $now->year);
-        $requestedMonth = $request->input('month', $now->month);
+        $selectedYear = (int) $request->input('year', $now->year);
+        $selectedMonth = (int) $request->input('month', $now->month);
 
-        // Validasi: tidak boleh melihat masa depan (bulan/tahun lebih dari saat ini)
-        if ($requestedYear > $now->year) {
-            $selectedYear = $now->year;
-            $selectedMonth = $now->month;
-        } elseif ($requestedYear == $now->year && $requestedMonth > $now->month) {
-            $selectedYear = $now->year;
-            $selectedMonth = $now->month;
-        } else {
-            $selectedYear = $requestedYear;
-            $selectedMonth = $requestedMonth;
+        if ($selectedMonth < 1 || $selectedMonth > 12) {
+            $selectedMonth = (int) $now->month;
         }
+
         // 1. Summary Cards Data
         $totalApar = Apar::count();
 
+        $startOfSelectedMonth = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
         $endOfSelectedMonth = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth();
 
-        $apars = Apar::with(['inspeksis' => function ($q) use ($endOfSelectedMonth) {
-            $q->where('created_at', '<=', $endOfSelectedMonth)->latest();
-        }, 'jenis'])->get();
+        $apars = Apar::with('jenis')->get();
+
+        // Ambil data inspeksi yang benar-benar tercatat pada bulan & tahun terpilih
+        $inspeksisBulanIni = Inspeksi::whereYear('created_at', $selectedYear)
+            ->whereMonth('created_at', $selectedMonth)
+            ->latest()
+            ->get();
+
+        // 1 APAR hanya dihitung 1 kali berdasarkan inspeksi terakhir di bulan tersebut
+        $latestInspeksisByApar = $inspeksisBulanIni->unique('apar_id')->keyBy('apar_id');
 
         $kondisiBaik = 0;     // Sesuai
         $rusakServis = 0;     // Tidak Sesuai
         $perluRefill = 0;     // Perlu Refill
+
+        foreach ($latestInspeksisByApar as $inspeksi) {
+            if (in_array($inspeksi->status, ['sesuai', 'layak', 'baik'])) {
+                $kondisiBaik++;
+            } elseif (in_array($inspeksi->status, ['tidak_sesuai', 'rusak', 'perbaikan', 'service', 'tidak_layak'])) {
+                $rusakServis++;
+            } elseif (in_array($inspeksi->status, ['perlu_refill', 'isi_ulang'])) {
+                $perluRefill++;
+            }
+        }
+
+        // Expiry check pada batas bulan terpilih (hanya yang terjadi di bulan tersebut)
+        $thirtyDaysFromSelected = $endOfSelectedMonth->copy()->addDays(30);
         $akanKedaluwarsa = 0;
         $sudahKedaluwarsa = 0;
 
-        $thirtyDaysFromSelected = $endOfSelectedMonth->copy()->addDays(30);
-
         foreach ($apars as $apar) {
-            // Status based on latest inspection up to selected month
-            $latestInspeksi = $apar->inspeksis->first();
-            if ($latestInspeksi) {
-                if (in_array($latestInspeksi->status, ['sesuai', 'layak', 'baik'])) {
-                    $kondisiBaik++;
-                } elseif (in_array($latestInspeksi->status, ['tidak_sesuai', 'rusak', 'perbaikan', 'service', 'tidak_layak'])) {
-                    $rusakServis++;
-                } elseif (in_array($latestInspeksi->status, ['perlu_refill', 'isi_ulang'])) {
-                    $perluRefill++;
-                }
-            } elseif ($apar->qty < 1) {
-                $perluRefill++;
-            }
-
-            // Expiry Check relative to selected month
             if ($apar->tgl_kedaluwarsa) {
-                if ($apar->tgl_kedaluwarsa->isBefore($endOfSelectedMonth)) {
+                // APAR yang kedaluwarsa pada bulan & tahun terpilih
+                if ($apar->tgl_kedaluwarsa->year == $selectedYear && $apar->tgl_kedaluwarsa->month == $selectedMonth) {
                     $sudahKedaluwarsa++;
-                } elseif ($apar->tgl_kedaluwarsa->between($endOfSelectedMonth, $thirtyDaysFromSelected)) {
+                }
+                // APAR yang akan kedaluwarsa pada rentang 30 hari ke depan setelah akhir bulan terpilih
+                elseif ($apar->tgl_kedaluwarsa->between($endOfSelectedMonth, $thirtyDaysFromSelected)) {
                     $akanKedaluwarsa++;
                 }
             }
@@ -196,5 +197,54 @@ class DashboardController extends Controller
         $data = $this->getDashboardData($request);
 
         return view('dashboard.display-report', $data);
+    }
+
+    public function quickSearch(Request $request)
+    {
+        $q = trim($request->input('q', ''));
+        if (strlen($q) < 1) {
+            return response()->json([
+                'apars' => [],
+                'lokasis' => [],
+            ]);
+        }
+
+        $apars = Apar::with(['lokasi.gedung', 'jenis'])
+            ->where(function ($query) use ($q) {
+                $query->where('kode', 'like', "%{$q}%")
+                    ->orWhere('no_seri', 'like', "%{$q}%");
+            })
+            ->take(5)
+            ->get()
+            ->map(function ($a) {
+                return [
+                    'id' => $a->id,
+                    'kode' => $a->kode,
+                    'lokasi' => ($a->lokasi->gedung->nama ?? '').' - '.($a->lokasi->nomor_ruangan ? '['.$a->lokasi->nomor_ruangan.'] ' : '').($a->lokasi->nama ?? ''),
+                    'jenis' => $a->jenis->nama ?? 'APAR',
+                    'url' => route('master-data.index', ['search' => $a->kode]),
+                ];
+            });
+
+        $lokasis = Lokasi::with('gedung')
+            ->where(function ($query) use ($q) {
+                $query->where('nama', 'like', "%{$q}%")
+                    ->orWhere('nomor_ruangan', 'like', "%{$q}%");
+            })
+            ->take(5)
+            ->get()
+            ->map(function ($l) {
+                return [
+                    'id' => $l->id,
+                    'nama' => ($l->nomor_ruangan ? '['.$l->nomor_ruangan.'] ' : '').$l->nama,
+                    'gedung' => $l->gedung->nama ?? '',
+                    'url' => route('master-data.index', ['tab' => 'referensi', 'search' => $l->nomor_ruangan ?: $l->nama]),
+                ];
+            });
+
+        return response()->json([
+            'apars' => $apars,
+            'lokasis' => $lokasis,
+        ]);
     }
 }

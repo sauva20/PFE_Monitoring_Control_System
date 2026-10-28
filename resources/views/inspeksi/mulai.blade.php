@@ -398,64 +398,17 @@
                                 </div>
                             </div>
                         </div>
-                        @elseif($index === 17)
-                        {{-- 4. Tanggal masa berlaku (Expired) --}}
-                        @php
-                            $tglKedaluwarsaStr = $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('Y-m-d') : '';
-                        @endphp
-                        <div class="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ (request('source') === 'schedule') ? 'lg:col-span-2' : '' }}" 
-                             x-data="{ 
-                                 expectedTgl: '{{ $tglKedaluwarsaStr }}',
-                                 keterangan: $persist('{{ addslashes(old('checklist.'.$index.'.keterangan', '')) }}').using(sessionStorage).as('inspeksi_ket_{{ $index }}_{{ $apar->id }}')
-                             }"
-                             :class="(tgl_kedaluwarsa == expectedTgl && expectedTgl !== '') ? 'bg-teal-50/50 border-teal-200/60' : 'bg-red-50/80 border-red-200'">
-                            <!-- Number & Question -->
-                            <div class="flex-1 flex gap-3">
-                                <div class="w-6 h-6 rounded-full flex items-center justify-center font-black text-[10px] flex-shrink-0 transition-colors"
-                                     :class="(tgl_kedaluwarsa == expectedTgl && expectedTgl !== '') ? 'bg-[#009B77] text-white' : 'bg-red-500 text-white'">
-                                    {{ $index - 13 }}
-                                </div>
-                                <div>
-                                    <p class="font-bold text-slate-700 text-xs leading-relaxed pt-0.5">{{ $tanya }}</p>
-                                    <p class="text-[10px] text-slate-400 font-medium mt-0.5">Master: <strong class="text-slate-600">{{ $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('d/m/Y') : '-' }}</strong></p>
-                                </div>
-                            </div>
-                            
-                            <!-- Date Input -->
-                            <div class="flex flex-col gap-2 w-full sm:w-[340px] sm:shrink-0">
-                                <div class="relative w-full">
-                                    <input type="hidden" name="checklist[{{ $index }}][jawaban]" :value="(tgl_kedaluwarsa == expectedTgl && expectedTgl !== '') ? 'ada' : 'tidak ada'">
-                                    <i class="ph-bold ph-calendar-blank absolute left-3 top-1/2 -translate-y-1/2 text-base pointer-events-none transition-colors"
-                                       :class="(tgl_kedaluwarsa == expectedTgl && expectedTgl !== '') ? 'text-[#009B77]' : 'text-red-500'"></i>
-                                    <input type="text" name="tgl_kedaluwarsa" x-model="tgl_kedaluwarsa" required
-                                           x-init="flatpickr($el, { dateFormat: 'Y-m-d', disableMobile: 'true', defaultDate: tgl_kedaluwarsa, onChange: (s, d) => { tgl_kedaluwarsa = d; } })"
-                                           class="w-full bg-white border-2 rounded-xl py-2 pl-9 pr-3 text-xs font-bold transition-all outline-none shadow-sm cursor-pointer"
-                                           :class="(tgl_kedaluwarsa == expectedTgl && expectedTgl !== '') ? 'border-teal-200/90 text-teal-900 bg-teal-50/50 focus:border-[#009B77] focus:ring-2 focus:ring-[#009B77]/15' : 'border-red-300 text-red-700 bg-red-50/50 focus:border-red-400 focus:ring-2 focus:ring-red-100'">
-                                </div>
-                                
-                                <!-- Input Keterangan -->
-                                <div x-show="tgl_kedaluwarsa !== '' && (tgl_kedaluwarsa != expectedTgl || expectedTgl === '')" x-collapse>
-                                    <div class="relative">
-                                        <i class="ph-bold absolute left-2.5 top-1/2 -translate-y-1/2 text-base" :class="(tgl_kedaluwarsa != expectedTgl || expectedTgl === '') ? 'ph-warning-circle text-red-400' : 'ph-note-pencil text-slate-400'"></i>
-                                        <input type="text" name="checklist[{{ $index }}][keterangan]" x-model="keterangan" 
-                                               placeholder="{{ __('Kondisi / Keterangan (Opsional)...') }}" 
-                                               class="w-full text-[11px] py-2 pl-8 pr-3 border-2 bg-white rounded-lg focus:ring-2 outline-none transition-all font-medium shadow-sm"
-                                               :class="(tgl_kedaluwarsa != expectedTgl || expectedTgl === '') ? 'border-red-200 focus:border-red-400 focus:ring-red-100 placeholder:text-red-300 text-red-700' : 'border-slate-200 focus:border-[#009B77] focus:ring-[#009B77]/15 placeholder:text-slate-300 text-slate-700'">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                         @else
-                        {{-- 5-10: Segel, Karat, Kepadatan, Nozzle, Pin, Lokasi --}}
+                        {{-- 4-9: Segel, Karat, Kepadatan, Nozzle, Pin, Lokasi --}}
                         @php
-                            $expected = ($index === 19) ? 'tidak ada' : 'ada';
+                            $expected = ($index === 18) ? 'tidak ada' : 'ada';
                         @endphp
                         <div x-data="{ 
                                 jawaban: $persist('{{ old('checklist.'.$index.'.jawaban', '') }}').using(sessionStorage).as('inspeksi_jawaban_{{ $index }}_{{ $apar->id }}'), 
                                 keterangan: $persist('{{ addslashes(old('checklist.'.$index.'.keterangan', '')) }}').using(sessionStorage).as('inspeksi_ket_{{ $index }}_{{ $apar->id }}'),
                                 expected: '{{ $expected }}' 
                              }" 
-                             @if($index === 23)
+                             @if($index === 22)
                               x-effect="if ($refs.lokasiInput) {
                                 if (jawaban === 'tidak ada' && keterangan.trim().toLowerCase() === '{{ strtolower($apar->lokasi->nama) }}') {
                                     $refs.lokasiInput.setCustomValidity('Lokasi yang dimasukkan sama dengan lokasi saat ini.');
@@ -464,7 +417,7 @@
                                 }
                               }"
                              @endif
-                             class="group flex flex-col sm:flex-row gap-3 p-3 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ ($index === 23 && (request('source') === 'schedule')) ? 'lg:col-span-2' : '' }}" 
+                             class="group flex flex-col sm:flex-row gap-3 p-3 rounded-xl border-2 transition-all duration-300 hover:shadow-sm {{ ($index === 22 && (request('source') === 'schedule')) ? 'lg:col-span-2' : '' }}" 
                              :class="jawaban === expected ? 'bg-teal-50/50 border-teal-200/60' : (jawaban !== '' ? 'bg-red-50/80 border-red-200' : 'bg-white border-slate-100 hover:border-slate-200')">
                              
                             <!-- Number & Question -->
@@ -475,7 +428,7 @@
                                 </div>
                                 <div>
                                     <p class="font-bold text-slate-700 text-xs leading-relaxed pt-0.5">{{ $tanya }}</p>
-                                    @if($index === 23)
+                                    @if($index === 22)
                                     <p class="text-[10px] text-slate-500 font-semibold mt-0.5">Master: <strong class="text-slate-700">{{ $apar->lokasi->nama ?? '-' }}</strong></p>
                                     @endif
                                 </div>
@@ -488,12 +441,12 @@
                                     <button type="button" @click="jawaban = 'ada'" 
                                             class="flex-1 px-3 py-1.5 rounded text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5" 
                                             :class="jawaban === 'ada' ? (expected === 'ada' ? 'bg-[#009B77] text-white shadow-sm scale-[1.02]' : 'bg-red-500 text-white shadow-sm scale-[1.02]') : 'text-slate-500 hover:bg-white hover:text-slate-700 hover:shadow-sm'">
-                                        <i class="ph-bold ph-check text-[10px]"></i> {{ $index === 20 ? __('Padat') : ($index === 23 ? __('Sesuai') : __('Ada')) }}
+                                        <i class="ph-bold ph-check text-[10px]"></i> {{ $index === 19 ? __('Padat') : ($index === 22 ? __('Sesuai') : __('Ada')) }}
                                     </button>
                                     <button type="button" @click="jawaban = 'tidak ada'" 
                                             class="flex-1 px-3 py-1.5 rounded text-[10px] font-bold transition-all duration-300 flex items-center justify-center gap-1.5" 
                                             :class="jawaban === 'tidak ada' ? (expected === 'tidak ada' ? 'bg-[#009B77] text-white shadow-sm scale-[1.02]' : 'bg-red-500 text-white shadow-sm scale-[1.02]') : 'text-slate-500 hover:bg-white hover:text-slate-700 hover:shadow-sm'">
-                                        <i class="ph-bold ph-x text-[10px]"></i> {{ $index === 20 ? __('Tidak') : ($index === 23 ? __('Tidak Sesuai') : __('Tidak Ada')) }}
+                                        <i class="ph-bold ph-x text-[10px]"></i> {{ $index === 19 ? __('Tidak') : ($index === 22 ? __('Tidak Sesuai') : __('Tidak Ada')) }}
                                     </button>
                                 </div>
                                 
@@ -502,13 +455,13 @@
                                     <div class="relative">
                                         <i class="ph-bold absolute left-2.5 top-1/2 -translate-y-1/2 text-base" :class="jawaban !== expected ? 'ph-warning-circle text-red-400' : 'ph-note-pencil text-slate-400'"></i>
                                         <input type="text" name="checklist[{{ $index }}][keterangan]" x-model="keterangan" 
-                                               @if($index === 23) x-ref="lokasiInput" @endif 
-                                               placeholder="{{ $index === 23 ? __('Masukkan lokasi yang tepat...') : __('Kondisi / Keterangan (Opsional)...') }}" 
-                                               :required="jawaban === 'tidak ada' && {{ $index === 23 ? 'true' : 'false' }}"
+                                               @if($index === 22) x-ref="lokasiInput" @endif 
+                                               placeholder="{{ $index === 22 ? __('Masukkan lokasi yang tepat...') : __('Kondisi / Keterangan (Opsional)...') }}" 
+                                               :required="jawaban === 'tidak ada' && {{ $index === 22 ? 'true' : 'false' }}"
                                                class="w-full text-[11px] py-2 pl-8 pr-3 border-2 bg-white rounded-lg focus:ring-2 outline-none transition-all font-medium shadow-sm"
                                                :class="jawaban !== expected ? 'border-red-200 focus:border-red-400 focus:ring-red-100 placeholder:text-red-300 text-red-700' : 'border-slate-200 focus:border-[#009B77] focus:ring-[#009B77]/15 placeholder:text-slate-300 text-slate-700'">
                                     </div>
-                                    @if($index === 23)
+                                    @if($index === 22)
                                     <div x-show="jawaban === 'tidak ada' && keterangan.trim().toLowerCase() === '{{ strtolower($apar->lokasi->nama) }}'" x-collapse>
                                         <div class="mt-1.5 flex items-start gap-1.5 text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
                                             <i class="ph-bold ph-warning text-sm mt-0.5"></i>
@@ -636,7 +589,28 @@
                 
                 <div class="space-y-4">
                     <div class="grid grid-cols-1 {{ (request('source') === 'schedule') ? 'lg:grid-cols-12 lg:gap-6 items-start' : 'md:grid-cols-2 gap-6' }}">
-                        <!-- Status Akhir -->
+                        <!-- 1. Tgl Kedaluwarsa (Expired) -->
+                        <div class="{{ (request('source') === 'schedule') ? 'lg:col-span-3' : '' }}">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ __('Expired') }}</label>
+                            <div class="relative">
+                                <i class="ph-bold ph-calendar-blank absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg pointer-events-none"></i>
+                                <input type="text" name="tgl_kedaluwarsa" x-model="tgl_kedaluwarsa" required
+                                       x-init="flatpickr($el, { dateFormat: 'Y-m-d', disableMobile: 'true', defaultDate: tgl_kedaluwarsa, onChange: (s, d) => { tgl_kedaluwarsa = d; } })"
+                                       class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-2.5 pl-12 pr-4 text-sm font-bold text-slate-700 focus:bg-white focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none cursor-pointer">
+                            </div>
+                        </div>
+
+                        <!-- 2. Qty -->
+                        <div class="{{ (request('source') === 'schedule') ? 'lg:col-span-3' : '' }}">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Qty</label>
+                            <div class="relative">
+                                <i class="ph-bold ph-hash absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
+                                <input type="number" name="qty" min="0" x-model="qty" required
+                                       class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-2.5 pl-12 pr-4 text-sm font-bold text-slate-700 focus:bg-white focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none">
+                            </div>
+                        </div>
+
+                        <!-- 3. Status Akhir -->
                         <div class="{{ (request('source') === 'schedule') ? 'lg:col-span-6' : 'md:col-span-2' }}">
                             <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ __('Overall Status') }}</label>
                             <div x-data="{ open: false, options: { 'sesuai': '{{ __('Sesuai') }}', 'tidak_sesuai': '{{ __('Tidak Sesuai') }}', 'perlu_refill': '{{ __('Perlu Refill') }}' } }" class="relative">
@@ -680,24 +654,6 @@
                                 </div>
                             </div>
                         </div>
-                        <!-- Qty -->
-                        <div class="{{ (request('source') === 'schedule') ? 'lg:col-span-3' : '' }}">
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Qty</label>
-                            <div class="relative">
-                                <i class="ph-bold ph-hash absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-lg"></i>
-                                <input type="number" name="qty" min="0" x-model="qty" required
-                                       class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-2.5 pl-12 pr-4 text-sm font-bold text-slate-700 focus:bg-white focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none">
-                            </div>
-                        </div>
-                        
-                        <!-- Tgl Kedaluwarsa Display/Confirmed -->
-                        <div class="{{ (request('source') === 'schedule') ? 'lg:col-span-3' : '' }}">
-                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Expired</label>
-                            <div class="relative">
-                                <input type="text" :value="tgl_kedaluwarsa" readonly
-                                       class="w-full bg-slate-100 border-2 border-slate-200 rounded-xl py-2.5 px-4 text-sm font-bold text-slate-700 outline-none cursor-default">
-                            </div>
-                        </div>
 
                         <!-- Upload Foto & Watermark Lokasi Real -->
                         <div class="{{ (request('source') === 'schedule') ? 'lg:col-start-7 lg:col-span-6 lg:row-start-1 lg:row-span-4' : 'md:col-span-2' }}">
@@ -722,6 +678,7 @@
                                 <div class="relative w-full rounded-xl overflow-hidden bg-slate-100 border-2 border-dashed border-slate-300 hover:border-[#009B77] transition-all min-h-[220px] flex items-center justify-center group">
                                     <input type="hidden" name="foto_base64" :value="photoPreview">
                                     <input type="file" id="foto" class="hidden" accept="image/*" {{ request('source') === 'schedule' ? '' : 'capture="environment"' }}
+                                           :disabled="!isSystemSource && gpsStatus !== 'success'"
                                            @change="processImage($event.target.files[0])">
                                     
                                     <!-- Loading State -->
@@ -732,7 +689,7 @@
                                     </div>
 
                                     <!-- Tombol Take Photo saat belum ada foto -->
-                                    <label for="foto" class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2.5 p-4 cursor-pointer transition-all" x-show="!photoPreview && !isProcessing">
+                                    <div @click="handlePhotoClick($event)" class="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2.5 p-4 cursor-pointer transition-all" x-show="!photoPreview && !isProcessing">
                                         <div class="w-13 h-13 rounded-full bg-white shadow-sm flex items-center justify-center text-slate-400 group-hover:text-[#009B77] group-hover:scale-110 transition-all flex-shrink-0 border border-slate-200">
                                             <i class="bi" :class="isSystemSource ? 'bi-cloud-arrow-up text-2xl' : 'bi-camera text-2xl'"></i>
                                         </div>
@@ -760,7 +717,7 @@
                                                 <span x-text="gpsStatus === 'success' ? 'GPS Terhubung (±' + (gpsAccuracy || 0) + 'm)' : (gpsStatus === 'locating' ? 'Mencari sinyal GPS...' : 'GPS belum terhubung (Klik untuk aktifkan)')"></span>
                                             </div>
                                         </template>
-                                    </label>
+                                    </div>
 
                                     <!-- Preview Image Display (Klik untuk Zoom/Modal) -->
                                     <template x-if="photoPreview">
@@ -783,9 +740,9 @@
                                             </div>
 
                                             <!-- Tombol Ambil Ulang Foto -->
-                                            <label for="foto" @click.stop class="absolute bottom-3 right-3 bg-white/95 hover:bg-white backdrop-blur px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 shadow-md cursor-pointer transition-colors flex items-center gap-1.5 z-20 border border-slate-200 hover:text-[#009B77]">
+                                            <button type="button" @click.stop="handlePhotoClick($event)" class="absolute bottom-3 right-3 bg-white/95 hover:bg-white backdrop-blur px-3 py-1.5 rounded-lg text-xs font-bold text-slate-700 shadow-md cursor-pointer transition-colors flex items-center gap-1.5 z-20 border border-slate-200 hover:text-[#009B77]">
                                                 <i class="bi bi-arrow-repeat text-[#009B77]"></i> {{ __('Ambil Ulang Foto') }}
-                                            </label>
+                                            </button>
 
                                             <!-- Petunjuk Kecil di Pojok Kiri Bawah -->
                                             <div class="absolute bottom-3 left-3 text-[10px] text-white/90 font-medium flex items-center gap-1 drop-shadow pointer-events-none">
@@ -1223,35 +1180,131 @@
                 picName: @json(auth()->user()->name ?? 'Petugas'),
                 capturedTime: null,
                 showFullPhoto: false,
+                backUrl: @json($backUrl),
+                locationDeniedCount: 0,
 
                 init() {
                     if (this.isSystemSource) {
                         this.gpsStatus = 'system';
                     } else {
-                        this.requestLocation();
+                        this.requestLocation(false);
                     }
                 },
 
-                requestLocation() {
+                requestLocation(fromUserClick = false) {
                     if (this.isSystemSource) return;
-                    if ('geolocation' in navigator) {
-                        this.gpsStatus = 'locating';
-                        navigator.geolocation.getCurrentPosition(
-                            (pos) => {
-                                this.gpsLat = pos.coords.latitude;
-                                this.gpsLng = pos.coords.longitude;
-                                this.gpsAccuracy = Math.round(pos.coords.accuracy);
-                                this.gpsStatus = 'success';
-                            },
-                            (err) => {
-                                console.warn('GPS Notice/Error:', err.message);
-                                this.gpsStatus = 'error';
-                            },
-                            { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
-                        );
-                    } else {
+                    if (!('geolocation' in navigator)) {
                         this.gpsStatus = 'error';
+                        Swal.fire({
+                            title: 'Perangkat Tidak Mendukung GPS',
+                            text: 'Perangkat Anda tidak mendukung fitur lokasi (Geolocation). Untuk keabsahan inspeksi APAR lapangan, lokasi perangkat wajib aktif.',
+                            icon: 'error',
+                            confirmButtonColor: '#009B77',
+                            confirmButtonText: 'Kembali',
+                            allowOutsideClick: false
+                        }).then(() => {
+                            window.location.href = this.backUrl;
+                        });
+                        return;
                     }
+
+                    this.gpsStatus = 'locating';
+                    navigator.geolocation.getCurrentPosition(
+                        (pos) => {
+                            this.gpsLat = pos.coords.latitude;
+                            this.gpsLng = pos.coords.longitude;
+                            this.gpsAccuracy = Math.round(pos.coords.accuracy);
+                            this.gpsStatus = 'success';
+                            this.locationDeniedCount = 0;
+                            if (fromUserClick) {
+                                setTimeout(() => {
+                                    const input = document.getElementById('foto');
+                                    if (input) input.click();
+                                }, 300);
+                            }
+                        },
+                        (err) => {
+                            console.warn('GPS Notice/Error:', err.message);
+                            this.gpsStatus = 'error';
+                            this.locationDeniedCount++;
+
+                            if (this.locationDeniedCount >= 2) {
+                                Swal.fire({
+                                    title: 'Akses Lokasi Ditolak!',
+                                    text: 'Akses lokasi ditolak kembali. Anda tidak dapat mengambil foto maupun melanjutkan inspeksi APAR tanpa izin lokasi perangkat. Anda akan dikembalikan ke halaman sebelumnya.',
+                                    icon: 'error',
+                                    confirmButtonColor: '#ef4444',
+                                    confirmButtonText: 'Kembali',
+                                    allowOutsideClick: false,
+                                    allowEscapeKey: false
+                                }).then(() => {
+                                    window.location.href = this.backUrl;
+                                });
+                                setTimeout(() => {
+                                    window.location.href = this.backUrl;
+                                }, 2500);
+                            } else {
+                                Swal.fire({
+                                    title: 'Akses Lokasi Wajib Diaktifkan!',
+                                    text: 'Untuk memastikan inspeksi dilakukan langsung di lokasi APAR, Anda wajib mengizinkan akses lokasi perangkat (GPS). Anda tidak dapat mengambil foto jika lokasi ditolak.',
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#009B77',
+                                    cancelButtonColor: '#94a3b8',
+                                    confirmButtonText: 'Izinkan Lokasi Sekarang',
+                                    cancelButtonText: 'Batal',
+                                    allowOutsideClick: false
+                                }).then((res) => {
+                                    if (res.isConfirmed) {
+                                        this.requestLocation(false);
+                                    }
+                                });
+                            }
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    );
+                },
+
+                handlePhotoClick(e) {
+                    if (this.isSystemSource) {
+                        const input = document.getElementById('foto');
+                        if (input) input.click();
+                        return;
+                    }
+
+                    if (this.gpsStatus !== 'success') {
+                        if (this.locationDeniedCount >= 2) {
+                            Swal.fire({
+                                title: 'Akses Lokasi Ditolak!',
+                                text: 'Akses lokasi ditolak. Anda tidak dapat mengambil foto tanpa mengizinkan lokasi. Anda akan dikembalikan.',
+                                icon: 'error',
+                                confirmButtonColor: '#ef4444',
+                                confirmButtonText: 'Kembali',
+                                allowOutsideClick: false
+                            }).then(() => {
+                                window.location.href = this.backUrl;
+                            });
+                            setTimeout(() => {
+                                window.location.href = this.backUrl;
+                            }, 2500);
+                            return;
+                        }
+
+                        Swal.fire({
+                            title: 'Wajib Mengizinkan Lokasi!',
+                            text: 'Anda tidak dapat mengambil foto tanpa menyalakan dan mengizinkan akses lokasi (GPS) pada perangkat Anda. Silakan izinkan akses lokasi.',
+                            icon: 'warning',
+                            confirmButtonColor: '#009B77',
+                            confirmButtonText: 'Izinkan Lokasi Sekarang',
+                            allowOutsideClick: false
+                        }).then(() => {
+                            this.requestLocation(true);
+                        });
+                        return;
+                    }
+
+                    const input = document.getElementById('foto');
+                    if (input) input.click();
                 },
 
                 processImage(file) {

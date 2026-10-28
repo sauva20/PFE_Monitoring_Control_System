@@ -39,8 +39,10 @@ class PasswordSetupController extends Controller
                 'pin' => 'required|string|size:4',
             ]);
 
-            if ($request->pin !== $user->pin) {
-                return back()->withErrors(['pin' => 'PIN yang Anda masukkan salah.']);
+            $isPinValid = $user->matchesPin($request->pin);
+
+            if (! $isPinValid) {
+                return back()->withErrors(['pin' => __('The PIN you entered is incorrect.')]);
             }
 
             session(['pin_verified_'.$user->id => true]);

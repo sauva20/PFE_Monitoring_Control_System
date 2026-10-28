@@ -33,6 +33,8 @@
     </style>
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-[#F0F0F0] text-[#1A1A1A] relative overflow-hidden w-full h-screen grid place-items-center p-4">
 
@@ -63,7 +65,8 @@
             <!-- Form -->
             <form action="{{ URL::full() }}" method="POST" class="space-y-5">
                 @csrf
-                
+                <input type="hidden" name="token" value="{{ $token ?? request('token') }}">
+
                 @if ($errors->any())
                 <div class="text-red-500 text-[13px] font-bold flex items-center justify-center gap-1.5 pb-2 text-center">
                     <i class="ph-fill ph-warning-circle text-base shrink-0"></i>
@@ -75,7 +78,7 @@
                 <div>
                     <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">{{ __('Account Email') }}</label>
                     <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                             <i class="ph-fill ph-envelope text-lg"></i>
                         </div>
                         <input type="email" value="{{ $user->email }}" readonly
@@ -87,13 +90,13 @@
                 <div>
                     <label for="password" class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">{{ __('New Password') }}</label>
                     <div class="relative group" x-data="{ show: false }">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
                             <i class="ph-fill ph-lock-key text-lg"></i>
                         </div>
-                        <input :type="show ? 'text' : 'password'" id="password" name="password" placeholder="{{ __('Minimum 8 characters') }}" minlength="8"
+                        <input type="password" :type="show ? 'text' : 'password'" id="password" name="password" placeholder="{{ __('Minimum 8 characters') }}" minlength="8"
                             class="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#009B77]/10 focus:border-[#009B77] focus:bg-white transition-all outline-none text-[#1A1A1A] text-sm tracking-widest font-mono placeholder:font-sans placeholder:tracking-normal" required autofocus>
-                        <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#009B77] transition-colors focus:outline-none">
-                            <i class="ph-fill text-lg" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
+                        <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-[#009B77] transition-colors focus:outline-none cursor-pointer">
+                            <i class="ph-fill ph-eye text-lg" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
                         </button>
                     </div>
                 </div>
@@ -102,16 +105,17 @@
                 <div>
                     <label for="password_confirmation" class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">{{ __('Confirm New Password') }}</label>
                     <div class="relative group" x-data="{ show: false }">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
-                            <i class="ph-fill ph-check-circle text-lg"></i>
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
+                            <i class="ph-fill ph-lock-key text-lg"></i>
                         </div>
-                        <input :type="show ? 'text' : 'password'" id="password_confirmation" name="password_confirmation" placeholder="{{ __('Repeat the password above') }}" minlength="8"
+                        <input type="password" :type="show ? 'text' : 'password'" id="password_confirmation" name="password_confirmation" placeholder="{{ __('Repeat the password above') }}" minlength="8"
                             class="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#009B77]/10 focus:border-[#009B77] focus:bg-white transition-all outline-none text-[#1A1A1A] text-sm tracking-widest font-mono placeholder:font-sans placeholder:tracking-normal" required>
-                        <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#009B77] transition-colors focus:outline-none">
-                            <i class="ph-fill text-lg" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
+                        <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-[#009B77] transition-colors focus:outline-none cursor-pointer">
+                            <i class="ph-fill ph-eye text-lg" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
                         </button>
                     </div>
                 </div>
+
 
                 <!-- Submit Button -->
                 <div class="pt-4">

@@ -110,8 +110,17 @@
                     <td>{{ $user->name }}</td>
                     <td>{{ $user->email }}</td>
                     <td>
-                        @if($user->gedungs->count() > 0)
-                            {{ $user->gedungs->pluck('nama')->implode(', ') }}
+                        @php
+                            $areas = [];
+                            foreach ($user->gedungs as $g) {
+                                $areas[] = $g->nama;
+                            }
+                            foreach ($user->lokasis as $l) {
+                                $areas[] = ($l->gedung->nama ?? '') . ': ' . ($l->nomor_ruangan ? '[' . $l->nomor_ruangan . '] ' : '') . $l->nama;
+                            }
+                        @endphp
+                        @if(count($areas) > 0)
+                            {{ implode(', ', $areas) }}
                         @else
                             n/a
                         @endif

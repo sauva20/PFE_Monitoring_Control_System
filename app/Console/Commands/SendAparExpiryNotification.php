@@ -50,18 +50,22 @@ class SendAparExpiryNotification extends Command
             $this->info('Sent master expiration reminder to EHSS users.');
         }
 
-        // Send to PIC (Staff) based on Gedung assignments
-        $staffUsers = User::where('role', 'Staff')->with('gedungs')->get();
+        // Send to PIC (Staff) based on Gedung / Lokasi assignments
+        $staffUsers = User::where('role', 'Staff')->with(['gedungs', 'lokasis'])->get();
 
         foreach ($staffUsers as $staff) {
             $assignedGedungIds = $staff->gedungs->pluck('id')->toArray();
+            $assignedLokasiIds = $staff->lokasis->pluck('id')->toArray();
 
-            if (empty($assignedGedungIds)) {
+            if (empty($assignedGedungIds) && empty($assignedLokasiIds)) {
                 continue;
             }
 
-            // Filter APARs that belong to this staff's assigned gedungs
-            $staffApars = $apars->filter(function ($apar) use ($assignedGedungIds) {
+            // Filter APARs that belong to this staff's assigned gedungs or lokasis
+            $staffApars = $apars->filter(function ($apar) use ($assignedGedungIds, $assignedLokasiIds) {
+                if ($apar->lokasi_id && in_array($apar->lokasi_id, $assignedLokasiIds)) {
+                    return true;
+                }
                 if ($apar->lokasi && $apar->lokasi->gedung_id) {
                     return in_array($apar->lokasi->gedung_id, $assignedGedungIds);
                 }

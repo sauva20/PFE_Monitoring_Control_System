@@ -1,15 +1,20 @@
 @php
-    $apars = collect();
-    if ($jadwal->tipe_area === 'gedung' && $jadwal->gedung) {
+    if (isset($jadwal->custom_apars)) {
+        $apars = $jadwal->custom_apars;
+    } elseif ($jadwal->tipe_area === 'gedung' && $jadwal->gedung) {
+        $apars = collect();
         foreach($jadwal->gedung->lokasi as $l) {
             foreach($l->apar as $a) {
                 $apars->push($a);
             }
         }
     } elseif ($jadwal->tipe_area === 'lokasi' && $jadwal->lokasi) {
+        $apars = collect();
         foreach($jadwal->lokasi->apar as $a) {
             $apars->push($a);
         }
+    } else {
+        $apars = collect();
     }
     $hasMultipleApars = $apars->count() > 1;
 @endphp
@@ -17,11 +22,7 @@
     <div class="p-5 flex items-start justify-between gap-4 {{ $hasMultipleApars ? 'cursor-pointer' : '' }}" @click="{{ $hasMultipleApars ? 'expanded = !expanded' : '' }}">
         <div class="flex gap-4">
             <div class="w-12 h-12 rounded-xl {{ $isTerlewat ? 'bg-red-50 border-red-200 text-red-500' : 'bg-[#009B77]/5 border-[#009B77]/20 text-[#009B77]' }} border flex items-center justify-center flex-shrink-0">
-                @if($jadwal->tipe_area === 'gedung')
-                    <i class="ph-duotone ph-buildings text-2xl" title="{{ __('Inspect Entire Building') }}"></i>
-                @else
-                    <i class="ph-duotone ph-map-pin text-2xl" title="{{ __('Inspect Specific Location') }}"></i>
-                @endif
+                <i class="ph-duotone ph-buildings text-2xl" title="{{ __('Inspect Building') }}"></i>
             </div>
             <div>
                 <div class="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -50,21 +51,16 @@
                     </span>
                 </div>
                 <h3 class="font-extrabold text-slate-800 text-base">
-                    @if($jadwal->tipe_area === 'gedung')
-                        {{ $jadwal->gedung->nama ?? __('Deleted Building') }} <span class="text-xs font-semibold text-slate-400 ml-1">{{ __('(All Areas)') }}</span>
-                    @else
-                        {{ $jadwal->lokasi->nama ?? __('Deleted Location') }} <span class="text-xs font-semibold text-slate-400 ml-1">({{ $jadwal->gedung->nama ?? 'n/a' }})</span>
-                    @endif
+                    {{ $jadwal->gedung->nama ?? ($jadwal->lokasi->nama ?? __('Deleted Area')) }}
+                    <span class="text-xs font-semibold text-slate-400 ml-1">
+                        {{ $jadwal->scope_label ?? ($jadwal->tipe_area === 'gedung' ? __('(All Areas)') : '('.($jadwal->lokasi->nama ?? '').')') }}
+                    </span>
                 </h3>
                 <p class="text-[13px] font-medium text-slate-500 mt-1 flex items-center gap-1.5 flex-wrap">
                     <span class="flex items-center gap-1.5"><i class="ph-bold ph-user-circle text-slate-400"></i> {{ __('Officer:') }} {{ $jadwal->user ? $jadwal->user->name : __('Free / Anyone') }}</span>
                     <span class="text-slate-300 mx-1">|</span>
                     <span class="flex items-center gap-1.5"><i class="ph-bold ph-fire-extinguisher text-slate-400"></i> 
-                    @if($apars->count() === 1)
-                        APAR: <span class="font-bold text-slate-600">{{ $apars->first()->kode }}</span>
-                    @else
                         {{ $apars->count() }} APAR
-                    @endif
                     </span>
                 </p>
                 @if($jadwal->catatan_tambahan)

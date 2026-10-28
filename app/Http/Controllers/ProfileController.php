@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\GuestDisplay;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -35,9 +37,26 @@ class ProfileController extends Controller
             'new_pin' => 'required|digits:4|confirmed',
         ]);
 
-        if ((string) $request->current_pin !== (string) auth()->user()->pin) {
+        $currentPinValid = auth()->user()->matchesPin($request->current_pin);
+
+        if (! $currentPinValid) {
             throw ValidationException::withMessages([
-                'current_pin' => 'PIN saat ini tidak sesuai.',
+                'current_pin' => __('PIN saat ini tidak sesuai.'),
+            ]);
+        }
+
+        $newPin = $request->new_pin;
+        $isPinUsedInGuest = GuestDisplay::where('pin', $newPin)->exists();
+        $isPinUsedInUsers = User::whereNotNull('pin')
+            ->where('id', '!=', auth()->id())
+            ->get()
+            ->contains(function ($u) use ($newPin) {
+                return $u->matchesPin($newPin);
+            });
+
+        if ($isPinUsedInGuest || $isPinUsedInUsers) {
+            throw ValidationException::withMessages([
+                'new_pin' => __('PIN yang anda buat berbahaya dan tidak aman'),
             ]);
         }
 

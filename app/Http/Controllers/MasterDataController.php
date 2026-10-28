@@ -126,7 +126,18 @@ class MasterDataController extends Controller
             ];
         }
 
-        return view('master-data.index', compact('gedungs', 'lokasis', 'jenisApars', 'kapasitasApars', 'apars', 'aparCadangans', 'resumeColumns', 'resumeTable'));
+        $allAparKodes = $allApars->pluck('kode')->filter()->values()->toArray();
+        $allAparItems = $allApars->map(function ($apar) {
+            preg_match('/\d+$/', $apar->kode ?? '', $matches);
+
+            return [
+                'id' => (string) $apar->id,
+                'kode' => $apar->kode,
+                'number' => $matches[0] ?? '',
+            ];
+        })->filter(fn ($item) => ! empty($item['number']))->values()->toArray();
+
+        return view('master-data.index', compact('gedungs', 'lokasis', 'jenisApars', 'kapasitasApars', 'apars', 'aparCadangans', 'resumeColumns', 'resumeTable', 'allAparKodes', 'allAparItems'));
     }
 
     public function exportPdf(Request $request)
@@ -269,7 +280,22 @@ class MasterDataController extends Controller
             'Expires' => '0',
         ];
 
-        $columns = ['No', 'Kode APAR', 'No. Ruangan', 'Lokasi', 'Gedung', 'Jenis APAR', 'Kapasitas', 'Kelas Kebakaran', 'Tgl Kedaluwarsa', 'Terakhir Isi Ulang', 'Qty', 'PIC', 'Status Akhir', 'Inspeksi Terakhir'];
+        $columns = [
+            'No',
+            'Fire Extinguisher Code / Kode APAR',
+            'Room No / No. Ruangan',
+            'Location / Lokasi',
+            'Building / Gedung',
+            'Fire Extinguisher Type / Jenis APAR',
+            'Fill Capacity / Kapasitas Isi',
+            'Fire Class / Kelas Kebakaran',
+            'Expired Date / Tanggal Kedaluwarsa',
+            'Last Refill / Terakhir Isi Ulang',
+            'Last Inspection / Terakhir Inspeksi',
+            'Qty / Jml',
+            'PIC / Penanggung Jawab',
+            'Final Status / Status Akhir',
+        ];
 
         $callback = function () use ($apars, $columns) {
             $file = fopen('php://output', 'w');
@@ -300,11 +326,11 @@ class MasterDataController extends Controller
                 }
                 $statusLabel = '-';
                 if ($statusRaw === 'sesuai' || $statusRaw === 'layak') {
-                    $statusLabel = 'Sesuai';
+                    $statusLabel = 'Compliant / Sesuai';
                 } elseif ($statusRaw === 'tidak_sesuai' || in_array($statusRaw, ['perbaikan', 'rusak', 'service', 'tidak_layak'])) {
-                    $statusLabel = 'Tidak Sesuai';
+                    $statusLabel = 'Non-Compliant / Tidak Sesuai';
                 } elseif ($statusRaw === 'perlu_refill' || $statusRaw === 'isi_ulang') {
-                    $statusLabel = 'Perlu Refill';
+                    $statusLabel = 'Needs Refill / Perlu Refill';
                 }
 
                 $row = [
@@ -318,10 +344,10 @@ class MasterDataController extends Controller
                     $kelas,
                     $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('d M Y') : '-',
                     $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->format('d M Y') : '-',
+                    $lastInspeksi ? $lastInspeksi->created_at->format('d M Y') : '-',
                     $apar->qty,
                     $picName,
                     $statusLabel,
-                    $lastInspeksi ? $lastInspeksi->created_at->format('d M Y') : '-',
                 ];
 
                 fputcsv($file, $row);
@@ -369,7 +395,22 @@ class MasterDataController extends Controller
         }
 
         $apars = $query->orderBy('id', 'asc')->get();
-        $columns = [__('No'), __('PFE ID'), __('Room No'), __('Location'), __('Building'), __('Type'), __('Capacity'), __('Fire Class'), __('Expiry Date'), __('Last Refill'), __('Qty'), __('PIC'), __('Last Inspection')];
+        $columns = [
+            'No',
+            'Fire Extinguisher Code / Kode APAR',
+            'Room No / No. Ruangan',
+            'Location / Lokasi',
+            'Building / Gedung',
+            'Fire Extinguisher Type / Jenis APAR',
+            'Fill Capacity / Kapasitas Isi',
+            'Fire Class / Kelas Kebakaran',
+            'Expired Date / Tanggal Kedaluwarsa',
+            'Last Refill / Terakhir Isi Ulang',
+            'Last Inspection / Terakhir Inspeksi',
+            'Qty / Jml',
+            'PIC / Penanggung Jawab',
+            'Final Status / Status Akhir',
+        ];
         $rows = [];
 
         foreach ($apars as $index => $apar) {
@@ -389,6 +430,19 @@ class MasterDataController extends Controller
                 $picName = $apar->pic->name;
             }
 
+            $statusRaw = $lastInspeksi ? strtolower($lastInspeksi->status) : null;
+            if ((int) $apar->qty <= 0) {
+                $statusRaw = 'perlu_refill';
+            }
+            $statusLabel = '-';
+            if ($statusRaw === 'sesuai' || $statusRaw === 'layak') {
+                $statusLabel = 'Compliant / Sesuai';
+            } elseif ($statusRaw === 'tidak_sesuai' || in_array($statusRaw, ['perbaikan', 'rusak', 'service', 'tidak_layak'])) {
+                $statusLabel = 'Non-Compliant / Tidak Sesuai';
+            } elseif ($statusRaw === 'perlu_refill' || $statusRaw === 'isi_ulang') {
+                $statusLabel = 'Needs Refill / Perlu Refill';
+            }
+
             $rows[] = [
                 $index + 1,
                 $apar->kode,
@@ -400,9 +454,10 @@ class MasterDataController extends Controller
                 $kelas,
                 $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->format('d M Y') : '-',
                 $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->format('d M Y') : '-',
+                $lastInspeksi ? $lastInspeksi->created_at->format('d M Y') : '-',
                 $apar->qty,
                 $picName,
-                $lastInspeksi ? $lastInspeksi->created_at->format('d M Y') : '-',
+                $statusLabel,
             ];
         }
 
@@ -430,10 +485,28 @@ class MasterDataController extends Controller
                 Rule::unique('lokasi')->where(fn ($query) => $query->where('gedung_id', $request->gedung_id)),
             ],
             'gedung_id' => 'required|exists:gedung,id',
+            'nomor_ruangan' => 'nullable|string|max:100',
+            'lantai' => 'nullable|string|max:50',
+            'klasifikasi' => 'nullable|string|max:50',
         ], [
             'nama.unique' => 'Lokasi dengan nama ini sudah ada di gedung yang dipilih.',
         ]);
-        Lokasi::create($request->only('nama', 'gedung_id'));
+
+        $klasifikasi = $request->klasifikasi;
+        if (! $klasifikasi && $request->klasifikasi_1) {
+            $klasifikasi = trim($request->klasifikasi_1);
+            if ($request->klasifikasi_2 && trim($request->klasifikasi_2) !== '' && trim($request->klasifikasi_2) !== '-') {
+                $klasifikasi .= '/'.trim($request->klasifikasi_2);
+            }
+        }
+
+        Lokasi::create([
+            'nama' => $request->nama,
+            'gedung_id' => $request->gedung_id,
+            'nomor_ruangan' => $request->nomor_ruangan,
+            'lantai' => $request->lantai,
+            'klasifikasi' => $klasifikasi,
+        ]);
 
         return redirect()->back()->with('success', __('Data lokasi berhasil ditambahkan!'));
     }
@@ -544,7 +617,9 @@ class MasterDataController extends Controller
             'vendor' => 'nullable|string|max:255',
             'tgl_kedaluwarsa' => 'nullable|date',
             'tgl_isi_ulang' => 'nullable|date',
-            'nomor_apar' => 'required|string|max:10',
+            'nomor_apar' => ['required', 'string', 'max:10', 'regex:/^[1-9][0-9]*$/'],
+        ], [
+            'nomor_apar.regex' => 'Nomor APAR harus berupa angka dan dimulai dari 1-9 (tidak boleh diawali angka 0).',
         ]);
 
         $lokasi = Lokasi::firstOrCreate([
@@ -568,18 +643,37 @@ class MasterDataController extends Controller
             }
         }
 
+        // Cek unik nomor APAR terhadap seluruh APAR yang ada
+        $inputNumber = (string) $request->nomor_apar;
+        $duplicateApar = Apar::all()->first(function ($item) use ($inputNumber) {
+            preg_match('/\d+$/', $item->kode ?? '', $matches);
+
+            return ($matches[0] ?? '') === $inputNumber;
+        });
+
+        if ($duplicateApar) {
+            return redirect()->back()->withErrors([
+                'nomor_apar' => __('Nomor PFE [:number] sudah digunakan oleh :code! Silakan gunakan nomor lain.', ['number' => $inputNumber, 'code' => $duplicateApar->kode]),
+            ])->withInput()->with('form_type', 'tambah_apar');
+        }
+
         $prefix = $this->generatePrefix($lokasi->id, $request->jenis_id);
         $kode = $prefix.$request->nomor_apar;
 
-        // Cek unik
+        // Cek unik kode lengkap juga sebagai fallback
         if (Apar::where('kode', $kode)->exists()) {
-            return redirect()->back()->withErrors(['nomor_apar' => 'Nomor APAR ini sudah digunakan untuk prefix '.$prefix])->withInput()->with('form_type', 'tambah_apar');
+            return redirect()->back()->withErrors(['nomor_apar' => __('Nomor APAR ini sudah digunakan untuk prefix :prefix', ['prefix' => $prefix])])->withInput()->with('form_type', 'tambah_apar');
         }
 
         $data = $request->except(['kode', 'nomor_apar', 'form_type', 'gedung_id', 'lokasi']);
         $data['kode'] = $kode;
         $data['lokasi_id'] = $lokasi->id;
         $data['pic_id'] = auth()->id();
+        $data['nomor_ruangan'] = $request->filled('nomor_ruangan') ? $request->nomor_ruangan : ($lokasi->nomor_ruangan ?? null);
+
+        if (! $lokasi->nomor_ruangan && $request->filled('nomor_ruangan')) {
+            $lokasi->update(['nomor_ruangan' => $request->nomor_ruangan]);
+        }
 
         if (empty($data['vendor'])) {
             $data['vendor'] = 'N/A';
@@ -605,13 +699,31 @@ class MasterDataController extends Controller
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('lokasi')->where(fn ($query) => $query->where('gedung_id', $request->gedung_id)),
+                Rule::unique('lokasi')->where(fn ($query) => $query->where('gedung_id', $request->gedung_id))->ignore($lokasi->id),
             ],
             'gedung_id' => 'required|exists:gedung,id',
+            'nomor_ruangan' => 'nullable|string|max:100',
+            'lantai' => 'nullable|string|max:50',
+            'klasifikasi' => 'nullable|string|max:50',
         ], [
             'nama.unique' => 'Lokasi dengan nama ini sudah ada di gedung yang dipilih.',
         ]);
-        $lokasi->update($request->only('nama', 'gedung_id'));
+
+        $klasifikasi = $request->klasifikasi;
+        if (! $klasifikasi && $request->klasifikasi_1) {
+            $klasifikasi = trim($request->klasifikasi_1);
+            if ($request->klasifikasi_2 && trim($request->klasifikasi_2) !== '' && trim($request->klasifikasi_2) !== '-') {
+                $klasifikasi .= '/'.trim($request->klasifikasi_2);
+            }
+        }
+
+        $lokasi->update([
+            'nama' => $request->nama,
+            'gedung_id' => $request->gedung_id,
+            'nomor_ruangan' => $request->nomor_ruangan,
+            'lantai' => $request->lantai,
+            'klasifikasi' => $klasifikasi,
+        ]);
 
         return redirect()->back()->with('success', __('Data lokasi berhasil diperbarui!'));
     }
@@ -650,7 +762,9 @@ class MasterDataController extends Controller
             'vendor' => 'nullable|string|max:255',
             'tgl_kedaluwarsa' => 'nullable|date',
             'tgl_isi_ulang' => 'nullable|date',
-            'nomor_apar' => 'required|string|max:10',
+            'nomor_apar' => ['required', 'string', 'max:10', 'regex:/^[1-9][0-9]*$/'],
+        ], [
+            'nomor_apar.regex' => 'Nomor APAR harus berupa angka dan dimulai dari 1-9 (tidak boleh diawali angka 0).',
         ]);
 
         $lokasi = Lokasi::firstOrCreate([
@@ -677,9 +791,28 @@ class MasterDataController extends Controller
         $data = $request->except(['kode', 'nomor_apar', 'form_type', 'gedung_id', 'lokasi']);
         $data['lokasi_id'] = $lokasi->id;
         $data['pic_id'] = auth()->id();
+        $data['nomor_ruangan'] = $request->filled('nomor_ruangan') ? $request->nomor_ruangan : ($lokasi->nomor_ruangan ?? null);
+
+        if (! $lokasi->nomor_ruangan && $request->filled('nomor_ruangan')) {
+            $lokasi->update(['nomor_ruangan' => $request->nomor_ruangan]);
+        }
 
         if (empty($data['vendor'])) {
             $data['vendor'] = 'N/A';
+        }
+
+        // Cek unik nomor APAR terhadap seluruh APAR lain
+        $inputNumber = (string) $request->nomor_apar;
+        $duplicateApar = Apar::where('id', '!=', $apar->id)->get()->first(function ($item) use ($inputNumber) {
+            preg_match('/\d+$/', $item->kode ?? '', $matches);
+
+            return ($matches[0] ?? '') === $inputNumber;
+        });
+
+        if ($duplicateApar) {
+            return redirect()->back()->withErrors([
+                'nomor_apar' => __('Nomor PFE [:number] sudah digunakan oleh :code! Silakan gunakan nomor lain.', ['number' => $inputNumber, 'code' => $duplicateApar->kode]),
+            ])->withInput()->with('form_type', 'edit_apar')->with('id', $apar->id);
         }
 
         $prefix = $this->generatePrefix($lokasi->id, $request->jenis_id);
@@ -687,7 +820,7 @@ class MasterDataController extends Controller
 
         // Cek unik untuk kode yang baru jika ada perubahan
         if ($newKode !== $apar->kode && Apar::where('kode', $newKode)->where('id', '!=', $apar->id)->exists()) {
-            return redirect()->back()->withErrors(['nomor_apar' => 'Nomor APAR ini sudah digunakan untuk prefix '.$prefix])->withInput()->with('form_type', 'edit_apar')->with('id', $apar->id);
+            return redirect()->back()->withErrors(['nomor_apar' => __('Nomor APAR ini sudah digunakan untuk prefix :prefix', ['prefix' => $prefix])])->withInput()->with('form_type', 'edit_apar')->with('id', $apar->id);
         }
 
         $data['kode'] = $newKode;
@@ -737,12 +870,28 @@ class MasterDataController extends Controller
 
     public function storeAparCadangan(Request $request)
     {
+        if (auth()->user() && auth()->user()->role === 'Staff') {
+            abort(403, __('Role Staff tidak memiliki izin untuk mengelola stok cadangan APAR.'));
+        }
+
         $request->validate([
             'gedung_id' => 'required|exists:gedung,id',
             'jenis_id' => 'required|exists:jenis_apar,id',
             'kapasitas_id' => 'required|exists:kapasitas_apar,id',
             'total' => 'required|integer|min:0',
         ]);
+
+        $exists = AparCadangan::where('gedung_id', $request->gedung_id)
+            ->where('jenis_id', $request->jenis_id)
+            ->where('kapasitas_id', $request->kapasitas_id)
+            ->exists();
+
+        if ($exists) {
+            return redirect()->back()
+                ->withErrors(['gedung_id' => __('Data sudah ada, silakan lakukan update data.')])
+                ->withInput()
+                ->with('error', __('Data sudah ada, silakan lakukan update data.'));
+        }
 
         Log::info('STORE: ', $request->all());
         AparCadangan::create($request->all());
@@ -752,12 +901,29 @@ class MasterDataController extends Controller
 
     public function updateAparCadangan(Request $request, AparCadangan $aparCadangan)
     {
+        if (auth()->user() && auth()->user()->role === 'Staff') {
+            abort(403, __('Role Staff tidak memiliki izin untuk mengelola stok cadangan APAR.'));
+        }
+
         $request->validate([
             'gedung_id' => 'required|exists:gedung,id',
             'jenis_id' => 'required|exists:jenis_apar,id',
             'kapasitas_id' => 'required|exists:kapasitas_apar,id',
             'total' => 'required|integer|min:0',
         ]);
+
+        $exists = AparCadangan::where('gedung_id', $request->gedung_id)
+            ->where('jenis_id', $request->jenis_id)
+            ->where('kapasitas_id', $request->kapasitas_id)
+            ->where('id', '!=', $aparCadangan->id)
+            ->exists();
+
+        if ($exists) {
+            return redirect()->back()
+                ->withErrors(['gedung_id' => __('Data sudah ada, silakan lakukan update data.')])
+                ->withInput()
+                ->with('error', __('Data sudah ada, silakan lakukan update data.'));
+        }
 
         Log::info('UPDATE: ', $request->all());
         $aparCadangan->update($request->all());
@@ -767,6 +933,10 @@ class MasterDataController extends Controller
 
     public function destroyAparCadangan(AparCadangan $aparCadangan)
     {
+        if (auth()->user() && auth()->user()->role === 'Staff') {
+            abort(403, __('Role Staff tidak memiliki izin untuk mengelola stok cadangan APAR.'));
+        }
+
         $aparCadangan->delete();
 
         return redirect()->route('master-data.index')->with('success', __('Data APAR Cadangan berhasil dihapus.'));

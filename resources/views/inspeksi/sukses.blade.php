@@ -172,14 +172,9 @@
                     <i class="ph-bold ph-scan text-xl"></i> {{ __('Scan Another PFE') }}
                 </button>
 
-                @if(Auth::check())
-                <form action="{{ route('logout') }}" method="POST" class="w-full mt-2">
-                    @csrf
-                    <button type="submit" class="w-full py-2.5 bg-transparent hover:bg-slate-100 text-slate-500 hover:text-red-600 rounded-xl font-medium text-xs transition-all flex items-center justify-center gap-1.5">
-                        <i class="ph-bold ph-sign-out text-sm"></i> {{ __('Selesai & Keluar Sesi') }}
-                    </button>
-                </form>
-                @endif
+                <a href="{{ route('scan.apar', $apar->kode) }}" class="w-full py-2.5 bg-transparent hover:bg-slate-100 text-slate-500 hover:text-[#009B77] rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 mt-2">
+                    <i class="ph-bold ph-arrow-left text-sm"></i> {{ __('Selesai & Kembali ke Detail APAR') }}
+                </a>
             @endif
         </div>
 

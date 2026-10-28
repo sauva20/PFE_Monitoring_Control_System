@@ -18,13 +18,16 @@ class NewUserRegistered extends Mailable
 
     public $setupUrl;
 
+    public $pin;
+
     /**
      * Create a new message instance.
      */
-    public function __construct(User $user, string $setupUrl)
+    public function __construct(User $user, string $setupUrl, ?string $pin = null)
     {
-        $this->user = $user;
+        $this->user = $user->withoutRelations()->load(['gedungs', 'lokasis.gedung']);
         $this->setupUrl = $setupUrl;
+        $this->pin = $pin;
     }
 
     /**

@@ -24,7 +24,7 @@ class InspectionReminder extends Mailable
      */
     public function __construct($user, $jenis, $tanggal)
     {
-        $this->user = $user;
+        $this->user = $user->withoutRelations()->load(['gedungs', 'lokasis.gedung']);
         $this->jenis = $jenis;
         $this->tanggal = $tanggal;
     }
@@ -35,7 +35,7 @@ class InspectionReminder extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Pengingat Batas Deadline Inspeksi Bulanan APAR - EHSS',
+            subject: 'Pengingat Deadline Inspeksi Bulanan APAR - EHSS',
         );
     }
 

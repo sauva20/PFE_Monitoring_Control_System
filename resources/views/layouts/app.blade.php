@@ -289,11 +289,11 @@
                     <i class="ph-duotone ph-users text-xl flex-shrink-0"></i>
                     <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">{{ __('User Management') }}</span>
                 </a>
+                @endif
                 <a href="/guest-display" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('guest-display*') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="{{ __('Display Access') }}">
                     <i class="ph-duotone ph-broadcast text-xl flex-shrink-0"></i>
                     <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">{{ __('Display Access') }}</span>
                 </a>
-                @endif
                 
                 <a href="/master-data" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('master-data') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="{{ __('PFE Master Data') }}">
                     <i class="ph-duotone ph-list-dashes text-xl flex-shrink-0"></i>
@@ -308,12 +308,10 @@
                     <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">{{ __('Inspection Schedule') }}</span>
                 </a>
 
-                @if(auth()->user()->role !== 'Staff')
                 <a href="/reports" class="justify-center flex items-center p-3 overflow-hidden rounded-xl font-semibold transition-all {{ request()->is('reports') ? 'bg-[#009B77] text-white shadow-[0_4px_12px_rgba(0,155,119,0.25)] hover:bg-[#008264]' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }}" :class="sidebarOpen ? 'justify-start' : 'justify-center'" title="{{ __('Inspection Reports') }}">
                     <i class="ph-duotone ph-file-text text-xl flex-shrink-0"></i>
                     <span class="opacity-0 w-0 ml-0 text-sm whitespace-nowrap transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden" :class="sidebarOpen ? 'opacity-100 w-32 ml-3' : 'opacity-0 w-0 ml-0'">{{ __('Inspection Reports') }}</span>
                 </a>
-                @endif
             </div>
             
             <!-- Group 4: Audit Trail -->
@@ -441,11 +439,329 @@
 
             <!-- Center Search Area (Dashboard only) -->
             @if(request()->is('dashboard'))
-            <div class="flex-1 flex justify-center">
-                <div class="relative w-full max-w-md hidden sm:block">
-                    <i class="ph-bold ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-[#009B77] text-lg"></i>
-                    <input type="text" placeholder="{{ __('Search PFE ID, location, or status...') }}" 
-                           class="w-full bg-white border-2 border-[#009B77] rounded-xl py-2.5 pl-11 pr-4 text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#009B77]/20 transition-all placeholder:text-slate-400 font-medium">
+            <div class="flex-1 flex justify-center"
+                 x-data="{
+                     query: '',
+                     isOpen: false,
+                     selectedIndex: -1,
+                     isLoadingData: false,
+                     debounceTimer: null,
+                     liveApars: [],
+                     liveLokasis: [],
+                     features: [
+                         {
+                             title: '{{ __('PFE Master Data') }}',
+                             category: '{{ __('Master Data') }}',
+                             desc: '{{ __('Manage all PFE units, serial numbers, and validity periods') }}',
+                             url: '{{ route('master-data.index') }}',
+                             icon: 'ph-fire-extinguisher',
+                             badge: '{{ __('Master') }}',
+                             keywords: 'master data apar pfe unit serial barcode tabung pemadam'
+                         },
+                         {
+                             title: '{{ __('Backup Stock (Spare APAR)') }}',
+                             category: '{{ __('Master Data') }}',
+                             desc: '{{ __('Manage spare APAR units and emergency replacements') }}',
+                             url: '{{ route('master-data.index') }}?tab=cadangan',
+                             icon: 'ph-archive-box',
+                             badge: '{{ __('Stock') }}',
+                             keywords: 'backup stock cadangan apar cadangan pengganti unit spare gudang'
+                         },
+                         {
+                             title: '{{ __('Reference Settings') }}',
+                             category: '{{ __('Master Data') }}',
+                             desc: '{{ __('Manage placement locations, buildings, PFE types, and capacities') }}',
+                             url: '{{ route('master-data.index') }}?tab=referensi',
+                             icon: 'ph-sliders-horizontal',
+                             badge: '{{ __('Reference') }}',
+                             keywords: 'referensi reference settings lokasi location gedung building type jenis kapasitas capacity'
+                         },
+                         {
+                             title: '{{ __('Inspection Schedule') }}',
+                             category: '{{ __('Inspection') }}',
+                             desc: '{{ __('Monthly inspection routines, calendar, and PIC assignments') }}',
+                             url: '/inspection-schedule',
+                             icon: 'ph-calendar-blank',
+                             badge: '{{ __('Schedule') }}',
+                             keywords: 'jadwal inspeksi inspection schedule kalender routine bulanan checklist pic'
+                         },
+                         {
+                             title: '{{ __('Inspection Reports') }}',
+                             category: '{{ __('Reports') }}',
+                             desc: '{{ __('Monthly compliance recaps, export inspection data to PDF and Excel') }}',
+                             url: '{{ route('reports.index') }}',
+                             icon: 'ph-file-text',
+                             badge: '{{ __('Report') }}',
+                             keywords: 'laporan report rekapitulasi export unduh cetak pdf excel inspeksi hasil'
+                         },
+                         {
+                             title: '{{ __('TV Monitoring Display') }}',
+                             category: '{{ __('Monitoring') }}',
+                             desc: '{{ __('Real-time full-screen display for plant and facility monitoring') }}',
+                             url: '{{ route('display-report') }}',
+                             icon: 'ph-television',
+                             badge: '{{ __('Display') }}',
+                             keywords: 'display report tv monitoring layar presentasi fullscreen monitor'
+                         },
+                         {
+                             title: '{{ __('Guest Display Access') }}',
+                             category: '{{ __('System') }}',
+                             desc: '{{ __('Manage viewer display links and secure audit access tokens') }}',
+                             url: '{{ route('display-access.index') }}',
+                             icon: 'ph-broadcast',
+                             badge: '{{ __('Guest') }}',
+                             keywords: 'guest display access tamu eksternal token audit external link'
+                         },
+                         {
+                             title: '{{ __('Print All QR Codes') }}',
+                             category: '{{ __('Quick Action') }}',
+                             desc: '{{ __('Batch generate and print QR code labels for all APAR units') }}',
+                             url: '{{ route('apar.print-all-qr') }}',
+                             icon: 'ph-qr-code',
+                             badge: '{{ __('Print QR') }}',
+                             keywords: 'print cetak qr code label barcode stiker tabung'
+                         }@if(auth()->user()->role !== 'Staff'),
+                         {
+                             title: '{{ __('User Management') }}',
+                             category: '{{ __('Users') }}',
+                             desc: '{{ __('Manage user accounts, roles (EHSS / Staff), and security PINs') }}',
+                             url: '{{ route('users.index') }}',
+                             icon: 'ph-users',
+                             badge: '{{ __('Users') }}',
+                             keywords: 'user pengguna akun employee id pic manajemen akun role ehss staff pin'
+                         },
+                         {
+                             title: '{{ __('Audit Trail') }}',
+                              category: '{{ __('System') }}',
+                             desc: '{{ __('Audit logs of user logins, data modifications, and system activity') }}',
+                             url: '{{ route('activity-log.index') }}',
+                             icon: 'ph-clock-counter-clockwise',
+                             badge: '{{ __('Audit') }}',
+                             keywords: 'activity log log aktivitas audit trail riwayat login history jejak'
+                         }
+                         @endif
+                     ],
+                     get filteredFeatures() {
+                         let q = this.query.trim().toLowerCase();
+                         if (!q) return this.features.slice(0, 6);
+                         return this.features.filter(f => 
+                             f.title.toLowerCase().includes(q) || 
+                             f.category.toLowerCase().includes(q) || 
+                             f.desc.toLowerCase().includes(q) || 
+                             f.keywords.toLowerCase().includes(q)
+                         );
+                     },
+                     get totalItems() {
+                         return this.filteredFeatures.length + this.liveApars.length + this.liveLokasis.length;
+                     },
+                     searchDataLive() {
+                         let q = this.query.trim();
+                         if (this.debounceTimer) clearTimeout(this.debounceTimer);
+                         if (q.length < 1) {
+                             this.liveApars = [];
+                             this.liveLokasis = [];
+                             this.isLoadingData = false;
+                             return;
+                         }
+                         this.isLoadingData = true;
+                         this.debounceTimer = setTimeout(async () => {
+                             try {
+                                 let res = await fetch(`{{ route('dashboard.quick-search') }}?q=${encodeURIComponent(q)}`, {
+                                     headers: { 'Accept': 'application/json' }
+                                 });
+                                 if (res.ok) {
+                                     let data = await res.json();
+                                     this.liveApars = data.apars || [];
+                                     this.liveLokasis = data.lokasis || [];
+                                 }
+                             } catch (e) {
+                                 // ignore
+                             } finally {
+                                 this.isLoadingData = false;
+                             }
+                         }, 200);
+                     },
+                     navigateItem(direction) {
+                         if (!this.isOpen || this.totalItems === 0) return;
+                         if (direction === 'down') {
+                             this.selectedIndex = (this.selectedIndex + 1) % this.totalItems;
+                         } else if (direction === 'up') {
+                             this.selectedIndex = (this.selectedIndex - 1 + this.totalItems) % this.totalItems;
+                         }
+                     },
+                     selectActive() {
+                         if (!this.isOpen) return;
+                         let all = [
+                             ...this.filteredFeatures.map(f => f.url),
+                             ...this.liveApars.map(a => a.url),
+                             ...this.liveLokasis.map(l => l.url)
+                         ];
+                         if (this.selectedIndex >= 0 && this.selectedIndex < all.length) {
+                             window.location.href = all[this.selectedIndex];
+                         } else if (all.length > 0) {
+                             window.location.href = all[0];
+                         }
+                     }
+                 }"
+                 @click.away="isOpen = false; selectedIndex = -1"
+                 @keydown.escape.window="isOpen = false; selectedIndex = -1"
+                 @keydown.down.prevent="navigateItem('down')"
+                 @keydown.up.prevent="navigateItem('up')"
+                 @keydown.enter.prevent="selectActive()">
+                <div class="relative w-full max-w-lg hidden sm:block">
+                    <!-- Search Input Wrapper -->
+                    <div class="relative flex items-center">
+                        <i class="ph-bold ph-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-[#009B77] text-lg transition-transform"
+                           :class="isOpen ? 'scale-110' : ''"></i>
+                        <input type="text" 
+                               x-model="query"
+                               @focus="isOpen = true"
+                               @input="isOpen = true; searchDataLive()"
+                               placeholder="{{ __('Search features, APAR units, locations...') }}" 
+                               class="w-full bg-white border-2 border-[#009B77] rounded-xl py-2.5 pl-11 pr-10 text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-[#009B77]/20 transition-all placeholder:text-slate-400 font-medium shadow-sm">
+                        
+                        <!-- Clear or Spinner Icon -->
+                        <div class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                            <i x-show="isLoadingData" class="ph-bold ph-spinner animate-spin text-[#009B77] text-base" x-cloak></i>
+                            <button type="button" 
+                                    x-show="query.length > 0" 
+                                    @click="query = ''; liveApars = []; liveLokasis = []; $nextTick(() => $el.closest('div').previousElementSibling.focus())" 
+                                    class="text-slate-400 hover:text-slate-600 transition-colors p-0.5 rounded-md hover:bg-slate-100" 
+                                    x-cloak>
+                                <i class="ph-bold ph-x-circle text-base"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Autocomplete & Recommendations Dropdown -->
+                    <div x-show="isOpen"
+                         x-transition:enter="transition ease-out duration-200"
+                         x-transition:enter-start="opacity-0 translate-y-1 scale-98"
+                         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                         x-transition:leave="transition ease-in duration-150"
+                         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+                         x-transition:leave-end="opacity-0 translate-y-1 scale-98"
+                         class="absolute left-0 right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden z-50 divide-y divide-slate-100 max-h-[75vh] flex flex-col"
+                         x-cloak
+                         style="display: none;">
+                        
+                        <!-- Header Label -->
+                        <div class="px-4 py-2.5 bg-slate-50/80 border-b border-slate-100 flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="ph-bold ph-sparkle text-[#009B77]"></i>
+                                <span x-text="query.trim().length > 0 ? '{{ __('Search Results & Recommendations') }}' : '{{ __('Popular Feature Recommendations') }}'"></span>
+                            </span>
+                            <span class="text-[10.5px] font-semibold text-slate-400" x-text="`${totalItems} {{ __('options') }}`"></span>
+                        </div>
+
+                        <!-- Results Scroll Container -->
+                        <div class="overflow-y-auto divide-y divide-slate-50 p-1.5 flex-1 max-h-[60vh]">
+                            
+                            <!-- Category: Features -->
+                            <div class="py-1">
+                                <div class="px-3 py-1 text-[10px] font-extrabold text-[#009B77] uppercase tracking-wider flex items-center gap-1">
+                                    <i class="ph-bold ph-squares-four text-xs"></i>
+                                    <span>{{ __('System Features & Menus') }}</span>
+                                </div>
+                                <template x-for="(item, idx) in filteredFeatures" :key="idx">
+                                    <a :href="item.url" 
+                                       @mouseenter="selectedIndex = idx"
+                                       class="flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all cursor-pointer group"
+                                       :class="selectedIndex === idx ? 'bg-[#009B77]/10 text-[#007A5E]' : 'hover:bg-slate-50 text-slate-700'">
+                                        <div class="flex items-center gap-3 min-w-0 flex-1">
+                                            <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors"
+                                                 :class="selectedIndex === idx ? 'bg-[#009B77] text-white' : 'bg-slate-100 text-slate-600 group-hover:bg-[#009B77]/20 group-hover:text-[#009B77]'">
+                                                <i :class="`ph-bold ${item.icon} text-base`"></i>
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center gap-2">
+                                                    <span class="text-xs font-bold truncate" :class="selectedIndex === idx ? 'text-[#007A5E]' : 'text-slate-800'" x-text="item.title"></span>
+                                                    <span class="text-[9.5px] font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0"
+                                                          :class="selectedIndex === idx ? 'bg-[#009B77] text-white' : 'bg-slate-100 text-slate-500'" 
+                                                          x-text="item.badge"></span>
+                                                </div>
+                                                <p class="text-[11px] text-slate-400 truncate mt-0.5" x-text="item.desc"></p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center text-slate-400 shrink-0 group-hover:text-[#009B77] transition-transform group-hover:translate-x-0.5">
+                                            <i class="ph-bold ph-arrow-right text-xs"></i>
+                                        </div>
+                                    </a>
+                                </template>
+                            </div>
+
+                            <!-- Category: Live APAR Units (if any) -->
+                            <div x-show="liveApars.length > 0" class="py-1">
+                                <div class="px-3 py-1 text-[10px] font-extrabold text-blue-600 uppercase tracking-wider flex items-center gap-1">
+                                    <i class="ph-bold ph-fire-extinguisher text-xs"></i>
+                                    <span>{{ __('Matching APAR Units') }} (<span x-text="liveApars.length"></span>)</span>
+                                </div>
+                                <template x-for="(apar, aIdx) in liveApars" :key="'apar-' + apar.id">
+                                    <a :href="apar.url" 
+                                       @mouseenter="selectedIndex = filteredFeatures.length + aIdx"
+                                       class="flex items-center justify-between gap-3 px-3 py-2 rounded-xl transition-all cursor-pointer group"
+                                       :class="selectedIndex === (filteredFeatures.length + aIdx) ? 'bg-blue-50 text-blue-900' : 'hover:bg-slate-50 text-slate-700'">
+                                        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                                            <span class="font-mono text-xs font-bold text-[#009B77] bg-[#009B77]/10 px-2 py-0.5 rounded border border-[#009B77]/20 shrink-0" x-text="apar.kode"></span>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="text-xs font-semibold text-slate-800 truncate" x-text="apar.lokasi"></span>
+                                                </div>
+                                                <span class="text-[10px] text-slate-400 font-medium" x-text="apar.jenis"></span>
+                                            </div>
+                                        </div>
+                                        <i class="ph-bold ph-arrow-right text-xs text-slate-400 group-hover:text-blue-600 shrink-0"></i>
+                                    </a>
+                                </template>
+                            </div>
+
+                            <!-- Category: Live Locations (if any) -->
+                            <div x-show="liveLokasis.length > 0" class="py-1">
+                                <div class="px-3 py-1 text-[10px] font-extrabold text-teal-600 uppercase tracking-wider flex items-center gap-1">
+                                    <i class="ph-bold ph-map-pin text-xs"></i>
+                                    <span>{{ __('Rooms & Areas') }} (<span x-text="liveLokasis.length"></span>)</span>
+                                </div>
+                                <template x-for="(lok, lIdx) in liveLokasis" :key="'lok-' + lok.id">
+                                    <a :href="lok.url" 
+                                       @mouseenter="selectedIndex = filteredFeatures.length + liveApars.length + lIdx"
+                                       class="flex items-center justify-between gap-3 px-3 py-2 rounded-xl transition-all cursor-pointer group"
+                                       :class="selectedIndex === (filteredFeatures.length + liveApars.length + lIdx) ? 'bg-teal-50 text-teal-900' : 'hover:bg-slate-50 text-slate-700'">
+                                        <div class="flex items-center gap-2.5 min-w-0 flex-1">
+                                            <div class="w-6 h-6 rounded-md bg-teal-100 text-teal-700 flex items-center justify-center shrink-0">
+                                                <i class="ph-bold ph-door text-xs"></i>
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <span class="text-xs font-bold text-slate-800 truncate block" x-text="lok.nama"></span>
+                                                <span class="text-[10px] text-slate-400" x-text="'{{ __('Building') }} ' + lok.gedung"></span>
+                                            </div>
+                                        </div>
+                                        <i class="ph-bold ph-arrow-right text-xs text-slate-400 group-hover:text-teal-600 shrink-0"></i>
+                                    </a>
+                                </template>
+                            </div>
+
+                            <!-- Empty State -->
+                            <div x-show="totalItems === 0" class="py-8 text-center px-4" x-cloak>
+                                <div class="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400 mb-2">
+                                    <i class="ph-bold ph-magnifying-glass text-2xl"></i>
+                                </div>
+                                <p class="text-xs font-bold text-slate-700">{{ __('No matching features or data found') }}</p>
+                                <p class="text-[11px] text-slate-400 mt-0.5">
+                                    {{ __('Try searching keywords like') }} <span class="font-bold text-[#009B77]">master</span>, <span class="font-bold text-[#009B77]">stock</span>, <span class="font-bold text-[#009B77]">location</span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown Footer Shortcuts -->
+                        <div class="px-4 py-2 bg-slate-50/90 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                            <div class="flex items-center gap-3">
+                                <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono shadow-xs">↑↓</kbd> {{ __('Navigate') }}</span>
+                                <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono shadow-xs">↵</kbd> {{ __('Open') }}</span>
+                                <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 bg-white border border-slate-200 rounded text-[10px] font-mono shadow-xs">ESC</kbd> {{ __('Close') }}</span>
+                            </div>
+                            <span class="text-[#009B77] font-bold text-[10px] tracking-wide">{{ __('PFE Control System') }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
             @else
@@ -665,7 +981,37 @@
     </div>
 
     <!-- Change PIN Modal -->
-    <div x-data="{ open: false }" @open-change-pin.window="open = true" x-show="open" class="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-slate-900/40 p-4" style="display: none;" x-cloak>
+    <div x-data="{ 
+            open: false,
+            currentPin: '',
+            newPin: '',
+            confirmPin: '',
+            isPinUnsafe: false,
+            pinCheckTimer: null,
+            checkPinUnsafe(pin) {
+                if (this.pinCheckTimer) clearTimeout(this.pinCheckTimer);
+                if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+                    this.isPinUnsafe = false;
+                    return;
+                }
+                this.pinCheckTimer = setTimeout(async () => {
+                    try {
+                        let res = await fetch(`/users/check-pin?pin=${encodeURIComponent(pin)}&user_id={{ auth()->id() }}`, {
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        let data = await res.json();
+                        this.isPinUnsafe = !data.safe;
+                    } catch (e) {
+                        // ignore
+                    }
+                }, 200);
+            }
+         }" 
+         @open-change-pin.window="open = true; currentPin = ''; newPin = ''; confirmPin = ''; isPinUnsafe = false;" 
+         x-show="open" 
+         class="fixed inset-0 z-[100] flex items-center justify-center overflow-hidden bg-slate-900/40 p-4" 
+         style="display: none;" 
+         x-cloak>
         <div x-show="open" class="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto flex flex-col custom-scrollbar border border-slate-100">
             <!-- Modal Header -->
             <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
@@ -689,7 +1035,16 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ __('Current PIN') }}</label>
                         <div class="relative" x-data="{ show: false }">
-                            <input :type="show ? 'text' : 'password'" name="current_pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-2.5 px-4 text-center text-lg font-mono tracking-widest text-slate-700 focus:bg-white focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none" placeholder="••••">
+                            <input :type="show ? 'text' : 'password'" 
+                                   name="current_pin" 
+                                   x-model="currentPin"
+                                   inputmode="numeric" 
+                                   pattern="[0-9]{4}" 
+                                   maxlength="4" 
+                                   required 
+                                   @input="currentPin = currentPin.replace(/[^0-9]/g, '')" 
+                                   class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-2.5 px-4 text-center text-lg font-mono tracking-widest text-slate-700 focus:bg-white focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none" 
+                                   placeholder="••••">
                             <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-[#009B77] transition-colors focus:outline-none">
                                 <i class="ph-fill text-lg" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
                             </button>
@@ -698,16 +1053,39 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ __('New PIN (4 Digits)') }}</label>
                         <div class="relative" x-data="{ show: false }">
-                            <input :type="show ? 'text' : 'password'" name="new_pin" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-2.5 px-4 text-center text-lg font-mono tracking-widest text-slate-700 focus:bg-white focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none" placeholder="••••">
+                            <input :type="show ? 'text' : 'password'" 
+                                   name="new_pin" 
+                                   x-model="newPin"
+                                   inputmode="numeric" 
+                                   pattern="[0-9]{4}" 
+                                   maxlength="4" 
+                                   required 
+                                   @input="newPin = newPin.replace(/[^0-9]/g, ''); if(newPin.length === 4) { checkPinUnsafe(newPin); } else { isPinUnsafe = false; }" 
+                                   class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-2.5 px-4 text-center text-lg font-mono tracking-widest text-slate-700 focus:bg-white focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none" 
+                                   :class="isPinUnsafe ? 'border-red-400 bg-red-50/50 text-red-600 focus:border-red-500 focus:ring-red-500/15' : ''"
+                                   placeholder="••••">
                             <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-[#009B77] transition-colors focus:outline-none">
                                 <i class="ph-fill text-lg" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
                             </button>
                         </div>
+                        <p x-show="isPinUnsafe" class="mt-1.5 text-xs text-red-600 font-bold leading-tight flex items-center gap-1.5" x-cloak>
+                            <i class="ph-fill ph-warning-circle text-sm shrink-0"></i>
+                            <span>{{ __('PIN Anda tidak aman') }}</span>
+                        </p>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ __('Confirm New PIN') }}</label>
                         <div class="relative" x-data="{ show: false }">
-                            <input :type="show ? 'text' : 'password'" name="new_pin_confirmation" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" required oninput="this.value = this.value.replace(/[^0-9]/g, '')" class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-2.5 px-4 text-center text-lg font-mono tracking-widest text-slate-700 focus:bg-white focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none" placeholder="••••">
+                            <input :type="show ? 'text' : 'password'" 
+                                   name="new_pin_confirmation" 
+                                   x-model="confirmPin"
+                                   inputmode="numeric" 
+                                   pattern="[0-9]{4}" 
+                                   maxlength="4" 
+                                   required 
+                                   @input="confirmPin = confirmPin.replace(/[^0-9]/g, '')" 
+                                   class="w-full bg-slate-50 border-2 border-slate-200 rounded-xl py-2.5 px-4 text-center text-lg font-mono tracking-widest text-slate-700 focus:bg-white focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none" 
+                                   placeholder="••••">
                             <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-[#009B77] transition-colors focus:outline-none">
                                 <i class="ph-fill text-lg" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
                             </button>
@@ -715,7 +1093,12 @@
                     </div>
                 </div>
                 <div class="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end rounded-b-2xl">
-                    <button type="submit" class="bg-[#009B77] hover:bg-[#008264] text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-teal-500/30 transition-all text-sm">{{ __('Save New PIN') }}</button>
+                    <button type="submit" 
+                            :disabled="isPinUnsafe"
+                            :class="isPinUnsafe ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''"
+                            class="bg-[#009B77] hover:bg-[#008264] text-white font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-teal-500/30 transition-all text-sm">
+                        {{ __('Save New PIN') }}
+                    </button>
                 </div>
             </form>
         </div>
@@ -788,20 +1171,38 @@
                                 </div>
                             </div>
                         @else
-                            @if($user->gedungs->isEmpty())
+                            @if($user->gedungs->isEmpty() && $user->lokasis->isEmpty())
                                 <div class="p-4 bg-slate-50 border border-slate-100 border-dashed rounded-xl text-center text-sm font-medium text-slate-500">
-                                    {{ __('You have not been assigned as a PIC for any building.') }}
+                                    {{ __('You have not been assigned as a PIC for any building or location.') }}
                                 </div>
                             @else
-                                <div class="space-y-3 mb-4">
+                                <div class="space-y-2 mb-4 max-h-52 overflow-y-auto pr-1">
                                     @foreach($user->gedungs as $gedung)
-                                        <div class="p-3 border border-slate-100 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between hover:bg-slate-50 transition-colors gap-2">
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                                        <div class="p-2.5 border border-slate-100 rounded-xl flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                            <div class="flex items-center gap-2.5">
+                                                <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center flex-shrink-0 text-sm">
                                                     <i class="ph-fill ph-building"></i>
                                                 </div>
                                                 <div>
-                                                    <p class="text-sm font-bold text-slate-800">{{ $gedung->nama }}</p>
+                                                    <p class="text-xs font-bold text-slate-800">{{ $gedung->nama }} <span class="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded ml-1">{{ __('All Rooms') }}</span></p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                    @foreach($user->lokasis as $lok)
+                                        <div class="p-2.5 border border-slate-100 rounded-xl flex items-center justify-between hover:bg-slate-50 transition-colors">
+                                            <div class="flex items-center gap-2.5 min-w-0">
+                                                <div class="w-7 h-7 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center flex-shrink-0 text-sm">
+                                                    <i class="ph-fill ph-door"></i>
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <p class="text-xs font-bold text-slate-800 truncate flex items-center gap-1.5">
+                                                        <span class="text-teal-700">{{ $lok->gedung->nama ?? '' }}:</span>
+                                                        @if($lok->nomor_ruangan)
+                                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#009B77]/10 text-[#009B77]">{{ $lok->nomor_ruangan }}</span>
+                                                        @endif
+                                                        <span>{{ $lok->nama }}</span>
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
@@ -839,7 +1240,6 @@
                                 </div>
                                 <i class="ph-bold ph-arrow-square-out text-slate-400 group-hover:text-indigo-500 transition-colors"></i>
                             </a>
-                            @if(auth()->user()->role !== 'Staff')
                             <a href="{{ route('display-access.index') }}" class="w-full text-left px-4 py-3 rounded-xl border border-slate-200 hover:border-[#009B77] hover:bg-teal-50 transition-all flex items-center justify-between group">
                                 <div class="flex items-center gap-3">
                                     <div class="w-8 h-8 rounded-lg bg-slate-100 text-slate-500 group-hover:bg-white group-hover:text-[#009B77] flex items-center justify-center transition-colors shadow-sm">
@@ -852,7 +1252,6 @@
                                 </div>
                                 <i class="ph-bold ph-caret-right text-slate-400 group-hover:text-[#009B77] transition-colors"></i>
                             </a>
-                            @endif
                         </div>
                     </div>
 
@@ -1055,6 +1454,13 @@
                 link.setAttribute('rel', 'noopener noreferrer');
             }
         }, true);
+
+        // Anti-BFCache: Reload page if navigated back from browser cache after logout
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || (window.performance && window.performance.navigation && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        });
     </script>
     @stack('scripts')
 

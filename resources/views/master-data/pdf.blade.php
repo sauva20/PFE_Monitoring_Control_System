@@ -246,11 +246,25 @@
         <table>
             <thead>
                 <tr>
-                    <th class="text-center" style="width: 5%;">No</th>
-                    <th style="width: 35%;">{{ __('Building') }}</th>
-                    <th style="width: 25%;">{{ __('Type') }}</th>
-                    <th style="width: 20%;">{{ __('Capacity') }}</th>
-                    <th class="text-center" style="width: 15%;">{{ __('Stock Quantity') }}</th>
+                    <th class="text-center" style="width: 5%;">
+                        <div>No</div>
+                    </th>
+                    <th style="width: 32%;">
+                        <div>Building</div>
+                        <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px; text-transform: none;">Gedung</div>
+                    </th>
+                    <th style="width: 25%;">
+                        <div>Type</div>
+                        <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px; text-transform: none;">Jenis</div>
+                    </th>
+                    <th style="width: 20%;">
+                        <div>Fill Capacity</div>
+                        <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px; text-transform: none;">Kapasitas Isi</div>
+                    </th>
+                    <th class="text-center" style="width: 18%;">
+                        <div>Stock Quantity</div>
+                        <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px; text-transform: none;">Jumlah Stok</div>
+                    </th>
                 </tr>
             </thead>
             <tbody>

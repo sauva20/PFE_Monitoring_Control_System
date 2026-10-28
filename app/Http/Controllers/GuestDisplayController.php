@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\GuestDisplayAccessMail;
 use App\Models\GuestDisplay;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -12,25 +13,43 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class GuestDisplayController extends Controller
 {
     private function ensureAdmin(): void
     {
-        if (auth()->user()?->role !== 'EHSS') {
-            abort(403, 'Akses terbatas untuk Administrator EHSS.');
+        if (! auth()->check()) {
+            abort(403, 'Akses tidak diizinkan. Silakan login terlebih dahulu.');
+        }
+    }
+
+    private function ensureOwnership(GuestDisplay $guestDisplay): void
+    {
+        $this->ensureAdmin();
+
+        $user = auth()->user();
+        if ($user && $user->role === 'Staff' && $guestDisplay->created_by !== $user->id) {
+            abort(403, 'Akses tidak diizinkan. Anda hanya dapat mengelola data display akses yang Anda buat sendiri.');
         }
     }
 
     /**
-     * Display a listing of guest display credentials (Admin EHSS).
+     * Display a listing of guest display credentials (All Roles).
      */
     public function index(Request $request): View
     {
         $this->ensureAdmin();
 
+        $user = auth()->user();
+        $isStaff = $user && $user->role === 'Staff';
+
         $query = GuestDisplay::with('creator')->latest();
+
+        if ($isStaff) {
+            $query->where('created_by', $user->id);
+        }
 
         if ($request->filled('search')) {
             $search = $request->input('search');
@@ -55,7 +74,34 @@ class GuestDisplayController extends Controller
 
         $guests = $query->paginate(10)->withQueryString();
 
-        return view('guest-display.index', compact('guests'));
+        // Calculate statistics scoped by user role
+        $statsBaseQuery = GuestDisplay::query();
+        if ($isStaff) {
+            $statsBaseQuery->where('created_by', $user->id);
+        }
+
+        $totalGuestCount = (clone $statsBaseQuery)->count();
+        $activeGuestCount = (clone $statsBaseQuery)
+            ->where('is_active', true)
+            ->whereDate('valid_until', '>=', Carbon::today())
+            ->count();
+        $inactiveOrExpiredGuestCount = (clone $statsBaseQuery)
+            ->where(function ($q) {
+                $q->where('is_active', false)
+                    ->orWhereDate('valid_until', '<', Carbon::today());
+            })->count();
+
+        $existingGuestPins = GuestDisplay::pluck('pin')->all();
+        $existingUserPins = User::whereNotNull('pin')->pluck('pin')->all();
+        $allExistingPins = array_values(array_unique(array_filter(array_merge($existingGuestPins, $existingUserPins))));
+
+        return view('guest-display.index', compact(
+            'guests',
+            'totalGuestCount',
+            'activeGuestCount',
+            'inactiveOrExpiredGuestCount',
+            'allExistingPins'
+        ));
     }
 
     /**
@@ -69,7 +115,18 @@ class GuestDisplayController extends Controller
             'name' => 'required|string|max:255',
             'institution' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'pin' => 'required|string|size:4|regex:/^[0-9]{4}$/',
+            'pin' => [
+                'required',
+                'string',
+                'size:4',
+                'regex:/^[0-9]{4}$/',
+                'unique:guest_displays,pin',
+                function ($attribute, $value, $fail) {
+                    if (User::where('pin', $value)->exists()) {
+                        $fail(__('PIN ini sudah terdaftar dalam sistem. Silakan pilih PIN 4 digit yang unik.'));
+                    }
+                },
+            ],
             'valid_until' => 'required|date|after_or_equal:today',
         ], [
             'name.required' => 'Nama viewer wajib diisi.',
@@ -79,6 +136,7 @@ class GuestDisplayController extends Controller
             'pin.required' => 'PIN akses 4 digit wajib diisi.',
             'pin.size' => 'PIN harus tepat 4 digit angka.',
             'pin.regex' => 'PIN harus berupa 4 digit angka.',
+            'pin.unique' => 'PIN ini sudah terdaftar dan digunakan oleh viewer lain. Silakan buat atau acak PIN 4 digit yang unik.',
             'valid_until.required' => 'Batas tanggal berlaku wajib diisi.',
             'valid_until.after_or_equal' => 'Batas tanggal berlaku tidak boleh sebelum hari ini.',
         ]);
@@ -125,7 +183,7 @@ class GuestDisplayController extends Controller
      */
     public function resendEmail(GuestDisplay $guestDisplay): RedirectResponse
     {
-        $this->ensureAdmin();
+        $this->ensureOwnership($guestDisplay);
 
         try {
             Mail::to($guestDisplay->email)->send(new GuestDisplayAccessMail($guestDisplay));
@@ -143,14 +201,26 @@ class GuestDisplayController extends Controller
      */
     public function update(Request $request, GuestDisplay $guestDisplay): RedirectResponse
     {
-        $this->ensureAdmin();
+        $this->ensureOwnership($guestDisplay);
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'institution' => 'required|string|max:255',
             'email' => 'required|email|max:255',
-            'pin' => 'required|string|size:4|regex:/^[0-9]{4}$/',
+            'pin' => [
+                'required',
+                'string',
+                'size:4',
+                'regex:/^[0-9]{4}$/',
+                Rule::unique('guest_displays', 'pin')->ignore($guestDisplay->id),
+                function ($attribute, $value, $fail) {
+                    if (User::where('pin', $value)->exists()) {
+                        $fail(__('PIN ini sudah terdaftar dalam sistem. Silakan pilih PIN 4 digit yang unik.'));
+                    }
+                },
+            ],
             'valid_until' => 'required|date',
+            'last_accessed_at' => 'nullable|date',
             'is_active' => 'nullable|boolean',
         ], [
             'name.required' => 'Nama viewer wajib diisi.',
@@ -160,6 +230,7 @@ class GuestDisplayController extends Controller
             'pin.required' => 'PIN akses 4 digit wajib diisi.',
             'pin.size' => 'PIN harus tepat 4 digit angka.',
             'pin.regex' => 'PIN harus berupa 4 digit angka.',
+            'pin.unique' => 'PIN ini sudah terdaftar dan digunakan oleh viewer lain. Silakan buat atau acak PIN 4 digit yang unik.',
             'valid_until.required' => 'Batas tanggal berlaku wajib diisi.',
         ]);
 
@@ -172,14 +243,20 @@ class GuestDisplayController extends Controller
             ])->withInput();
         }
 
-        $guestDisplay->update([
+        $updates = [
             'name' => $validated['name'],
             'institution' => $validated['institution'],
             'email' => $validated['email'],
             'pin' => $validated['pin'],
             'valid_until' => $validated['valid_until'],
             'is_active' => $isActive,
-        ]);
+        ];
+
+        if ($request->has('last_accessed_at')) {
+            $updates['last_accessed_at'] = $request->filled('last_accessed_at') ? Carbon::parse($request->input('last_accessed_at')) : null;
+        }
+
+        $guestDisplay->update($updates);
 
         return redirect()->route('display-access.index')
             ->with('success', __('Viewer Display Access data successfully updated.'));
@@ -190,7 +267,7 @@ class GuestDisplayController extends Controller
      */
     public function toggleActive(GuestDisplay $guestDisplay): RedirectResponse
     {
-        $this->ensureAdmin();
+        $this->ensureOwnership($guestDisplay);
 
         $isCurrentlyAccessible = $guestDisplay->isAccessible();
 
@@ -231,7 +308,7 @@ class GuestDisplayController extends Controller
      */
     public function destroy(GuestDisplay $guestDisplay): RedirectResponse
     {
-        $this->ensureAdmin();
+        $this->ensureOwnership($guestDisplay);
 
         $guestDisplay->delete();
 
@@ -255,6 +332,10 @@ class GuestDisplayController extends Controller
         }
 
         session(['guest_display_token' => $token]);
+
+        $guest->update([
+            'last_accessed_at' => Carbon::now(),
+        ]);
 
         // If inactive or expired
         if (! $guest->is_active || $guest->isExpired()) {
@@ -365,6 +446,10 @@ class GuestDisplayController extends Controller
 
             return redirect()->route('display.access', ['token' => $token]);
         }
+
+        $guest->update([
+            'last_accessed_at' => Carbon::now(),
+        ]);
 
         // Retrieve dashboard data from DashboardController
         $dashboardController = app(DashboardController::class);

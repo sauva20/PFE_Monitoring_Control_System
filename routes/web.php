@@ -72,7 +72,9 @@ Route::middleware(['auth', 'prevent-back-history'])->group(function () {
         Route::post('/profile/change-pin', [ProfileController::class, 'updatePin'])->name('profile.change-pin');
 
         Route::get('/dashboard', [DashboardController::class, 'index']);
+        Route::get('/dashboard/quick-search', [DashboardController::class, 'quickSearch'])->name('dashboard.quick-search');
 
+        Route::get('/users/check-pin', [UserController::class, 'checkPin'])->name('users.check-pin');
         Route::get('/users/export-pdf', [UserController::class, 'exportPdf'])->name('users.export-pdf');
         Route::get('/users/export-excel', [UserController::class, 'exportExcel'])->name('users.export-excel');
         Route::get('/users/export-excel-preview', [UserController::class, 'previewExcel'])->name('users.export-excel-preview');
@@ -86,13 +88,14 @@ Route::middleware(['auth', 'prevent-back-history'])->group(function () {
         Route::get('/activity-log/export-pdf', [ActivityLogController::class, 'exportPdf'])->name('activity-log.export-pdf');
         Route::get('/activity-log/export-excel', [ActivityLogController::class, 'exportExcel'])->name('activity-log.export-excel');
         Route::get('/activity-log/export-excel-preview', [ActivityLogController::class, 'previewExcel'])->name('activity-log.export-excel-preview');
+        Route::get('/activity-log/preview-excel', [ActivityLogController::class, 'previewExcel'])->name('activity-log.preview-excel');
 
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/export-pdf', [ReportController::class, 'exportPdf'])->name('reports.export-pdf');
         Route::get('/reports/export-excel', [ReportController::class, 'exportExcel'])->name('reports.export-excel');
         Route::get('/reports/export-excel-preview', [ReportController::class, 'previewExcel'])->name('reports.export-excel-preview');
 
-        // Guest Display Management (Admin EHSS)
+        // Guest Display Management (All Roles: EHSS & Staff)
         Route::get('/guest-display', [GuestDisplayController::class, 'index'])->name('display-access.index');
         Route::post('/guest-display', [GuestDisplayController::class, 'store'])->name('display-access.store');
         Route::put('/guest-display/{guestDisplay}', [GuestDisplayController::class, 'update'])->name('display-access.update');
@@ -166,7 +169,7 @@ Route::get('/test-email/{type}', function ($type) {
 
     switch ($type) {
         case 'new-user':
-            return new NewUserRegistered($user, url('/setup-password/test'));
+            return new NewUserRegistered($user, url('/setup-password/test'), '1234');
         case 'reset-password':
             return new ResetPassword($user, url('/reset-password/test'));
         case 'inspection-assigned':
@@ -193,7 +196,11 @@ Route::get('/test-email/{type}', function ($type) {
         case 'inspection-reminder':
             return new InspectionReminder($user, 'Inspeksi Rutin Bulanan', now()->addDays(3)->format('Y-m-d'));
         case 'user-schedule-updated':
-            return new UserScheduleUpdated($user, $user->gedungs ?? collect());
+            $sampleStaff = User::where('role', 'Staff')->has('lokasis')->with(['gedungs', 'lokasis.gedung'])->first()
+                ?? User::where('role', 'Staff')->with(['gedungs', 'lokasis.gedung'])->first()
+                ?? $user;
+
+            return new UserScheduleUpdated($sampleStaff, null, '1234');
         case 'guest-display':
             $guest = new GuestDisplay([
                 'name' => 'Bpk. Ahmad Sujarwo',

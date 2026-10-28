@@ -5,9 +5,7 @@
             <th class="py-3 px-5 text-xs font-bold uppercase tracking-wider">{{ __('PFE ID') }}</th>
             <th class="py-3 px-5 text-xs font-bold uppercase tracking-wider">{{ __('Location') }}</th>
             <th class="py-3 px-5 text-xs font-bold uppercase tracking-wider">{{ __('Building') }}</th>
-            @if(auth()->user() && auth()->user()->role !== 'Staff')
-            <th class="py-3 px-5 text-xs font-bold uppercase tracking-wider text-center">{{ __('Action') }}</th>
-            @endif
+            <th class="py-3 px-5 text-xs font-bold uppercase tracking-wider text-center">{{ __('Status') }}</th>
         </tr>
     </thead>
     <tbody class="text-sm divide-y divide-slate-100">
@@ -17,17 +15,15 @@
             <td class="py-3 px-5 font-bold text-slate-700">{{ $apar->kode }}</td>
             <td class="py-3 px-5 font-medium text-slate-600">{{ $apar->lokasi->nama ?? 'n/a' }}</td>
             <td class="py-3 px-5 font-medium text-slate-600">{{ $apar->lokasi->gedung->nama ?? 'n/a' }}</td>
-            @if(auth()->user() && auth()->user()->role !== 'Staff')
             <td class="py-3 px-5 text-center">
-                <a href="/scan/{{ $apar->kode }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-[#009B77] bg-[#009B77]/10 hover:bg-[#009B77]/20 px-3 py-1.5 rounded-lg transition-colors">
-                    <i class="ph-bold ph-scan"></i> {{ __('Scan') }}
-                </a>
+                <span class="inline-flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-200/50">
+                    <i class="ph-bold ph-clock"></i> {{ __('Uninspected') }}
+                </span>
             </td>
-            @endif
         </tr>
         @empty
         <tr>
-            <td colspan="{{ (auth()->user() && auth()->user()->role !== 'Staff') ? '5' : '4' }}" class="py-8 text-center text-slate-500 font-semibold">{{ __('All PFE have been inspected this month! 🎉') }}</td>
+            <td colspan="5" class="py-8 text-center text-slate-500 font-semibold">{{ __('All PFE have been inspected this month!') }}</td>
         </tr>
         @endforelse
     </tbody>

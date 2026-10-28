@@ -33,16 +33,28 @@ class SendInspectionReminder extends Command
         $today = now();
         $targetRutinDate = $today->copy()->addDays(3);
         $targetRutinDay = $targetRutinDate->day;
+        $isLastDayOfMonth = $targetRutinDate->isLastOfMonth();
 
         // 1. Cek Jadwal Rutin (H-3)
-        $usersRutin = User::where('role', 'Staff')
-            ->where('jadwal_rutin_tanggal', $targetRutinDay)
-            ->with('gedungs')
-            ->get();
+        // Jika target H-3 jatuh pada hari terakhir bulan (misal 28 Februari atau 30 April),
+        // maka staf dengan tanggal rutin >= tanggal tersebut (29, 30, 31) otomatis diikutsertakan.
+        $usersRutinQuery = User::where('role', 'Staff')
+            ->whereNotNull('jadwal_rutin_tanggal');
+
+        if ($isLastDayOfMonth) {
+            $usersRutinQuery->where('jadwal_rutin_tanggal', '>=', $targetRutinDay);
+        } else {
+            $usersRutinQuery->where('jadwal_rutin_tanggal', $targetRutinDay);
+        }
+
+        $usersRutin = $usersRutinQuery->with(['gedungs', 'lokasis.gedung'])->get();
 
         foreach ($usersRutin as $user) {
-            $this->info("Mengirim pengingat rutin ke: {$user->email}");
-            Mail::to($user->email)->send(new InspectionReminder($user, 'Inspeksi Rutin Bulanan', $targetRutinDate->format('Y-m-d')));
+            $effectiveDeadlineDay = min($user->jadwal_rutin_tanggal, $targetRutinDate->daysInMonth);
+            $effectiveDeadlineDate = $targetRutinDate->copy()->day($effectiveDeadlineDay)->format('Y-m-d');
+
+            $this->info("Mengirim pengingat rutin ke: {$user->email} (Deadline: {$effectiveDeadlineDate})");
+            Mail::to($user->email)->send(new InspectionReminder($user, 'Inspeksi Rutin Bulanan', $effectiveDeadlineDate));
         }
 
         $this->info('Selesai mengirim pengingat!');

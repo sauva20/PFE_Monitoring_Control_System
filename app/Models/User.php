@@ -7,6 +7,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
 
@@ -35,7 +36,17 @@ class User extends Authenticatable
         return LogOptions::defaults()
             ->logFillable()
             ->logOnlyDirty()
-            ->setDescriptionForEvent(fn (string $eventName) => "User telah di-{$eventName}");
+            ->setDescriptionForEvent(function (string $eventName) {
+                $nama = $this->name ?? 'User';
+                $role = $this->role ?? 'User';
+
+                return match ($eventName) {
+                    'created' => "Menambahkan user baru: {$nama} ({$role})",
+                    'updated' => "Memperbarui data akun user: {$nama} ({$role})",
+                    'deleted' => "Menghapus akun user: {$nama}",
+                    default => "User {$nama} telah di-{$eventName}",
+                };
+            });
     }
 
     /**
@@ -54,5 +65,36 @@ class User extends Authenticatable
     public function gedungs()
     {
         return $this->belongsToMany(Gedung::class);
+    }
+
+    public function lokasis()
+    {
+        return $this->belongsToMany(Lokasi::class);
+    }
+
+    public static function verifyPin(string $inputPin, ?string $storedPin): bool
+    {
+        if (empty($storedPin)) {
+            return false;
+        }
+
+        if ((string) $inputPin === (string) $storedPin) {
+            return true;
+        }
+
+        if (str_starts_with($storedPin, '$2y$') || str_starts_with($storedPin, '$2a$') || str_starts_with($storedPin, '$2b$')) {
+            try {
+                return Hash::check($inputPin, $storedPin);
+            } catch (\Throwable) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    public function matchesPin(string $inputPin): bool
+    {
+        return static::verifyPin($inputPin, $this->pin);
     }
 }

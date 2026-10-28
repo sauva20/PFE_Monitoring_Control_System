@@ -40,10 +40,18 @@
                 $scheduleType = ucfirst(str_replace('_', ' ', $rawJenis));
             @endphp
 
-            <div style="background-color: #f1f5f9; padding: 16px; border-radius: 8px; margin-bottom: 24px; border-left: 4px solid #009B77; display: flex; flex-direction: column; gap: 8px;">
-                <div style="margin: 0;"><strong>Batas Deadline Inspeksi:</strong> <span style="color: #0f172a; font-weight: 700;">{{ \Carbon\Carbon::parse($firstJadwal->tanggal_inspeksi)->translatedFormat('d F Y') }}</span></div>
-                <div style="margin: 0;"><strong>Schedule Type:</strong> <span style="color: #0f172a;">{{ $scheduleType }}</span></div>
-            </div>
+            <table style="width: 100%; border-collapse: collapse; background-color: #f1f5f9; border-radius: 8px; border-left: 4px solid #009B77; margin-bottom: 24px;">
+                <tr>
+                    <td style="padding: 12px 16px 4px 16px; font-size: 14px; color: #334155; line-height: 1.5;">
+                        <strong style="color: #475569;">Deadline Inspeksi:</strong> <span style="color: #0f172a; font-weight: 700;">{{ \Carbon\Carbon::parse($firstJadwal->tanggal_inspeksi)->translatedFormat('d F Y') }}</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 16px 12px 16px; font-size: 14px; color: #334155; line-height: 1.5;">
+                        <strong style="color: #475569;">Schedule Type:</strong> <span style="color: #0f172a; font-weight: 600;">{{ $scheduleType }}</span>
+                    </td>
+                </tr>
+            </table>
 
             <p style="font-weight: 600; color: #0f172a;">Here is the list of PFE units to be inspected:</p>
 

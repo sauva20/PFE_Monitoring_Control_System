@@ -36,7 +36,7 @@ class InspectionAssigned extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Penugasan & Batas Deadline Inspeksi APAR - EHSS',
+            subject: 'Penugasan & Deadline Inspeksi APAR - EHSS',
         );
     }
 

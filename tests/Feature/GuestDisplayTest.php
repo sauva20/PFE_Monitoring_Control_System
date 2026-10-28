@@ -27,7 +27,7 @@ class GuestDisplayTest extends TestCase
         $response->assertSee(__('Viewer Display Access'));
     }
 
-    public function test_staff_cannot_access_guest_display_management(): void
+    public function test_staff_can_access_guest_display_management(): void
     {
         $staff = User::factory()->create([
             'role' => 'Staff',
@@ -36,7 +36,8 @@ class GuestDisplayTest extends TestCase
 
         $response = $this->actingAs($staff)->get(route('display-access.index'));
 
-        $response->assertStatus(403);
+        $response->assertStatus(200);
+        $response->assertSee(__('Viewer Display Access'));
     }
 
     public function test_admin_can_create_guest_display_and_email_is_sent(): void
@@ -300,5 +301,105 @@ class GuestDisplayTest extends TestCase
         $response2 = $this->actingAs($admin)->patch(route('display-access.toggle', $guest));
         $response2->assertRedirect();
         $this->assertTrue($guest->fresh()->is_active);
+    }
+
+    public function test_staff_only_sees_guest_displays_they_created(): void
+    {
+        $staffA = User::factory()->create([
+            'name' => 'Staff Alice',
+            'role' => 'Staff',
+        ]);
+
+        $staffB = User::factory()->create([
+            'name' => 'Staff Bob',
+            'role' => 'Staff',
+        ]);
+
+        $admin = User::factory()->create([
+            'name' => 'Admin EHSS',
+            'role' => 'EHSS',
+        ]);
+
+        $guestAlice = GuestDisplay::create([
+            'name' => 'Alice Guest',
+            'institution' => 'Alice Corp',
+            'email' => 'aliceguest@example.com',
+            'pin' => '1111',
+            'access_token' => 'token-alice-guest',
+            'valid_until' => Carbon::today()->addDays(5),
+            'is_active' => true,
+            'created_by' => $staffA->id,
+        ]);
+
+        $guestBob = GuestDisplay::create([
+            'name' => 'Bob Guest',
+            'institution' => 'Bob Corp',
+            'email' => 'bobguest@example.com',
+            'pin' => '2222',
+            'access_token' => 'token-bob-guest',
+            'valid_until' => Carbon::today()->addDays(5),
+            'is_active' => true,
+            'created_by' => $staffB->id,
+        ]);
+
+        // Staff Alice melihat record miliknya dan kolom Created By
+        $responseAlice = $this->actingAs($staffA)->get(route('display-access.index'));
+        $responseAlice->assertOk();
+        $responseAlice->assertSee('Alice Guest');
+        $responseAlice->assertSee('Staff Alice');
+        $responseAlice->assertSee(__('Created By'));
+        $responseAlice->assertDontSee('Bob Guest');
+
+        // Admin EHSS dapat melihat seluruh data display
+        $responseAdmin = $this->actingAs($admin)->get(route('display-access.index'));
+        $responseAdmin->assertOk();
+        $responseAdmin->assertSee('Alice Guest');
+        $responseAdmin->assertSee('Bob Guest');
+    }
+
+    public function test_staff_cannot_modify_or_delete_guest_displays_created_by_others(): void
+    {
+        $staffA = User::factory()->create([
+            'name' => 'Staff Alice',
+            'role' => 'Staff',
+        ]);
+
+        $staffB = User::factory()->create([
+            'name' => 'Staff Bob',
+            'role' => 'Staff',
+        ]);
+
+        $guestBob = GuestDisplay::create([
+            'name' => 'Bob Guest',
+            'institution' => 'Bob Corp',
+            'email' => 'bobguest@example.com',
+            'pin' => '2222',
+            'access_token' => 'token-bob-guest-2',
+            'valid_until' => Carbon::today()->addDays(5),
+            'is_active' => true,
+            'created_by' => $staffB->id,
+        ]);
+
+        // Staff Alice mencoba update display milik Bob -> 403
+        $responseUpdate = $this->actingAs($staffA)->put(route('display-access.update', $guestBob), [
+            'name' => 'Hacked Name',
+            'institution' => 'Hacked',
+            'email' => 'hacked@example.com',
+            'pin' => '9999',
+            'valid_until' => Carbon::today()->addDays(5)->format('Y-m-d'),
+        ]);
+        $responseUpdate->assertStatus(403);
+
+        // Staff Alice mencoba toggle display milik Bob -> 403
+        $responseToggle = $this->actingAs($staffA)->patch(route('display-access.toggle', $guestBob));
+        $responseToggle->assertStatus(403);
+
+        // Staff Alice mencoba delete display milik Bob -> 403
+        $responseDelete = $this->actingAs($staffA)->delete(route('display-access.destroy', $guestBob));
+        $responseDelete->assertStatus(403);
+
+        // Staff Alice mencoba resend email display milik Bob -> 403
+        $responseResend = $this->actingAs($staffA)->post(route('display-access.resend', $guestBob));
+        $responseResend->assertStatus(403);
     }
 }

@@ -38,11 +38,10 @@ class InspeksiController extends Controller
             __('Apakah petugas yang bertanggung jawab terhadap APAR terlatih dalam penggunaan dan pemeliharaan APAR?'),
             __('Apakah daerah sekitar APAR bebas dari bahan yang mudah terbakar atau bahan yang dapat menghambat akses ke APAR?'),
 
-            // 10 Item Pemeriksaan Fisik (Langkah 1)
+            // 9 Item Pemeriksaan Fisik (Langkah 1)
             __('Jenis APAR'),
             __('Kapasitas'),
             __('Tanggal isi ulang terakhir'),
-            __('Tanggal masa berlaku'),
             __('Segel keselamatan'),
             __('Karat pada tabung'),
             __('Kepadatan isi dalam tabung'),
@@ -59,14 +58,20 @@ class InspeksiController extends Controller
 
         $query = Gedung::query();
 
-        // Jika Staff, hanya ambil gedung yang ditugaskan ke dia
+        // Jika Staff, hanya ambil gedung atau lokasi yang ditugaskan ke dia
         if (auth()->user()->role === 'Staff') {
-            $query->whereHas('users', function ($q) {
-                $q->where('user_id', auth()->id());
+            $query->where(function ($sub) {
+                $sub->whereHas('users', function ($q) {
+                    $q->where('user_id', auth()->id());
+                })->orWhereHas('lokasi.users', function ($q) {
+                    $q->where('user_id', auth()->id());
+                });
             });
         }
 
         $gedungs = $query->with([
+            'users:id,name',
+            'lokasi.users:id,name',
             'lokasi.apar',
             'lokasi.apar.jenis',
             'lokasi.apar.kapasitas',
@@ -80,7 +85,15 @@ class InspeksiController extends Controller
 
         // Filter out empty gedungs and lokasis for cleaner UI
         $gedungs = $gedungs->filter(function ($gedung) {
-            $gedung->lokasi = $gedung->lokasi->filter(function ($lokasi) {
+            $gedung->lokasi = $gedung->lokasi->filter(function ($lokasi) use ($gedung) {
+                if (auth()->user()->role === 'Staff') {
+                    $isAssignedGedung = $gedung->users->contains('id', auth()->id());
+                    $isAssignedLokasi = $lokasi->users->contains('id', auth()->id());
+                    if (! $isAssignedGedung && ! $isAssignedLokasi) {
+                        return false;
+                    }
+                }
+
                 return $lokasi->apar->isNotEmpty();
             });
 
@@ -108,8 +121,13 @@ class InspeksiController extends Controller
             ->whereMonth('tanggal_inspeksi', $currentMonth)
             ->whereYear('tanggal_inspeksi', $currentYear)
             ->orderBy('tanggal_inspeksi', 'asc');
+
+        if (auth()->user()->role === 'Staff') {
+            $jadwalsQuery->where('user_id', auth()->id());
+        }
+
         $jadwals = $jadwalsQuery->get();
-        $users = User::with('gedungs')->get();
+        $users = User::with(['gedungs', 'lokasis.gedung'])->get();
 
         // Hitung progres untuk jadwal asli (Ad-Hoc)
         foreach ($jadwals as $jadwal) {
@@ -140,7 +158,11 @@ class InspeksiController extends Controller
         }
 
         // Gabungkan jadwal rutin dari profil Staff ke dalam daftar jadwal
-        foreach ($users as $user) {
+        $staffForRoutine = auth()->user()->role === 'Staff'
+            ? collect([auth()->user()->load(['gedungs.lokasi.apar.inspeksis', 'lokasis.apar.inspeksis', 'lokasis.gedung'])])
+            : $users;
+
+        foreach ($staffForRoutine as $user) {
             if ($user->role === 'Staff' && $user->jadwal_rutin_tanggal) {
                 $maxDays = Carbon::create($currentYear, $currentMonth, 1)->daysInMonth;
                 $tgl = min($user->jadwal_rutin_tanggal, $maxDays);
@@ -160,13 +182,67 @@ class InspeksiController extends Controller
                     $mockJadwal->setRelation('gedung', $gedung);
                     $mockJadwal->setRelation('user', $user);
                     $mockJadwal->is_rutin_virtual = true;
+                    $mockJadwal->scope_label = __('(All Areas)');
 
                     // Cek progres
                     $aparsInGedung = $gedung->lokasi->flatMap->apar;
+                    $mockJadwal->custom_apars = $aparsInGedung;
                     $totalAparInArea = $aparsInGedung->count();
                     $inspectedCount = 0;
 
                     foreach ($aparsInGedung as $a) {
+                        if ($a->inspeksis()->whereMonth('created_at', $currentMonth)->whereYear('created_at', $currentYear)->exists()) {
+                            $inspectedCount++;
+                        }
+                    }
+
+                    $mockJadwal->total_apar = $totalAparInArea;
+                    $mockJadwal->inspected_apar = $inspectedCount;
+
+                    if ($totalAparInArea > 0 && $inspectedCount === $totalAparInArea) {
+                        $mockJadwal->status = 'selesai';
+                    } elseif ($inspectedCount > 0) {
+                        $mockJadwal->status = 'proses';
+                    }
+
+                    $jadwals->push($mockJadwal);
+                }
+
+                $userLokasisByGedung = $user->lokasis ? $user->lokasis->groupBy('gedung_id') : collect();
+                foreach ($userLokasisByGedung as $gedungId => $lokList) {
+                    // Hindari duplikasi jika seluruh gedung sudah di-handle oleh $user->gedungs
+                    if ($user->gedungs->contains('id', $gedungId)) {
+                        continue;
+                    }
+
+                    $parentGedung = $lokList->first()->gedung ?? Gedung::find($gedungId);
+                    if (! $parentGedung) {
+                        continue;
+                    }
+
+                    $mockJadwal = new JadwalInspeksi([
+                        'jenis_jadwal' => 'Inspeksi Rutin Bulanan',
+                        'tanggal_inspeksi' => $tanggalRutin,
+                        'tipe_area' => 'gedung',
+                        'gedung_id' => $parentGedung->id,
+                        'user_id' => $user->id,
+                        'catatan_tambahan' => 'Jadwal rutin bulanan otomatis',
+                        'status' => 'menunggu',
+                    ]);
+                    $mockJadwal->id = 'rutin_'.$user->id.'_g_'.$parentGedung->id;
+                    $mockJadwal->setRelation('gedung', $parentGedung);
+                    $mockJadwal->setRelation('user', $user);
+                    $mockJadwal->is_rutin_virtual = true;
+
+                    $roomCount = $lokList->count();
+                    $mockJadwal->scope_label = '('.$roomCount.' '.__('Specific Rooms').')';
+
+                    $aparsInAssignedRooms = $lokList->flatMap->apar;
+                    $mockJadwal->custom_apars = $aparsInAssignedRooms;
+                    $totalAparInArea = $aparsInAssignedRooms->count();
+                    $inspectedCount = 0;
+
+                    foreach ($aparsInAssignedRooms as $a) {
                         if ($a->inspeksis()->whereMonth('created_at', $currentMonth)->whereYear('created_at', $currentYear)->exists()) {
                             $inspectedCount++;
                         }
@@ -270,7 +346,7 @@ class InspeksiController extends Controller
             : 'Ambil foto kondisi APAR secara langsung dari lokasi menggunakan kamera.';
 
         $request->validate([
-            'checklist' => 'required|array|size:24',
+            'checklist' => 'required|array|size:23',
             'checklist.*.jawaban' => 'required|in:ya,tidak,ada,tidak ada',
             'checklist.*.keterangan' => 'nullable|string',
             'status' => 'required|string',
@@ -313,9 +389,10 @@ class InspeksiController extends Controller
             $updateData['foto'] = $path;
         }
 
-        // Jika Lokasi APAR (index 23) "Tidak Sesuai", update master data lokasi
-        if (isset($request->checklist[23]) && $request->checklist[23]['jawaban'] === 'tidak ada' && ! empty($request->checklist[23]['keterangan'])) {
-            $newLokasiName = trim($request->checklist[23]['keterangan']);
+        // Jika Lokasi APAR (index 22, atau legacy 23) "Tidak Sesuai", update master data lokasi
+        $lokasiChecklist = $request->checklist[22] ?? $request->checklist[23] ?? null;
+        if ($lokasiChecklist && ($lokasiChecklist['jawaban'] ?? '') === 'tidak ada' && ! empty($lokasiChecklist['keterangan'])) {
+            $newLokasiName = trim($lokasiChecklist['keterangan']);
             $lokasi = Lokasi::firstOrCreate([
                 'nama' => $newLokasiName,
                 'gedung_id' => $apar->lokasi->gedung_id,
@@ -430,10 +507,12 @@ class InspeksiController extends Controller
     {
         $request->validate([
             'jenis_jadwal' => 'required|string',
-            'tanggal' => 'required|date',
+            'tanggal' => 'required|date|after_or_equal:today',
             'areas' => 'required|array|min:1',
             'user_id' => 'required|exists:users,id',
             'catatan_tambahan' => 'nullable|string',
+        ], [
+            'tanggal.after_or_equal' => __('Tanggal inspeksi tidak boleh sebelum hari ini.'),
         ]);
 
         $jadwals = collect();
@@ -468,12 +547,14 @@ class InspeksiController extends Controller
     {
         $request->validate([
             'jenis_jadwal' => 'required|string',
-            'tanggal' => 'required|date',
+            'tanggal' => 'required|date|after_or_equal:today',
             'tipe_area' => 'required|in:gedung,lokasi',
             'gedung_id' => 'required_if:tipe_area,gedung',
             'lokasi_id' => 'required_if:tipe_area,lokasi',
             'user_id' => 'required|exists:users,id',
             'catatan_tambahan' => 'nullable|string',
+        ], [
+            'tanggal.after_or_equal' => __('Tanggal inspeksi tidak boleh sebelum hari ini.'),
         ]);
 
         $jadwal->update([

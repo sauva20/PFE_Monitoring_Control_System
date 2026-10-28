@@ -17,13 +17,16 @@ class UserScheduleUpdated extends Mailable
 
     public $buildings;
 
+    public $newPin;
+
     /**
      * Create a new message instance.
      */
-    public function __construct($user, $buildings)
+    public function __construct($user, $buildings = null, ?string $newPin = null)
     {
-        $this->user = $user;
-        $this->buildings = $buildings;
+        $this->user = $user->withoutRelations()->load(['gedungs', 'lokasis.gedung']);
+        $this->buildings = $buildings ?? $this->user->gedungs;
+        $this->newPin = $newPin;
     }
 
     /**
@@ -32,7 +35,7 @@ class UserScheduleUpdated extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Pembaruan Batas Deadline Inspeksi Bulanan - EHSS',
+            subject: 'Pembaruan Jadwal & PIC Inspeksi Bulanan - EHSS',
         );
     }
 

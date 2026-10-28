@@ -71,9 +71,9 @@
 
             <!-- Titles -->
             <div class="text-center mb-8">
-                <h1 class="text-xl sm:text-xl font-bold text-[#1A1A1A] tracking-tight mb-1.5">SETUP PASSWORD</h1>
+                <h1 class="text-xl sm:text-xl font-bold text-[#1A1A1A] tracking-tight mb-1.5">{{ __('SETUP PASSWORD') }}</h1>
                 <p class="text-sm text-gray-500">
-                    {{ __('Hello,') }} <strong>{{ $user->name }}</strong>.<br>{{ __('Please create a password for your account.') }}
+                    {{ __('Hello,') }} <strong>{{ $user->name }}</strong>.<br>{{ __('Please enter your Security PIN to verify and set up your password.') }}
                 </p>
             </div>
 
@@ -91,9 +91,9 @@
 
                 <!-- Email (Readonly) -->
                 <div>
-                    <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Email</label>
+                    <label class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">{{ __('Account Email') }}</label>
                     <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
                             <i class="ph-fill ph-envelope text-lg"></i>
                         </div>
                         <input type="email" value="{{ $user->email }}" readonly
@@ -103,12 +103,12 @@
 
                 <!-- PIN -->
                 <div>
-                    <label for="pin" class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">{{ __('Inspection PIN (4 Digits)') }}</label>
+                    <label for="pin" class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">{{ __('Security PIN (4 digits)') }}</label>
                     <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
-                            <i class="ph-fill ph-numpad text-lg"></i>
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
+                            <i class="ph-fill ph-shield-check text-lg"></i>
                         </div>
-                        <input type="text" id="pin" name="pin" placeholder="{{ __('Enter PIN from Email') }}" maxlength="4" pattern="[0-9]*" inputmode="numeric" value="{{ old('pin') }}"
+                        <input type="text" id="pin" name="pin" placeholder="{{ __('Enter 4-digit PIN from Email') }}" maxlength="4" pattern="[0-9]*" inputmode="numeric" value="{{ old('pin') }}"
                             class="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#009B77]/10 focus:border-[#009B77] focus:bg-white transition-all outline-none text-[#1A1A1A] text-sm font-medium placeholder:font-normal text-center tracking-[0.5em]" required autofocus>
                     </div>
                 </div>
@@ -144,13 +144,13 @@
                 <div>
                     <label for="password" class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">{{ __('New Password') }}</label>
                     <div class="relative group" x-data="{ show: false }">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
                             <i class="ph-fill ph-lock-key text-lg"></i>
                         </div>
-                        <input :type="show ? 'text' : 'password'" id="password" name="password" placeholder="{{ __('Minimum 8 characters') }}" minlength="8"
+                        <input type="password" :type="show ? 'text' : 'password'" id="password" name="password" placeholder="{{ __('Minimum 8 characters') }}" minlength="8"
                             class="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#009B77]/10 focus:border-[#009B77] focus:bg-white transition-all outline-none text-[#1A1A1A] text-sm tracking-widest font-mono placeholder:font-sans placeholder:tracking-normal" required autofocus>
-                        <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#009B77] transition-colors focus:outline-none">
-                            <i class="ph-fill text-lg" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
+                        <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-[#009B77] transition-colors focus:outline-none cursor-pointer">
+                            <i class="ph-fill ph-eye text-lg" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
                         </button>
                     </div>
                 </div>
@@ -159,13 +159,13 @@
                 <div>
                     <label for="password_confirmation" class="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">{{ __('Confirm New Password') }}</label>
                     <div class="relative group" x-data="{ show: false }">
-                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
-                            <i class="ph-fill ph-check-circle text-lg"></i>
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#009B77] transition-colors">
+                            <i class="ph-fill ph-lock-key text-lg"></i>
                         </div>
-                        <input :type="show ? 'text' : 'password'" id="password_confirmation" name="password_confirmation" placeholder="{{ __('Repeat the password above') }}" minlength="8"
+                        <input type="password" :type="show ? 'text' : 'password'" id="password_confirmation" name="password_confirmation" placeholder="{{ __('Repeat the password above') }}" minlength="8"
                             class="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-[#009B77]/10 focus:border-[#009B77] focus:bg-white transition-all outline-none text-[#1A1A1A] text-sm tracking-widest font-mono placeholder:font-sans placeholder:tracking-normal" required>
-                        <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-[#009B77] transition-colors focus:outline-none">
-                            <i class="ph-fill text-lg" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
+                        <button type="button" @click="show = !show" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-[#009B77] transition-colors focus:outline-none cursor-pointer">
+                            <i class="ph-fill ph-eye text-lg" :class="show ? 'ph-eye-slash' : 'ph-eye'"></i>
                         </button>
                     </div>
                 </div>

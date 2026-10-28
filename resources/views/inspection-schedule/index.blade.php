@@ -256,81 +256,235 @@
                             </div>
                         </div>
                         
-                        <!-- Body -->
+                        <!-- Body: Adaptive grouping (only group when multiple data) -->
                         <div x-show="expanded" x-collapse>
                             <div class="p-5 bg-white space-y-3">
-                                @foreach($aparsInGedung as $apar)
-                                    @if($apar->inspeksis->isEmpty())
-                                    <!-- APAR Menunggu -->
-                                    <div class="p-4 rounded-xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-200 transition-colors">
-                                        <div class="flex items-start gap-3">
-                                            <div class="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0">
-                                                <i class="ph-fill ph-fire-extinguisher text-xl"></i>
-                                            </div>
-                                            <div>
-                                                <h5 class="font-bold text-slate-800 text-sm">{{ $apar->kode }}</h5>
-                                                <p class="text-xs font-semibold text-slate-500 mb-1">{{ $apar->lokasi->nama ?? 'n/a' }}</p>
-                                                <p class="text-[10px] font-bold text-slate-400 flex items-center gap-1"><i class="ph-bold ph-user"></i> {{ __('Assigned to:') }} {{ __('Anyone') }}</p>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center gap-2 w-full sm:w-auto">
-                                            <span class="hidden sm:inline-flex px-2 py-1 rounded-md text-[10px] font-bold bg-amber-50 text-amber-500 border border-amber-100">{{ __('Waiting') }}</span>
-                                            <a href="{{ route('inspeksi.pedoman', $apar->id) }}?source=schedule" class="w-full sm:w-auto text-center bg-white border-2 border-slate-200 hover:border-[#009B77] text-slate-600 hover:text-[#009B77] font-bold py-1.5 px-4 rounded-lg transition-colors text-xs flex items-center justify-center gap-1.5 shadow-sm">
-                                                {{ __('Start') }} <i class="ph-bold ph-arrow-right"></i>
-                                            </a>
-                                        </div>
-                                    </div>
-                                    @else
-                                    <!-- APAR Selesai -->
-                                    @php 
-                                        $inspeksi = $apar->inspeksis->first(); 
-                                        $isPic = $gedung->users->contains('id', $inspeksi->user_id);
+                                @foreach($gedung->lokasi as $lokasi)
+                                    @php
+                                        $lokasiApars = $lokasi->apar;
+                                        $lokasiSelesai = $lokasiApars->filter(fn($a) => $a->inspeksis->isNotEmpty())->count();
+                                        $lokasiTotal = $lokasiApars->count();
+                                        $isMultiData = $gedung->lokasi->count() > 1 && $lokasiTotal > 1;
                                     @endphp
-                                    <div class="p-4 rounded-xl border border-[#009B77]/20 bg-[#009B77]/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden">
-                                        <div class="flex items-start gap-3">
-                                            <div class="w-10 h-10 rounded-lg bg-white border border-[#009B77]/20 flex items-center justify-center text-[#009B77] flex-shrink-0">
-                                                <i class="ph-fill ph-fire-extinguisher text-xl"></i>
+                                    @if($lokasiTotal > 0)
+                                        @if($isMultiData)
+                                        <!-- Multiple APARs in room: Grouped box -->
+                                        <div class="rounded-xl border border-slate-200/90 overflow-hidden bg-slate-50/40">
+                                            <!-- Location Subheader -->
+                                            <div class="px-4 py-2.5 bg-slate-100/70 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-2">
+                                                <div class="flex items-center gap-2">
+                                                    <div class="w-6 h-6 rounded-md bg-white border border-slate-200/90 flex items-center justify-center text-[#009B77] shadow-2xs">
+                                                        <i class="ph-bold ph-door text-xs"></i>
+                                                    </div>
+                                                    <div>
+                                                        <span class="font-bold text-slate-800 text-xs sm:text-sm">{{ $lokasi->nama }}</span>
+                                                        @if($lokasi->nomor_ruangan)
+                                                            <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-white border border-slate-200 text-slate-600">{{ $lokasi->nomor_ruangan }}</span>
+                                                        @endif
+                                                        @if($lokasi->lantai)
+                                                            <span class="ml-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-white border border-slate-200 text-slate-500">{{ __('Floor') }} {{ $lokasi->lantai }}</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-2 text-xs font-semibold">
+                                                    <span class="text-slate-500 text-[11px]">{{ $lokasiTotal }} APAR</span>
+                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold {{ $lokasiSelesai === $lokasiTotal ? 'bg-emerald-50 text-[#009B77] border border-emerald-200' : 'bg-slate-200/70 text-slate-600' }}">
+                                                        {{ $lokasiSelesai }}/{{ $lokasiTotal }} {{ __('Completed') }}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h5 class="font-bold text-slate-800 text-sm">{{ $apar->kode }}</h5>
-                                                <p class="text-xs font-semibold text-slate-500 mb-1">{{ $apar->lokasi->nama ?? 'n/a' }}</p>
-                                                <p class="text-[10px] font-bold text-[#009B77] flex items-center gap-1">
-                                                    <i class="ph-bold ph-check-circle"></i> {{ __('Completed by') }} 
-                                                    @if(!$isPic)
-                                                        <span class="text-amber-500 flex items-center gap-0.5" title="{{ __('Not Main PIC for this Area') }}">
-                                                            {{ ucwords(strtolower($inspeksi->user->name ?? 'User')) }} <i class="ph-fill ph-warning-circle text-[10px]"></i>
-                                                        </span>
-                                                    @else
-                                                        {{ ucwords(strtolower($inspeksi->user->name ?? 'User')) }}
-                                                    @endif
-                                                    <span class="text-slate-400 font-medium">({{ $inspeksi->created_at->format('d M, H:i') }})</span>
-                                                </p>
-                                            </div>
-                                        </div>
-                                        @php
-                                            $inspeksiData = [
-                                                'apar_kode' => $apar->kode,
-                                                'lokasi' => $apar->lokasi->nama ?? 'n/a',
-                                                'jenis' => $apar->jenis->nama ?? '-',
-                                                'kapasitas' => $apar->kapasitas->ukuran ?? '-',
-                                                'tgl_isi_ulang' => $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->translatedFormat('d M Y') : '-',
-                                                'tgl_kedaluwarsa' => $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->translatedFormat('d M Y') : '-',
-                                                'waktu' => $inspeksi->created_at->format('d M Y, H:i'),
-                                                'petugas' => ucwords(strtolower($inspeksi->user->name ?? 'User')),
-                                                'is_pic' => $isPic,
-                                                'status' => $inspeksi->status,
-                                                'catatan' => $inspeksi->catatan_tambahan,
-                                                'checklist' => is_string($inspeksi->checklist) ? json_decode($inspeksi->checklist, true) : $inspeksi->checklist,
-                                                'foto' => $apar->foto
 
-                                            ];
-                                        @endphp
-                                        <div class="flex items-center gap-2 w-full sm:w-auto">
-                                            <button @click='selectedInspeksi = @json($inspeksiData); showPanelHasil = true' class="w-full sm:w-auto text-center bg-white border border-slate-200 hover:border-slate-300 text-slate-600 font-bold py-1.5 px-4 rounded-lg transition-colors text-xs flex items-center justify-center gap-1.5 shadow-sm">
-                                                {{ __('View Results') }}
-                                            </button>
+                                            <!-- APAR List in this Location -->
+                                            <div class="p-3 bg-white space-y-2.5">
+                                                @foreach($lokasiApars as $apar)
+                                                    @if($apar->inspeksis->isEmpty())
+                                                    <!-- APAR Menunggu -->
+                                                    <div class="p-3 rounded-xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-200 hover:bg-slate-50/50 transition-colors">
+                                                        <div class="flex items-center gap-3">
+                                                            <div class="w-9 h-9 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0">
+                                                                <i class="ph-fill ph-fire-extinguisher text-lg"></i>
+                                                            </div>
+                                                            <div>
+                                                                <div class="flex items-center gap-2">
+                                                                    <h5 class="font-bold text-slate-800 text-sm">{{ $apar->kode }}</h5>
+                                                                    <span class="text-[10px] font-medium text-slate-400">({{ $apar->jenis->nama ?? '-' }}, {{ $apar->kapasitas->ukuran ?? '-' }})</span>
+                                                                </div>
+                                                                @php
+                                                                    $aparPics = $lokasi->users->isNotEmpty()
+                                                                        ? $lokasi->users
+                                                                        : $gedung->users;
+                                                                    $aparPicNames = $aparPics->pluck('name')->implode(', ');
+                                                                @endphp
+                                                                <p class="text-[10px] font-bold {{ $aparPicNames ? 'text-[#009B77]' : 'text-slate-400' }} flex items-center gap-1 mt-0.5"><i class="ph-bold ph-user"></i> {{ __('Assigned to:') }} {{ $aparPicNames ?: __('Anyone') }}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                                                            <span class="hidden sm:inline-flex px-2 py-1 rounded-md text-[10px] font-bold bg-amber-50 text-amber-500 border border-amber-100">{{ __('Waiting') }}</span>
+                                                            <a href="{{ route('inspeksi.pedoman', $apar->id) }}?source=schedule" class="w-full sm:w-auto text-center bg-white border-2 border-slate-200 hover:border-[#009B77] text-slate-600 hover:text-[#009B77] font-bold py-1.5 px-4 rounded-lg transition-colors text-xs flex items-center justify-center gap-1.5 shadow-sm">
+                                                                {{ __('Start') }} <i class="ph-bold ph-arrow-right"></i>
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                    @else
+                                                    <!-- APAR Selesai -->
+                                                    @php 
+                                                        $inspeksi = $apar->inspeksis->first(); 
+                                                        $isPic = $gedung->users->contains('id', $inspeksi->user_id) || $lokasi->users->contains('id', $inspeksi->user_id);
+                                                    @endphp
+                                                    <div class="p-3 rounded-xl border border-[#009B77]/20 bg-[#009B77]/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 relative overflow-hidden">
+                                                        <div class="flex items-center gap-3">
+                                                            <div class="w-9 h-9 rounded-lg bg-white border border-[#009B77]/20 flex items-center justify-center text-[#009B77] flex-shrink-0">
+                                                                <i class="ph-fill ph-fire-extinguisher text-lg"></i>
+                                                            </div>
+                                                            <div>
+                                                                <div class="flex items-center gap-2">
+                                                                    <h5 class="font-bold text-slate-800 text-sm">{{ $apar->kode }}</h5>
+                                                                    <span class="text-[10px] font-medium text-slate-500">({{ $apar->jenis->nama ?? '-' }}, {{ $apar->kapasitas->ukuran ?? '-' }})</span>
+                                                                </div>
+                                                                <p class="text-[10px] font-bold text-[#009B77] flex items-center gap-1 mt-0.5">
+                                                                    <i class="ph-bold ph-check-circle"></i> {{ __('Completed by') }} 
+                                                                    @if(!$isPic)
+                                                                        <span class="text-amber-500 flex items-center gap-0.5" title="{{ __('Not Main PIC for this Area') }}">
+                                                                            {{ ucwords(strtolower($inspeksi->user->name ?? 'User')) }} <i class="ph-fill ph-warning-circle text-[10px]"></i>
+                                                                        </span>
+                                                                    @else
+                                                                        {{ ucwords(strtolower($inspeksi->user->name ?? 'User')) }}
+                                                                    @endif
+                                                                    <span class="text-slate-400 font-medium">({{ $inspeksi->created_at->format('d M, H:i') }})</span>
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        @php
+                                                            $inspeksiData = [
+                                                                'apar_kode' => $apar->kode,
+                                                                'lokasi' => ($lokasi->nama ?? 'n/a') . ($lokasi->nomor_ruangan ? ' ('.$lokasi->nomor_ruangan.')' : ''),
+                                                                'jenis' => $apar->jenis->nama ?? '-',
+                                                                'kapasitas' => $apar->kapasitas->ukuran ?? '-',
+                                                                'tgl_isi_ulang' => $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->translatedFormat('d M Y') : '-',
+                                                                'tgl_kedaluwarsa' => $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->translatedFormat('d M Y') : '-',
+                                                                'waktu' => $inspeksi->created_at->format('d M Y, H:i'),
+                                                                'petugas' => ucwords(strtolower($inspeksi->user->name ?? 'User')),
+                                                                'is_pic' => $isPic,
+                                                                'status' => $inspeksi->status,
+                                                                'catatan' => $inspeksi->catatan_tambahan,
+                                                                'checklist' => is_string($inspeksi->checklist) ? json_decode($inspeksi->checklist, true) : $inspeksi->checklist,
+                                                                'foto' => $apar->foto
+                                                            ];
+                                                        @endphp
+                                                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                                                            <button @click='selectedInspeksi = @json($inspeksiData); showPanelHasil = true' class="w-full sm:w-auto text-center bg-white border border-slate-200 hover:border-slate-300 text-slate-600 font-bold py-1.5 px-4 rounded-lg transition-colors text-xs flex items-center justify-center gap-1.5 shadow-sm">
+                                                                {{ __('View Results') }}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                    @endif
+                                                @endforeach
+                                            </div>
                                         </div>
-                                    </div>
+                                        @else
+                                        <!-- Single APAR in room or single room in building: Display flat like usual ("tampilin kyk biasa") -->
+                                        @foreach($lokasiApars as $apar)
+                                            @if($apar->inspeksis->isEmpty())
+                                            <!-- APAR Menunggu -->
+                                            <div class="p-4 rounded-xl border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-slate-200 hover:bg-slate-50/50 transition-colors">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 flex-shrink-0">
+                                                        <i class="ph-fill ph-fire-extinguisher text-xl"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="flex items-center gap-2">
+                                                            <h5 class="font-bold text-slate-800 text-sm">{{ $apar->kode }}</h5>
+                                                            <span class="text-[10px] font-medium text-slate-400">({{ $apar->jenis->nama ?? '-' }}, {{ $apar->kapasitas->ukuran ?? '-' }})</span>
+                                                        </div>
+                                                        <p class="text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1.5 mt-0.5">
+                                                            <i class="ph-bold ph-door text-slate-400 text-xs"></i> {{ $lokasi->nama ?? 'n/a' }}
+                                                            @if($lokasi->nomor_ruangan)
+                                                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 border border-slate-200/80 text-slate-600">{{ $lokasi->nomor_ruangan }}</span>
+                                                            @endif
+                                                            @if($lokasi->lantai)
+                                                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 border border-slate-200/80 text-slate-500">{{ __('Floor') }} {{ $lokasi->lantai }}</span>
+                                                            @endif
+                                                        </p>
+                                                        @php
+                                                            $aparPics = $lokasi->users->isNotEmpty()
+                                                                ? $lokasi->users
+                                                                : $gedung->users;
+                                                            $aparPicNames = $aparPics->pluck('name')->implode(', ');
+                                                        @endphp
+                                                        <p class="text-[10px] font-bold {{ $aparPicNames ? 'text-[#009B77]' : 'text-slate-400' }} flex items-center gap-1"><i class="ph-bold ph-user"></i> {{ __('Assigned to:') }} {{ $aparPicNames ?: __('Anyone') }}</p>
+                                                    </div>
+                                                </div>
+                                                <div class="flex items-center gap-2 w-full sm:w-auto">
+                                                    <span class="hidden sm:inline-flex px-2 py-1 rounded-md text-[10px] font-bold bg-amber-50 text-amber-500 border border-amber-100">{{ __('Waiting') }}</span>
+                                                    <a href="{{ route('inspeksi.pedoman', $apar->id) }}?source=schedule" class="w-full sm:w-auto text-center bg-white border-2 border-slate-200 hover:border-[#009B77] text-slate-600 hover:text-[#009B77] font-bold py-1.5 px-4 rounded-lg transition-colors text-xs flex items-center justify-center gap-1.5 shadow-sm">
+                                                        {{ __('Start') }} <i class="ph-bold ph-arrow-right"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            @else
+                                            <!-- APAR Selesai -->
+                                            @php 
+                                                $inspeksi = $apar->inspeksis->first(); 
+                                                $isPic = $gedung->users->contains('id', $inspeksi->user_id) || $lokasi->users->contains('id', $inspeksi->user_id);
+                                            @endphp
+                                            <div class="p-4 rounded-xl border border-[#009B77]/20 bg-[#009B77]/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative overflow-hidden">
+                                                <div class="flex items-start gap-3">
+                                                    <div class="w-10 h-10 rounded-lg bg-white border border-[#009B77]/20 flex items-center justify-center text-[#009B77] flex-shrink-0">
+                                                        <i class="ph-fill ph-fire-extinguisher text-xl"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="flex items-center gap-2">
+                                                            <h5 class="font-bold text-slate-800 text-sm">{{ $apar->kode }}</h5>
+                                                            <span class="text-[10px] font-medium text-slate-500">({{ $apar->jenis->nama ?? '-' }}, {{ $apar->kapasitas->ukuran ?? '-' }})</span>
+                                                        </div>
+                                                        <p class="text-xs font-semibold text-slate-500 mb-1 flex items-center gap-1.5 mt-0.5">
+                                                            <i class="ph-bold ph-door text-slate-400 text-xs"></i> {{ $lokasi->nama ?? 'n/a' }}
+                                                            @if($lokasi->nomor_ruangan)
+                                                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-white border border-slate-200 text-slate-600">{{ $lokasi->nomor_ruangan }}</span>
+                                                            @endif
+                                                            @if($lokasi->lantai)
+                                                                <span class="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-white border border-slate-200 text-slate-500">{{ __('Floor') }} {{ $lokasi->lantai }}</span>
+                                                            @endif
+                                                        </p>
+                                                        <p class="text-[10px] font-bold text-[#009B77] flex items-center gap-1">
+                                                            <i class="ph-bold ph-check-circle"></i> {{ __('Completed by') }} 
+                                                            @if(!$isPic)
+                                                                <span class="text-amber-500 flex items-center gap-0.5" title="{{ __('Not Main PIC for this Area') }}">
+                                                                    {{ ucwords(strtolower($inspeksi->user->name ?? 'User')) }} <i class="ph-fill ph-warning-circle text-[10px]"></i>
+                                                                </span>
+                                                            @else
+                                                                {{ ucwords(strtolower($inspeksi->user->name ?? 'User')) }}
+                                                            @endif
+                                                            <span class="text-slate-400 font-medium">({{ $inspeksi->created_at->format('d M, H:i') }})</span>
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                @php
+                                                    $inspeksiData = [
+                                                        'apar_kode' => $apar->kode,
+                                                        'lokasi' => ($lokasi->nama ?? 'n/a') . ($lokasi->nomor_ruangan ? ' ('.$lokasi->nomor_ruangan.')' : ''),
+                                                        'jenis' => $apar->jenis->nama ?? '-',
+                                                        'kapasitas' => $apar->kapasitas->ukuran ?? '-',
+                                                        'tgl_isi_ulang' => $apar->tgl_isi_ulang ? $apar->tgl_isi_ulang->translatedFormat('d M Y') : '-',
+                                                        'tgl_kedaluwarsa' => $apar->tgl_kedaluwarsa ? $apar->tgl_kedaluwarsa->translatedFormat('d M Y') : '-',
+                                                        'waktu' => $inspeksi->created_at->format('d M Y, H:i'),
+                                                        'petugas' => ucwords(strtolower($inspeksi->user->name ?? 'User')),
+                                                        'is_pic' => $isPic,
+                                                        'status' => $inspeksi->status,
+                                                        'catatan' => $inspeksi->catatan_tambahan,
+                                                        'checklist' => is_string($inspeksi->checklist) ? json_decode($inspeksi->checklist, true) : $inspeksi->checklist,
+                                                        'foto' => $apar->foto
+                                                    ];
+                                                @endphp
+                                                <div class="flex items-center gap-2 w-full sm:w-auto">
+                                                    <button @click='selectedInspeksi = @json($inspeksiData); showPanelHasil = true' class="w-full sm:w-auto text-center bg-white border border-slate-200 hover:border-slate-300 text-slate-600 font-bold py-1.5 px-4 rounded-lg transition-colors text-xs flex items-center justify-center gap-1.5 shadow-sm">
+                                                        {{ __('View Results') }}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            @endif
+                                        @endforeach
+                                        @endif
                                     @endif
                                 @endforeach
                             </div>
@@ -541,18 +695,24 @@
                                                                 <div class="flex items-start gap-3 p-3 rounded-xl border" 
                                                                     x-data="{ 
                                                                         isExpected() { 
-                                                                            if (parseInt(index) === 19) return item.jawaban === 'tidak ada';
+                                                                            const isLegacy = selectedInspeksi.checklist && Object.keys(selectedInspeksi.checklist).length >= 24;
+                                                                            const karatIdx = isLegacy ? 19 : 18;
+                                                                            if (parseInt(index) === karatIdx) return item.jawaban === 'tidak ada';
                                                                             return item.jawaban === 'ada';
                                                                         },
                                                                         getAnswerBadge() {
                                                                             const idx = parseInt(index);
+                                                                            const isLegacy = selectedInspeksi.checklist && Object.keys(selectedInspeksi.checklist).length >= 24;
                                                                             if (idx === 14) return selectedInspeksi.jenis || '{{ __('Ada') }}';
                                                                             if (idx === 15) return selectedInspeksi.kapasitas || '{{ __('Ada') }}';
                                                                             if (idx === 16) return selectedInspeksi.tgl_isi_ulang || '{{ __('Ada') }}';
-                                                                            if (idx === 17) return selectedInspeksi.tgl_kedaluwarsa || '{{ __('Ada') }}';
-                                                                            if (idx === 19) return item.jawaban === 'tidak ada' ? '{{ __('Tidak Ada') }}' : '{{ __('Ada') }}';
-                                                                            if (idx === 20) return item.jawaban === 'ada' ? '{{ __('Padat') }}' : '{{ __('Tidak Padat') }}';
-                                                                            if (idx === 23) {
+                                                                            if (isLegacy && idx === 17) return selectedInspeksi.tgl_kedaluwarsa || '{{ __('Ada') }}';
+                                                                            const karatIdx = isLegacy ? 19 : 18;
+                                                                            const padatIdx = isLegacy ? 20 : 19;
+                                                                            const lokasiIdx = isLegacy ? 23 : 22;
+                                                                            if (idx === karatIdx) return item.jawaban === 'tidak ada' ? '{{ __('Tidak Ada') }}' : '{{ __('Ada') }}';
+                                                                            if (idx === padatIdx) return item.jawaban === 'ada' ? '{{ __('Padat') }}' : '{{ __('Tidak Padat') }}';
+                                                                            if (idx === lokasiIdx) {
                                                                                 if (item.jawaban === 'tidak ada' && item.keterangan) {
                                                                                     return '{{ __('Pindah: ') }}' + item.keterangan;
                                                                                 }
@@ -569,7 +729,7 @@
                                                                             <p class="font-bold text-slate-800 text-xs leading-relaxed" x-text="window.pertanyaanApar[index]"></p>
                                                                             <span class="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider flex-shrink-0 text-center" :class="isExpected() ? 'bg-teal-50 text-teal-600' : 'bg-red-100 text-red-600'" x-text="getAnswerBadge()"></span>
                                                                         </div>
-                                                                        <template x-if="item.keterangan && item.keterangan.trim() !== '' && parseInt(index) !== 23">
+                                                                        <template x-if="item.keterangan && item.keterangan.trim() !== '' && parseInt(index) !== ((selectedInspeksi.checklist && Object.keys(selectedInspeksi.checklist).length >= 24) ? 23 : 22)">
                                                                             <p class="text-xs font-bold mt-1.5 bg-white px-2 py-1 rounded border inline-block" :class="isExpected() ? 'text-slate-600 border-slate-100' : 'text-red-600 border-red-100'">
                                                                                 {{ __('Notes:') }} <span class="font-medium" x-text="item.keterangan"></span>
                                                                             </p>
@@ -707,7 +867,7 @@
                     if (!jadwalsForDate) return false;
                     return jadwalsForDate.some(j => j.area_id === areaId);
                 }
-            }" @submit="if(formAreas.some(a => isAreaScheduledOnDate(a))) { alert('Ada area yang sudah terjadwal di tanggal tersebut.'); $event.preventDefault(); }">
+            }">
                 @csrf
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
                     <!-- Jenis Jadwal -->
@@ -737,7 +897,7 @@
                     <!-- Tanggal Inspeksi -->
                     <div>
                         <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">{{ __('Inspection Date') }}</label>
-                        <div class="relative" x-data x-init="flatpickr($refs.dateInput, { dateFormat: 'Y-m-d', minDate: 'today', onChange: (s, d) => { formTanggal = d; formAreas = formAreas.filter(a => !isAreaScheduledOnDate(a)); } })">
+                        <div class="relative" x-data x-init="flatpickr($refs.dateInput, { dateFormat: 'Y-m-d', minDate: 'today', onChange: (s, d) => { formTanggal = d; } })">
                             <i class="ph-bold ph-calendar-blank absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base transition-colors peer-focus:text-[#009B77] z-10"></i>
                             <input x-ref="dateInput" name="tanggal" type="text" placeholder="{{ __('Select Date') }}" required
                                    class="peer w-full bg-white border-2 border-slate-200 rounded-xl py-2.5 pl-10 pr-3 text-sm font-medium text-slate-700 focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none placeholder:text-slate-400 placeholder:font-medium appearance-none cursor-pointer">
@@ -795,17 +955,13 @@
                                 <div class="overflow-y-auto">
                                     <template x-for="option in options" :key="option.id">
                                         <button type="button" x-show="option.text_search.toLowerCase().includes(search.toLowerCase())" 
-                                                @click="if(!isAreaScheduledOnDate(option.id)) toggleArea(option.id)" 
-                                                class="w-full text-left px-4 py-2.5 transition-colors flex items-start justify-between" 
-                                                :class="[
-                                                    formAreas.includes(option.id) ? 'bg-[#009B77]/5' : 'hover:bg-slate-50',
-                                                    isAreaScheduledOnDate(option.id) ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''
-                                                ]"
-                                                :disabled="isAreaScheduledOnDate(option.id)">
+                                                @click="toggleArea(option.id)" 
+                                                class="w-full text-left px-4 py-2.5 transition-colors flex items-start justify-between cursor-pointer" 
+                                                :class="formAreas.includes(option.id) ? 'bg-[#009B77]/5' : 'hover:bg-slate-50'">
                                             <div class="flex flex-col pr-3 py-0.5">
                                                 <div class="flex items-center mb-1">
                                                     <span class="text-sm transition-colors" :class="formAreas.includes(option.id) ? 'text-[#009B77] font-bold' : 'text-slate-700 font-medium'" x-text="option.nama"></span>
-                                                    <span x-show="isAreaScheduledOnDate(option.id)" class="text-[9px] font-bold text-red-500 bg-red-50 border border-red-100 px-1.5 py-0.5 rounded ml-2 uppercase tracking-wide">{{ __('Scheduled') }}</span>
+                                                    <span x-show="isAreaScheduledOnDate(option.id)" class="text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded ml-2 uppercase tracking-wide">{{ __('Scheduled') }}</span>
                                                 </div>
                                                 <div class="flex flex-wrap items-center gap-1.5">
                                                     <div class="flex items-center gap-1 text-[10px] text-slate-500 font-medium bg-slate-100 px-1.5 py-0.5 rounded">
@@ -995,7 +1151,7 @@
                     <!-- Tanggal Inspeksi -->
                     <div>
                         <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">{{ __('Inspection Date') }}</label>
-                        <div class="relative" x-data x-init="let fp = flatpickr($refs.dateInput, { dateFormat: 'Y-m-d', onChange: function(s, d) { formTanggal = d; } }); $watch('formTanggal', val => { if(val) fp.setDate(val) })">
+                        <div class="relative" x-data x-init="let fp = flatpickr($refs.dateInput, { dateFormat: 'Y-m-d', minDate: 'today', onChange: function(s, d) { formTanggal = d; } }); $watch('formTanggal', val => { if(val) fp.setDate(val) })">
                             <i class="ph-bold ph-calendar-blank absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base transition-colors peer-focus:text-[#009B77] z-10"></i>
                             <input x-ref="dateInput" name="tanggal" type="text" placeholder="{{ __('Select Date') }}" required
                                    class="peer w-full bg-white border-2 border-slate-200 rounded-xl py-2.5 pl-10 pr-3 text-sm font-medium text-slate-700 focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all outline-none placeholder:text-slate-400 placeholder:font-medium appearance-none cursor-pointer">

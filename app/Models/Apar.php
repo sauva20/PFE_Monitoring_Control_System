@@ -20,7 +20,17 @@ class Apar extends Model
         return LogOptions::defaults()
             ->logFillable()
             ->logOnlyDirty()
-            ->setDescriptionForEvent(fn (string $eventName) => "APAR telah di-{$eventName}");
+            ->setDescriptionForEvent(function (string $eventName) {
+                $kode = $this->kode ?? 'APAR';
+                $lokasi = $this->lokasi?->nama ?? '-';
+
+                return match ($eventName) {
+                    'created' => "Menambahkan unit APAR baru [{$kode}] di lokasi {$lokasi}",
+                    'updated' => "Memperbarui data spesifikasi APAR [{$kode}]",
+                    'deleted' => "Menghapus unit APAR [{$kode}]",
+                    default => "APAR [{$kode}] telah di-{$eventName}",
+                };
+            });
     }
 
     protected $casts = [

@@ -19,11 +19,11 @@
             <p style="margin-bottom: 24px;">Please click the button below to set a new password:</p>
             
             <div style="text-align: center; margin: 30px 0;">
-                <a href="{{ $resetUrl }}" style="background-color: #009B77; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Reset Password</a>
+                <a href="{{ $resetUrl }}" style="background-color: #009B77; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 14px; display: inline-block;">Reset Password</a>
             </div>
             
             <div style="background-color: #fef2f2; padding: 16px; border-radius: 8px; border-left: 4px solid #ef4444; margin: 20px 0;">
-                <p style="color: #b91c1c; font-size: 14px; margin: 0;">This link will expire in <strong>60 minutes</strong>.</p>
+                <p style="color: #b91c1c; font-size: 14px; margin: 0;">This link will expire in <strong>60 minutes</strong> and can only be used <strong>once</strong>.</p>
             </div>
 
             <p>If you did not request a password reset, please ignore this email and your account will remain secure.</p>

@@ -23,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SetLocale::class,
             LockGuestDisplay::class,
+            PreventBackHistory::class,
         ]);
         $middleware->alias([
             'prevent-back-history' => PreventBackHistory::class,

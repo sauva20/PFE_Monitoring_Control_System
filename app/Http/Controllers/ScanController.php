@@ -9,7 +9,6 @@ use App\Models\KapasitasApar;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 
 class ScanController extends Controller
@@ -25,9 +24,12 @@ class ScanController extends Controller
             },
         ])->where('kode', $kode)->firstOrFail();
 
-        // Jika petugas sudah login via PIN, perbarui target APAR aktif di sesi
-        if (Auth::check() && session('is_pin_login')) {
-            session(['pin_login_apar_id' => $apar->id]);
+        // Jika ada sesi login (terutama sesi PIN inspeksi), hapus langsung saat kembali ke browser scan
+        // sehingga petugas wajib memasukkan PIN 4 digit kembali jika ingin melakukan inspeksi lagi
+        if (session('is_pin_login') || Auth::check()) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
         }
 
         $latestInspeksi = $apar->inspeksis->first();
@@ -36,7 +38,11 @@ class ScanController extends Controller
         $jenisApars = JenisApar::all();
         $kapasitasApars = KapasitasApar::all();
 
-        return view('scan.index', compact('apar', 'latestInspeksi', 'gedungs', 'jenisApars', 'kapasitasApars'));
+        return response()
+            ->view('scan.index', compact('apar', 'latestInspeksi', 'gedungs', 'jenisApars', 'kapasitasApars'))
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0');
     }
 
     public function verifyPin(Request $request, $kode)
@@ -53,10 +59,10 @@ class ScanController extends Controller
             return redirect()->back()->with('error', __('Akses verifikasi PIN diblokir sementara karena terlalu banyak percobaan salah.'));
         }
 
-        // Find user by PIN (Loop through all users because PIN is hashed)
+        // Find user by PIN (Loop through all users because PIN might be hashed or plaintext)
         $users = User::whereNotNull('pin')->get();
         $user = $users->first(function ($u) use ($request) {
-            return Hash::check($request->pin, $u->pin) || $u->pin === $request->pin;
+            return $u->matchesPin($request->pin);
         });
 
         if (! $user) {
