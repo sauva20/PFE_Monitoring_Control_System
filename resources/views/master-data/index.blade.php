@@ -358,8 +358,8 @@
                                     {{ __('PFE ID') }}
                                 </th>
                                 <th
-                                    class="py-2.5 px-1.5 text-[11px] font-bold uppercase tracking-wider text-center whitespace-nowrap w-16">
-                                    {{ __('Room No') }}
+                                    class="py-2 px-1 text-[11px] font-bold uppercase tracking-wider text-center align-middle w-24 min-w-[85px] leading-tight">
+                                    {!! str_replace(' ', '<br>', e(__('Room No'))) !!}
                                 </th>
                                 <th
                                     class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-left whitespace-nowrap">
@@ -423,7 +423,7 @@
                                     <td class="py-2.5 px-2 text-center whitespace-nowrap">
                                         <span class="font-bold text-slate-800">{{ $apar->kode }}</span>
                                     </td>
-                                    <td class="py-2.5 px-1.5 text-center font-semibold text-slate-600 whitespace-nowrap">
+                                    <td class="py-2.5 px-2 text-center align-middle font-mono font-semibold text-slate-700 whitespace-nowrap">
                                         {{ $apar->nomor_ruangan ?? '-' }}
                                     </td>
                                     <td class="py-2.5 px-2 font-semibold text-slate-700 capitalize whitespace-nowrap text-left truncate max-w-[130px]"
@@ -1252,15 +1252,15 @@
                                         </div>
 
                                         <!-- Segmen 1 & 2: Kode Gedung & Lantai -->
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                             <div>
                                                 <label class="block text-[10.5px] font-semibold text-slate-600 mb-0.5">
                                                     1. {{ __('Building Code / Area') }} <span
                                                         class="text-[9px] text-slate-400">({{ __('Kode Gedung') }})</span>
                                                 </label>
                                                 <div
-                                                    class="h-8 bg-slate-100/90 border border-slate-200 rounded-lg px-2.5 flex items-center gap-1.5 select-none text-xs">
-                                                    <i class="ph-bold ph-buildings text-slate-400 text-xs"></i>
+                                                    class="h-8 bg-slate-100/90 border border-slate-200 rounded-lg px-2.5 flex items-center gap-2 select-none text-xs">
+                                                    <i class="ph-bold ph-buildings text-slate-400 text-xs shrink-0"></i>
                                                     <span class="font-mono font-medium text-xs truncate"
                                                         :class="kode_gedung ? 'text-teal-700' : 'text-slate-400 italic text-[11px]'"
                                                         x-text="kode_gedung || '{{ __('Pilih gedung di atas / Select above...') }}'"></span>
@@ -1277,12 +1277,12 @@
                                                 </label>
                                                 <div class="relative">
                                                     <i
-                                                        class="ph-bold ph-stack absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                                        class="ph-bold ph-stack absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
                                                     <input type="text" inputmode="numeric" name="lantai" :value="lantai"
                                                         @input="lantai = $event.target.value.replace(/\D/g, '')"
                                                         placeholder="{{ __('Numbers: 0, 1, 2...') }}" maxlength="10"
                                                         required
-                                                        class="w-full bg-white border border-slate-200 rounded-lg py-1 pl-7 pr-2 text-xs font-medium text-slate-700 focus:border-[#009B77] focus:ring-2 focus:ring-[#009B77]/20 outline-none">
+                                                        class="w-full h-8 bg-white border border-slate-200 rounded-lg pl-7 pr-2.5 text-xs font-medium text-slate-700 focus:border-[#009B77] focus:ring-2 focus:ring-[#009B77]/20 outline-none">
                                                 </div>
                                                 <p class="text-[9px] text-slate-400 mt-0.5">
                                                     {{ __('Numbers only / Angka saja (0, 1, 2...)') }}
@@ -1292,22 +1292,30 @@
 
                                         <!-- Segmen 3: Klasifikasi Ruang (2 Custom Dropdown) -->
                                         <div>
-                                            <label class="block text-[10.5px] font-semibold text-slate-600 mb-0.5">
-                                                3. {{ __('Room Classification (Single or Airlock)') }} /
-                                                {{ __('Klasifikasi Ruang') }} <span class="text-rose-500">*</span>
-                                            </label>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label class="block text-[10.5px] font-semibold text-slate-600">
+                                                    3. {{ __('Room Classification (Single or Airlock)') }} /
+                                                    {{ __('Klasifikasi Ruang') }} <span class="text-rose-500">*</span>
+                                                </label>
+                                                <span class="font-semibold px-2 py-0.5 rounded font-mono text-[9.5px] tracking-wide inline-flex items-center shadow-2xs"
+                                                    :class="klasifikasi_2 ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' : 'bg-teal-100 text-teal-800 border border-teal-200'"
+                                                    x-text="fullKlasifikasi ? (klasifikasi_2 ? fullKlasifikasi + ' (Airlock / Transisi)' : fullKlasifikasi + ' (Single / Tunggal)') : '-'"></span>
+                                            </div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                                 <!-- Klasifikasi 1 Custom Dropdown -->
                                                 <div class="relative" @click.away="openKlasifikasi1 = false">
                                                     <span
                                                         class="block text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">{{ __('Classification 1 (Main / Utama)') }}</span>
                                                     <button type="button"
                                                         @click="openKlasifikasi1 = !openKlasifikasi1; openKlasifikasi2 = false"
-                                                        class="w-full bg-white border border-slate-200 rounded-lg py-1 px-2.5 text-xs font-semibold text-left transition-all flex items-center justify-between"
+                                                        class="w-full h-8 bg-white border border-slate-200 rounded-lg px-2.5 text-xs font-semibold text-left transition-all flex items-center justify-between"
                                                         :class="openKlasifikasi1 ? 'border-[#009B77] ring-2 ring-[#009B77]/15 text-slate-800' : 'text-slate-700 hover:border-slate-300'">
-                                                        <span x-text="klasifikasi_1"
-                                                            class="font-mono text-slate-700 text-xs"></span>
-                                                        <i class="ph-bold ph-caret-down text-slate-400 text-xs transition-transform duration-200"
+                                                        <div class="flex items-center gap-2 truncate">
+                                                            <i class="ph-bold ph-tag text-slate-400 text-xs shrink-0"></i>
+                                                            <span x-text="klasifikasi_1"
+                                                                class="font-mono text-slate-700 text-xs"></span>
+                                                        </div>
+                                                        <i class="ph-bold ph-caret-down text-slate-400 text-xs transition-transform duration-200 shrink-0"
                                                             :class="openKlasifikasi1 ? 'rotate-180 text-[#009B77]' : ''"></i>
                                                     </button>
 
@@ -1364,11 +1372,14 @@
                                                         class="block text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">{{ __('Classification 2 (Transition / Transisi)') }}</span>
                                                     <button type="button"
                                                         @click="openKlasifikasi2 = !openKlasifikasi2; openKlasifikasi1 = false"
-                                                        class="w-full bg-white border border-slate-200 rounded-lg py-1 px-2.5 text-xs font-semibold text-left transition-all flex items-center justify-between"
+                                                        class="w-full h-8 bg-white border border-slate-200 rounded-lg px-2.5 text-xs font-semibold text-left transition-all flex items-center justify-between"
                                                         :class="openKlasifikasi2 ? 'border-[#009B77] ring-2 ring-[#009B77]/15 text-slate-800' : 'border-slate-200 text-slate-700 hover:border-slate-300'">
-                                                        <span x-text="klasifikasi_2 || '- {{ __('None / Tunggal') }}'"
-                                                            :class="klasifikasi_2 ? 'font-mono text-slate-700 text-xs' : 'text-slate-400 font-normal text-xs'"></span>
-                                                        <i class="ph-bold ph-caret-down text-slate-400 text-xs transition-transform duration-200"
+                                                        <div class="flex items-center gap-2 truncate">
+                                                            <i class="ph-bold ph-arrows-split text-slate-400 text-xs shrink-0"></i>
+                                                            <span x-text="klasifikasi_2 || '{{ __('None / Tunggal') }}'"
+                                                                :class="klasifikasi_2 ? 'font-mono text-slate-700 text-xs' : 'text-slate-400 font-normal text-xs'"></span>
+                                                        </div>
+                                                        <i class="ph-bold ph-caret-down text-slate-400 text-xs transition-transform duration-200 shrink-0"
                                                             :class="openKlasifikasi2 ? 'rotate-180 text-[#009B77]' : ''"></i>
                                                     </button>
 
@@ -1430,13 +1441,6 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="mt-1 flex items-center justify-between text-[10px]">
-                                                <span
-                                                    class="text-slate-500 font-medium">{{ __('Classification Result / Hasil:') }}</span>
-                                                <span class="font-semibold px-2 py-0.2 rounded font-mono text-[10px]"
-                                                    :class="klasifikasi_2 ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' : 'bg-teal-100 text-teal-800 border border-teal-200'"
-                                                    x-text="fullKlasifikasi ? (klasifikasi_2 ? fullKlasifikasi + ' (Airlock / Transisi)' : fullKlasifikasi + ' (Single / Tunggal)') : '-'"></span>
-                                            </div>
                                         </div>
 
                                         <!-- Segmen 4: Nomor Urut Ruang -->
@@ -1447,11 +1451,11 @@
                                             </label>
                                             <div class="relative">
                                                 <i
-                                                    class="ph-bold ph-hash absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                                    class="ph-bold ph-hash absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
                                                 <input type="text" inputmode="numeric" :value="nomor_urut"
                                                     @input="nomor_urut = $event.target.value.replace(/\D/g, '')"
                                                     placeholder="066" maxlength="20"
-                                                    class="w-full bg-white border border-slate-200 rounded-lg py-1 pl-7 pr-2 text-xs font-medium font-mono text-slate-700 focus:border-[#009B77] focus:ring-2 focus:ring-[#009B77]/20 outline-none">
+                                                    class="w-full h-8 bg-white border border-slate-200 rounded-lg pl-7 pr-2.5 text-xs font-medium font-mono text-slate-700 focus:border-[#009B77] focus:ring-2 focus:ring-[#009B77]/20 outline-none">
                                             </div>
                                             <p class="text-[9px] text-slate-400 mt-0.5">
                                                 {{ __('Example: 66 auto-formatted to 066 / Contoh: 66 otomatis jadi 066') }}
@@ -3467,15 +3471,15 @@
                                         </div>
 
                                         <!-- Segmen 1 & 2: Kode Gedung & Lantai -->
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                             <div>
                                                 <label class="block text-[10.5px] font-semibold text-slate-600 mb-0.5">
                                                     1. {{ __('Building Code / Area') }} <span
                                                         class="text-[9px] text-slate-400">({{ __('Kode Gedung') }})</span>
                                                 </label>
                                                 <div
-                                                    class="h-8 bg-slate-100/90 border border-slate-200 rounded-lg px-2.5 flex items-center gap-1.5 select-none text-xs">
-                                                    <i class="ph-bold ph-buildings text-slate-400 text-xs"></i>
+                                                    class="h-8 bg-slate-100/90 border border-slate-200 rounded-lg px-2.5 flex items-center gap-2 select-none text-xs">
+                                                    <i class="ph-bold ph-buildings text-slate-400 text-xs shrink-0"></i>
                                                     <span class="font-mono font-medium text-xs truncate"
                                                         :class="kode_gedung ? 'text-amber-800' : 'text-slate-400 italic text-[11px]'"
                                                         x-text="kode_gedung || '{{ __('Pilih gedung di atas / Select above...') }}'"></span>
@@ -3492,12 +3496,12 @@
                                                 </label>
                                                 <div class="relative">
                                                     <i
-                                                        class="ph-bold ph-stack absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                                        class="ph-bold ph-stack absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
                                                     <input type="text" inputmode="numeric" name="lantai" :value="lantai"
                                                         @input="lantai = $event.target.value.replace(/\D/g, '')"
                                                         placeholder="{{ __('Numbers: 0, 1, 2...') }}" maxlength="10"
                                                         required
-                                                        class="w-full bg-white border border-slate-200 rounded-lg py-1 pl-7 pr-2 text-xs font-medium text-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none">
+                                                        class="w-full h-8 bg-white border border-slate-200 rounded-lg pl-7 pr-2.5 text-xs font-medium text-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none">
                                                 </div>
                                                 <p class="text-[9px] text-slate-400 mt-0.5">
                                                     {{ __('Numbers only / Angka saja (0, 1, 2...)') }}
@@ -3507,22 +3511,30 @@
 
                                         <!-- Segmen 3: Klasifikasi Ruang (2 Custom Dropdown) -->
                                         <div>
-                                            <label class="block text-[10.5px] font-semibold text-slate-600 mb-0.5">
-                                                3. {{ __('Room Classification (Single or Airlock)') }} /
-                                                {{ __('Klasifikasi Ruang') }} <span class="text-rose-500">*</span>
-                                            </label>
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label class="block text-[10.5px] font-semibold text-slate-600">
+                                                    3. {{ __('Room Classification (Single or Airlock)') }} /
+                                                    {{ __('Klasifikasi Ruang') }} <span class="text-rose-500">*</span>
+                                                </label>
+                                                <span class="font-semibold px-2 py-0.5 rounded font-mono text-[9.5px] tracking-wide inline-flex items-center shadow-2xs"
+                                                    :class="klasifikasi_2 ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' : 'bg-amber-100 text-amber-800 border border-amber-200'"
+                                                    x-text="fullKlasifikasi ? (klasifikasi_2 ? fullKlasifikasi + ' (Airlock / Transisi)' : fullKlasifikasi + ' (Single / Tunggal)') : '-'"></span>
+                                            </div>
+                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                                                 <!-- Klasifikasi 1 Custom Dropdown -->
                                                 <div class="relative" @click.away="openKlasifikasi1 = false">
                                                     <span
                                                         class="block text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">{{ __('Classification 1 (Main / Utama)') }}</span>
                                                     <button type="button"
                                                         @click="openKlasifikasi1 = !openKlasifikasi1; openKlasifikasi2 = false"
-                                                        class="w-full bg-white border border-slate-200 rounded-lg py-1 px-2.5 text-xs font-semibold text-left transition-all flex items-center justify-between"
+                                                        class="w-full h-8 bg-white border border-slate-200 rounded-lg px-2.5 text-xs font-semibold text-left transition-all flex items-center justify-between"
                                                         :class="openKlasifikasi1 ? 'border-amber-500 ring-2 ring-amber-500/15 text-slate-800' : 'text-slate-700 hover:border-slate-300'">
-                                                        <span x-text="klasifikasi_1"
-                                                            class="font-mono text-slate-700 text-xs"></span>
-                                                        <i class="ph-bold ph-caret-down text-slate-400 text-xs transition-transform duration-200"
+                                                        <div class="flex items-center gap-2 truncate">
+                                                            <i class="ph-bold ph-tag text-slate-400 text-xs shrink-0"></i>
+                                                            <span x-text="klasifikasi_1"
+                                                                class="font-mono text-slate-700 text-xs"></span>
+                                                        </div>
+                                                        <i class="ph-bold ph-caret-down text-slate-400 text-xs transition-transform duration-200 shrink-0"
                                                             :class="openKlasifikasi1 ? 'rotate-180 text-amber-500' : ''"></i>
                                                     </button>
 
@@ -3580,11 +3592,14 @@
                                                         class="block text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">{{ __('Classification 2 (Transition / Transisi)') }}</span>
                                                     <button type="button"
                                                         @click="openKlasifikasi2 = !openKlasifikasi2; openKlasifikasi1 = false"
-                                                        class="w-full bg-white border border-slate-200 rounded-lg py-1 px-2.5 text-xs font-semibold text-left transition-all flex items-center justify-between"
+                                                        class="w-full h-8 bg-white border border-slate-200 rounded-lg px-2.5 text-xs font-semibold text-left transition-all flex items-center justify-between"
                                                         :class="openKlasifikasi2 ? 'border-amber-500 ring-2 ring-amber-500/15 text-slate-800' : 'border-slate-200 text-slate-700 hover:border-slate-300'">
-                                                        <span x-text="klasifikasi_2 || '- {{ __('None / Tunggal') }}'"
-                                                            :class="klasifikasi_2 ? 'font-mono text-slate-700 text-xs' : 'text-slate-400 font-normal text-xs'"></span>
-                                                        <i class="ph-bold ph-caret-down text-slate-400 text-xs transition-transform duration-200"
+                                                        <div class="flex items-center gap-2 truncate">
+                                                            <i class="ph-bold ph-arrows-split text-slate-400 text-xs shrink-0"></i>
+                                                            <span x-text="klasifikasi_2 || '{{ __('None / Tunggal') }}'"
+                                                                :class="klasifikasi_2 ? 'font-mono text-slate-700 text-xs' : 'text-slate-400 font-normal text-xs'"></span>
+                                                        </div>
+                                                        <i class="ph-bold ph-caret-down text-slate-400 text-xs transition-transform duration-200 shrink-0"
                                                             :class="openKlasifikasi2 ? 'rotate-180 text-amber-500' : ''"></i>
                                                     </button>
 
@@ -3647,13 +3662,6 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="mt-1 flex items-center justify-between text-[10px]">
-                                                <span
-                                                    class="text-slate-500 font-medium">{{ __('Classification Result / Hasil:') }}</span>
-                                                <span class="font-semibold px-2 py-0.2 rounded font-mono text-[10px]"
-                                                    :class="klasifikasi_2 ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' : 'bg-amber-100 text-amber-800 border border-amber-200'"
-                                                    x-text="fullKlasifikasi ? (klasifikasi_2 ? fullKlasifikasi + ' (Airlock / Transisi)' : fullKlasifikasi + ' (Single / Tunggal)') : '-'"></span>
-                                            </div>
                                         </div>
 
                                         <!-- Segmen 4: Nomor Urut Ruang -->
@@ -3664,11 +3672,11 @@
                                             </label>
                                             <div class="relative">
                                                 <i
-                                                    class="ph-bold ph-hash absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                                    class="ph-bold ph-hash absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
                                                 <input type="text" inputmode="numeric" :value="nomor_urut"
                                                     @input="nomor_urut = $event.target.value.replace(/\D/g, '')"
                                                     placeholder="066" maxlength="20"
-                                                    class="w-full bg-white border border-slate-200 rounded-lg py-1 pl-7 pr-2 text-xs font-medium font-mono text-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none">
+                                                    class="w-full h-8 bg-white border border-slate-200 rounded-lg pl-7 pr-2.5 text-xs font-medium font-mono text-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none">
                                             </div>
                                             <p class="text-[9px] text-slate-400 mt-0.5">
                                                 {{ __('Example: 66 auto-formatted to 066 / Contoh: 66 otomatis jadi 066') }}
