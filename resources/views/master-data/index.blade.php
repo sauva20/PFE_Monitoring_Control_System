@@ -3,6 +3,9 @@
 @section('title', 'Master Data APAR - APAR Monitoring System')
 
 @section('content')
+    <script id="all-apar-items-data" type="application/json">
+        @json($allAparItems ?? [])
+    </script>
     <div class="space-y-6"
         x-data="{ activeTab: (new URLSearchParams(window.location.search).get('tab')) || localStorage.getItem('masterDataTab') || 'data', 
                     showModalApar: {{ old('form_type') == 'tambah_apar' && $errors->any() ? 'true' : 'false' }} || (new URLSearchParams(window.location.search).get('action') === 'add-pfe'), 
@@ -415,7 +418,7 @@
                         </thead>
                         <tbody class="text-xs divide-y divide-slate-100">
                             @forelse($apars as $index => $apar)
-                                <tr class="hover:bg-slate-50/80 transition-colors divide-x divide-slate-100">
+                                <tr class="hover:bg-slate-50/80 transition-colors divide-x divide-slate-100" data-pfe-id="{{ $apar->id }}" data-pfe-kode="{{ $apar->kode }}">
                                     @php
                                         $lastInspeksi = $apar->latestInspeksi;
                                     @endphp
@@ -1069,7 +1072,7 @@
                         x-cloak>
 
                         <form action="/master-data/lokasi" method="POST"
-                            @submit="isDuplicate || nama.trim() === '' || gedung_id === '' ? $event.preventDefault() : true"
+                            @submit="isDuplicate || nama.trim() === '' || gedung_id === '' || !nomor_urut || nomor_urut.trim() === '' ? $event.preventDefault() : true"
                             x-data="{ 
                                         nama: '', 
                                         gedung_id: '', 
@@ -1115,7 +1118,11 @@
                                             if (target === 2) { this.klasifikasi_2 = clean; this.newKlasifikasi2 = ''; this.openKlasifikasi2 = false; }
                                         },
                                         nomor_urut: '', 
-                                        existing: [ @foreach(\App\Models\Lokasi::all() as $l) { nama: '{{ strtolower(addslashes($l->nama)) }}', gedung_id: '{{ $l->gedung_id }}' }, @endforeach ], 
+                                        existing: [ 
+                                            @foreach(\App\Models\Lokasi::all() as $l) 
+                                                { id: {{ $l->id }}, gedung_id: '{{ $l->gedung_id }}', nomor_ruangan: '{{ addslashes($l->nomor_ruangan ?? '') }}' }, 
+                                            @endforeach 
+                                        ], 
                                         get fullKlasifikasi() {
                                             if (!this.klasifikasi_1) return '';
                                             if (this.klasifikasi_2 && this.klasifikasi_2 !== '' && this.klasifikasi_2 !== '-') {
@@ -1145,8 +1152,34 @@
                                         onGedungSelect(id, name) {
                                             this.gedung_id = id;
                                         },
+                                        extractSeq(code) {
+                                            if (!code) return null;
+                                            let s = String(code).trim();
+                                            if (s.includes('.')) {
+                                                let parts = s.split('.');
+                                                let last = parts[parts.length - 1].trim();
+                                                let m = last.match(/^0*(\d+)$/);
+                                                return m ? m[1] : last.toLowerCase();
+                                            }
+                                            let m = s.match(/^0*(\d+)$/);
+                                            return m ? m[1] : s.toLowerCase();
+                                        },
                                         get isDuplicate() { 
-                                            return this.nama.trim() !== '' && this.existing.some(e => e.nama === this.nama.toLowerCase().trim() && e.gedung_id == this.gedung_id); 
+                                            if (!this.gedung_id) return false;
+                                            let raw = (this.nomor_urut || '').trim();
+                                            let targetSeq = raw ? (raw.match(/^0*(\d+)$/) ? raw.match(/^0*(\d+)$/)[1] : raw.toLowerCase()) : null;
+                                            let targetCode = (this.generatedKode || '').trim().toUpperCase();
+                                            if (!targetSeq && !targetCode) return false;
+
+                                            return this.existing.some(e => {
+                                                if (e.gedung_id != this.gedung_id) return false;
+                                                if (!e.nomor_ruangan) return false;
+                                                let existCode = String(e.nomor_ruangan).trim().toUpperCase();
+                                                if (targetCode && existCode === targetCode) return true;
+                                                let existSeq = this.extractSeq(e.nomor_ruangan);
+                                                if (targetSeq && existSeq && existSeq === targetSeq) return true;
+                                                return false;
+                                            });
                                         } 
                                     }">
                             <input type="hidden" name="form_type" value="tambah_lokasi">
@@ -1459,11 +1492,24 @@
                                                 <input type="text" inputmode="numeric" :value="nomor_urut"
                                                     @input="nomor_urut = $event.target.value.replace(/\D/g, '')"
                                                     placeholder="066" maxlength="20"
-                                                    class="w-full h-8 bg-white border border-slate-200 rounded-lg pl-7 pr-2.5 text-xs font-medium font-mono text-slate-700 focus:border-[#009B77] focus:ring-2 focus:ring-[#009B77]/20 outline-none">
+                                                    class="w-full h-8 bg-white border rounded-lg pl-7 pr-2.5 text-xs font-medium font-mono text-slate-700 outline-none transition-all"
+                                                    :class="isDuplicate ? 'border-rose-400 ring-2 ring-rose-400/20' : 'border-slate-200 focus:border-[#009B77] focus:ring-2 focus:ring-[#009B77]/20'">
                                             </div>
-                                            <p class="text-[9px] text-slate-400 mt-0.5">
-                                                {{ __('Example: 66 auto-formatted to 066 / Contoh: 66 otomatis jadi 066') }}
-                                            </p>
+                                            <div class="flex items-center justify-between mt-0.5">
+                                                <p class="text-[9px] text-slate-400">
+                                                    {{ __('Example: 66 auto-formatted to 066 / Contoh: 66 otomatis jadi 066') }}
+                                                </p>
+                                                <p x-show="isDuplicate" x-cloak class="text-[9.5px] text-rose-500 font-semibold flex items-center">
+                                                    <i class="ph-bold ph-warning-circle mr-1 text-xs"></i>
+                                                    {{ __('Nomor ini sudah dipakai di gedung ini!') }}
+                                                </p>
+                                            </div>
+                                            @error('nomor_ruangan')
+                                                <p class="text-[10px] text-rose-500 font-medium mt-1 flex items-center">
+                                                    <i class="ph-bold ph-warning-circle mr-1 text-xs"></i>
+                                                    {{ $message }}
+                                                </p>
+                                            @enderror
                                         </div>
 
                                         <!-- Live Generator Room Code Output -->
@@ -1508,22 +1554,25 @@
                                             <i
                                                 class="ph-bold ph-map-pin absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
                                             <input type="text" name="nama" x-model="nama"
-                                                @keydown.enter="if(isDuplicate || nama.trim() === '' || gedung_id === '') { $event.preventDefault(); showModalLokasi = false; }"
+                                                @keydown.enter="if(isDuplicate || nama.trim() === '' || gedung_id === '' || !nomor_urut || nomor_urut.trim() === '') { $event.preventDefault(); }"
                                                 required
                                                 placeholder="{{ __('Example: AIRLOCK IN COMING / Contoh: Ruang Produksi') }}"
                                                 class="w-full bg-slate-50 border border-slate-200 rounded-lg py-1.5 pl-8 pr-3 text-xs font-medium text-slate-700 focus:bg-white focus:border-[#009B77] focus:ring-2 focus:ring-[#009B77]/15 transition-all outline-none">
                                         </div>
-                                        <p x-show="isDuplicate" x-cloak class="text-[10px] text-red-500 font-medium mt-1"><i
-                                                class="ph-bold ph-warning-circle mr-1"></i>{{ __('Location already exists in selected building / Lokasi ini sudah terdaftar.') }}
-                                        </p>
+                                        @error('nama')
+                                            <p class="text-[10px] text-rose-500 font-medium mt-1 flex items-center">
+                                                <i class="ph-bold ph-warning-circle mr-1 text-xs"></i>
+                                                {{ $message }}
+                                            </p>
+                                        @enderror
                                     </div>
                                 </div>
                             </div>
 
                             <div
                                 class="bg-slate-50 px-5 py-2.5 sm:px-6 sm:py-3 sm:flex sm:flex-row-reverse border-t border-slate-100 rounded-b-2xl sm:rounded-b-3xl gap-2">
-                                <button type="submit" :disabled="isDuplicate || nama.trim() === '' || gedung_id === ''"
-                                    :class="isDuplicate || nama.trim() === '' || gedung_id === '' ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#008264]'"
+                                <button type="submit" :disabled="isDuplicate || nama.trim() === '' || gedung_id === '' || !nomor_urut || nomor_urut.trim() === ''"
+                                    :class="isDuplicate || nama.trim() === '' || gedung_id === '' || !nomor_urut || nomor_urut.trim() === '' ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#008264]'"
                                     class="inline-flex w-full justify-center rounded-xl bg-[#009B77] px-4 py-2 text-xs font-bold text-white shadow-xs sm:w-auto transition-colors shadow-[#009B77]/20">{{ __('Save / Simpan') }}</button>
                                 <button type="button" @click="showModalLokasi = false"
                                     class="mt-2 sm:mt-0 inline-flex w-full justify-center rounded-xl bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-xs ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:w-auto transition-colors">{{ __('Cancel / Batal') }}</button>
@@ -1915,7 +1964,7 @@
                                                 placeholder="{{ __('Enter number (e.g. 12)') }}" required
                                                 x-model="nomorApar"
                                                 @keydown="if ($event.key === '0' && (!$el.value || $el.selectionStart === 0)) { $event.preventDefault(); } if (['e', 'E', '+', '-', '.'].includes($event.key)) { $event.preventDefault(); }"
-                                                @input="nomorApar = $el.value.replace(/\D/g, '').replace(/^0+/, ''); $el.value = nomorApar;"
+                                                @input="nomorApar = $el.value.replace(/\D/g, '').replace(/^0+/, ''); $el.value = nomorApar; if (nomorApar !== serverNumber) { serverError = null; }"
                                                 :class="isDuplicateNumber ? 'border-red-500 ring-4 ring-red-500/15 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15'"
                                                 class="w-full bg-white border-2 rounded-xl py-2.5 pl-10 pr-4 text-sm font-semibold font-mono text-slate-700 outline-none transition-all">
                                         </div>
@@ -1924,10 +1973,15 @@
                                         <div x-show="nomorApar && isDuplicateNumber" x-cloak
                                             class="mt-2 flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">
                                             <i class="ph-bold ph-warning-circle text-base flex-shrink-0 text-red-500"></i>
-                                            <span>{{ __('PFE Number') }} [<strong class="font-mono"
-                                                    x-text="nomorApar"></strong>] {{ __('is already in use by') }} <strong
-                                                    class="font-mono underline" x-text="duplicateKode"></strong>!
-                                                {{ __('Please use another number.') }}</span>
+                                            <template x-if="duplicateKode">
+                                                <span>{{ __('PFE Number') }} [<strong class="font-mono" x-text="nomorApar"></strong>] {{ __('is already in use by') }} <strong class="font-mono underline" x-text="duplicateKode"></strong>! {{ __('Nomor PFE adalah Primary Key, silakan gunakan nomor lain.') }}</span>
+                                            </template>
+                                            <template x-if="!duplicateKode && serverError">
+                                                <span x-text="serverError"></span>
+                                            </template>
+                                            <template x-if="!duplicateKode && !serverError">
+                                                <span>{{ __('PFE Number') }} [<strong class="font-mono" x-text="nomorApar"></strong>] {{ __('is already in use!') }} {{ __('Nomor PFE adalah Primary Key, silakan gunakan nomor lain.') }}</span>
+                                            </template>
                                         </div>
                                         <div x-show="nomorApar && !isDuplicateNumber" x-cloak
                                             class="mt-2 flex items-center gap-1.5 text-xs font-semibold text-[#009B77] bg-[#009B77]/10 border border-[#009B77]/20 px-3 py-1.5 rounded-xl">
@@ -1935,9 +1989,6 @@
                                             <span>{{ __('PFE ID available') }}: <strong class="font-mono font-bold"
                                                     x-text="gedungId ? fullKodePreview : ('#' + nomorApar)"></strong></span>
                                         </div>
-
-                                        @error('nomor_apar') <span
-                                        class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
                                     </div>
 
                                     <!-- Nomor Ruangan -->
@@ -2394,8 +2445,8 @@
 
                             <div
                                 class="bg-slate-50 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-8 border-t border-slate-100 rounded-b-3xl">
-                                <button type="submit" :disabled="isDuplicateNumber"
-                                    :class="isDuplicateNumber ? 'bg-slate-300 text-slate-500 cursor-not-allowed opacity-75' : 'bg-[#009B77] hover:bg-[#008264] text-white shadow-md shadow-[#009B77]/25 cursor-pointer'"
+                                <button type="submit" :disabled="isDuplicateNumber || !nomorApar || nomorApar.trim() === ''"
+                                    :class="(isDuplicateNumber || !nomorApar || nomorApar.trim() === '') ? 'bg-slate-300 text-slate-500 cursor-not-allowed opacity-75' : 'bg-[#009B77] hover:bg-[#008264] text-white shadow-md shadow-[#009B77]/25 cursor-pointer'"
                                     class="inline-flex w-full justify-center items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold sm:ml-3 sm:w-auto transition-all">
                                     <i class="ph-bold ph-floppy-disk text-base"></i>
                                     <span>{{ __('Save Data') }}</span>
@@ -2575,7 +2626,7 @@
                                                 placeholder="{{ __('Enter sequence number...') }}" required
                                                 x-model="editApar.nomor_apar"
                                                 @keydown="if ($event.key === '0' && (!$el.value || $el.selectionStart === 0)) { $event.preventDefault(); } if (['e', 'E', '+', '-', '.'].includes($event.key)) { $event.preventDefault(); }"
-                                                @input="editApar.nomor_apar = $el.value.replace(/\D/g, '').replace(/^0+/, ''); $el.value = editApar.nomor_apar;"
+                                                @input="editApar.nomor_apar = $el.value.replace(/\D/g, '').replace(/^0+/, ''); $el.value = editApar.nomor_apar; if (editApar.nomor_apar !== serverNumber) { serverError = null; }"
                                                 :class="isDuplicateNumber ? 'border-red-500 ring-4 ring-red-500/15 focus:border-red-500 focus:ring-red-500/20' : 'border-slate-200 focus:border-amber-500 focus:ring-4 focus:ring-amber-500/15'"
                                                 class="w-full bg-white border-2 rounded-xl py-2.5 pl-10 pr-4 text-sm font-semibold font-mono text-slate-700 outline-none transition-all">
                                         </div>
@@ -2584,10 +2635,15 @@
                                         <div x-show="editApar.nomor_apar && isDuplicateNumber" x-cloak
                                             class="mt-2 flex items-center gap-1.5 text-xs font-bold text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-xl">
                                             <i class="ph-bold ph-warning-circle text-base flex-shrink-0 text-red-500"></i>
-                                            <span>{{ __('PFE Number') }} [<strong class="font-mono"
-                                                    x-text="editApar.nomor_apar"></strong>] {{ __('is already in use by') }}
-                                                <strong class="font-mono underline" x-text="duplicateKode"></strong>!
-                                                {{ __('Please use another number.') }}</span>
+                                            <template x-if="duplicateKode">
+                                                <span>{{ __('PFE Number') }} [<strong class="font-mono" x-text="editApar.nomor_apar"></strong>] {{ __('is already in use by') }} <strong class="font-mono underline" x-text="duplicateKode"></strong>! {{ __('Nomor PFE adalah Primary Key, silakan gunakan nomor lain.') }}</span>
+                                            </template>
+                                            <template x-if="!duplicateKode && serverError">
+                                                <span x-text="serverError"></span>
+                                            </template>
+                                            <template x-if="!duplicateKode && !serverError">
+                                                <span>{{ __('PFE Number') }} [<strong class="font-mono" x-text="editApar.nomor_apar"></strong>] {{ __('is already in use!') }} {{ __('Nomor PFE adalah Primary Key, silakan gunakan nomor lain.') }}</span>
+                                            </template>
                                         </div>
                                         <div x-show="editApar.nomor_apar && !isDuplicateNumber" x-cloak
                                             class="mt-2 flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl">
@@ -2595,9 +2651,6 @@
                                             <span>{{ __('PFE ID available') }}: <strong class="font-mono font-bold"
                                                     x-text="editApar.gedung_id ? fullKodePreview : ('#' + editApar.nomor_apar)"></strong></span>
                                         </div>
-
-                                        @error('nomor_apar') <span
-                                        class="text-xs text-red-500 mt-1 block">{{ $message }}</span> @enderror
                                     </div>
 
                                     <!-- Nomor Ruangan -->
@@ -3059,8 +3112,8 @@
                             <div
                                 class="bg-slate-50 px-6 py-4 sm:flex sm:flex-row-reverse sm:px-8 border-t border-slate-100 rounded-b-3xl">
                                 <button type="submit"
-                                    :disabled="isDuplicateNumber || (JSON.stringify(editApar) === originalEditApar)"
-                                    :class="(isDuplicateNumber || (JSON.stringify(editApar) === originalEditApar)) ? 'bg-slate-300 text-slate-500 cursor-not-allowed opacity-75' : 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/25 cursor-pointer'"
+                                    :disabled="isDuplicateNumber || !editApar.nomor_apar || editApar.nomor_apar.trim() === '' || (JSON.stringify(editApar) === originalEditApar)"
+                                    :class="(isDuplicateNumber || !editApar.nomor_apar || editApar.nomor_apar.trim() === '' || (JSON.stringify(editApar) === originalEditApar)) ? 'bg-slate-300 text-slate-500 cursor-not-allowed opacity-75' : 'bg-amber-500 hover:bg-amber-600 text-white shadow-md shadow-amber-500/25 cursor-pointer'"
                                     class="inline-flex w-full justify-center items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold sm:ml-3 sm:w-auto transition-all">
                                     <i class="ph-bold ph-floppy-disk text-base"></i>
                                     <span>{{ __('Save Changes') }}</span>
@@ -3294,6 +3347,42 @@
                                             if (target === 2) { this.klasifikasi_2 = clean; this.newKlasifikasi2 = ''; this.openKlasifikasi2 = false; }
                                         },
                                         nomor_urut: '',
+                                        existing: [ 
+                                            @foreach(\App\Models\Lokasi::all() as $l) 
+                                                { id: {{ $l->id }}, gedung_id: '{{ $l->gedung_id }}', nomor_ruangan: '{{ addslashes($l->nomor_ruangan ?? '') }}' }, 
+                                            @endforeach 
+                                        ],
+                                        extractSeq(code) {
+                                            if (!code) return null;
+                                            let s = String(code).trim();
+                                            if (s.includes('.')) {
+                                                let parts = s.split('.');
+                                                let last = parts[parts.length - 1].trim();
+                                                let m = last.match(/^0*(\d+)$/);
+                                                return m ? m[1] : last.toLowerCase();
+                                            }
+                                            let m = s.match(/^0*(\d+)$/);
+                                            return m ? m[1] : s.toLowerCase();
+                                        },
+                                        get isDuplicate() { 
+                                            let gid = editLokasi.gedung_id;
+                                            if (!gid) return false;
+                                            let raw = (this.nomor_urut || '').trim();
+                                            let targetSeq = raw ? (raw.match(/^0*(\d+)$/) ? raw.match(/^0*(\d+)$/)[1] : raw.toLowerCase()) : null;
+                                            let targetCode = (this.generatedKode || '').trim().toUpperCase();
+                                            if (!targetSeq && !targetCode) return false;
+
+                                            return this.existing.some(e => {
+                                                if (e.id == editLokasi.id) return false;
+                                                if (e.gedung_id != gid) return false;
+                                                if (!e.nomor_ruangan) return false;
+                                                let existCode = String(e.nomor_ruangan).trim().toUpperCase();
+                                                if (targetCode && existCode === targetCode) return true;
+                                                let existSeq = this.extractSeq(e.nomor_ruangan);
+                                                if (targetSeq && existSeq && existSeq === targetSeq) return true;
+                                                return false;
+                                            });
+                                        },
                                         get fullKlasifikasi() {
                                             if (!this.klasifikasi_1) return '';
                                             if (this.klasifikasi_2 && this.klasifikasi_2 !== '' && this.klasifikasi_2 !== '-') {
@@ -3682,11 +3771,26 @@
                                                 <input type="text" inputmode="numeric" :value="nomor_urut"
                                                     @input="nomor_urut = $event.target.value.replace(/\D/g, '')"
                                                     placeholder="066" maxlength="20"
-                                                    class="w-full h-8 bg-white border border-slate-200 rounded-lg pl-7 pr-2.5 text-xs font-medium font-mono text-slate-700 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20 outline-none">
+                                                    class="w-full h-8 bg-white border rounded-lg pl-7 pr-2.5 text-xs font-medium font-mono text-slate-700 outline-none transition-all"
+                                                    :class="isDuplicate ? 'border-rose-400 ring-2 ring-rose-400/20' : 'border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'">
                                             </div>
-                                            <p class="text-[9px] text-slate-400 mt-0.5">
-                                                {{ __('Example: 66 auto-formatted to 066 / Contoh: 66 otomatis jadi 066') }}
-                                            </p>
+                                            <div class="flex items-center justify-between mt-0.5">
+                                                <p class="text-[9px] text-slate-400">
+                                                    {{ __('Example: 66 auto-formatted to 066 / Contoh: 66 otomatis jadi 066') }}
+                                                </p>
+                                                <p x-show="isDuplicate" x-cloak class="text-[9.5px] text-rose-500 font-semibold flex items-center">
+                                                    <i class="ph-bold ph-warning-circle mr-1 text-xs"></i>
+                                                    {{ __('Nomor ini sudah dipakai di gedung ini!') }}
+                                                </p>
+                                            </div>
+                                            @if(old('form_type') == 'edit_lokasi')
+                                                @error('nomor_ruangan')
+                                                    <p class="text-[10px] text-rose-500 font-medium mt-1 flex items-center">
+                                                        <i class="ph-bold ph-warning-circle mr-1 text-xs"></i>
+                                                        {{ $message }}
+                                                    </p>
+                                                @enderror
+                                            @endif
                                         </div>
 
                                         <!-- Live Generator Room Code Output -->
@@ -3743,8 +3847,8 @@
                             </div>
                             <div
                                 class="bg-slate-50 px-5 py-2.5 sm:px-6 sm:py-3 sm:flex sm:flex-row-reverse border-t border-slate-100 rounded-b-2xl sm:rounded-b-3xl gap-2">
-                                <button type="submit" :disabled="JSON.stringify(editLokasi) === originalEditLokasi"
-                                    :class="(JSON.stringify(editLokasi) === originalEditLokasi) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-amber-600 shadow-amber-500/20'"
+                                <button type="submit" :disabled="isDuplicate || (JSON.stringify(editLokasi) === originalEditLokasi) || !nomor_urut || nomor_urut.trim() === '' || !editLokasi.nama || editLokasi.nama.trim() === ''"
+                                    :class="(isDuplicate || (JSON.stringify(editLokasi) === originalEditLokasi) || !nomor_urut || nomor_urut.trim() === '' || !editLokasi.nama || editLokasi.nama.trim() === '') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-amber-600 shadow-amber-500/20'"
                                     class="inline-flex w-full justify-center rounded-xl bg-amber-50 px-4 py-2 text-xs font-bold text-amber-600 sm:w-auto transition-colors"
                                     style="background-color: rgb(245 158 11); color: white;">{{ __('Save Changes / Simpan') }}</button>
                                 <button type="button" @click="showEditLokasi = false"
@@ -4469,7 +4573,17 @@
                         // 1. Ganti konten utama (main)
                         const newMain = doc.querySelector('main');
                         if (currentMain && newMain) {
+                            if (window.Alpine) {
+                                try {
+                                    window.Alpine.destroyTree(currentMain);
+                                } catch (e) {}
+                            }
                             currentMain.innerHTML = newMain.innerHTML;
+                            if (window.Alpine) {
+                                try {
+                                    window.Alpine.initTree(currentMain);
+                                } catch (e) {}
+                            }
                         }
 
                         // Kembalikan posisi scroll seketika pada container BARU
@@ -4531,11 +4645,42 @@
             }
         });
 
+        function getAllAparList() {
+            let list = [];
+            const el = document.getElementById('all-apar-items-data');
+            if (el && el.textContent) {
+                try {
+                    const parsed = JSON.parse(el.textContent);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        list = parsed;
+                    }
+                } catch (e) {}
+            }
+
+            // Also scrape from visible rows in DOM if any exist
+            document.querySelectorAll('tr[data-pfe-kode]').forEach(tr => {
+                let id = tr.getAttribute('data-pfe-id') || '';
+                let kode = (tr.getAttribute('data-pfe-kode') || '').trim();
+                if (kode && !list.some(item => item.kode === kode)) {
+                    let m = kode.match(/\d+$/);
+                    list.push({
+                        id: id,
+                        kode: kode,
+                        number: m ? m[0] : ''
+                    });
+                }
+            });
+
+            return list;
+        }
+
         function addAparModalData() {
             return {
                 gedungId: '{{ old('gedung_id') }}',
                 jenisId: '{{ old('jenis_id', $jenisApars->first()->id ?? '') }}',
                 nomorApar: '{{ old('nomor_apar') }}',
+                serverError: {{ old('form_type') === 'tambah_apar' && $errors->has('nomor_apar') ? json_encode($errors->first('nomor_apar')) : 'null' }},
+                serverNumber: '{{ old('form_type') === 'tambah_apar' ? old('nomor_apar', '') : '' }}',
                 lokasiName: '{{ old('lokasi') }}',
                 nomorRuangan: '{{ old('nomor_ruangan') }}',
                 openLokasi: false,
@@ -4545,7 +4690,9 @@
                 isAutofilled: false,
                 gunakanCadangan: {{ old('gunakan_cadangan') ? 'true' : 'false' }},
                 cadanganId: '{{ old('cadangan_id') }}',
-                allAparItems: @json($allAparItems ?? []),
+                get allAparItems() {
+                    return getAllAparList();
+                },
                 gedungOptions: [
                     @foreach($gedungs as $gedung)
                         { id: '{{ $gedung->id }}', name: {!! json_encode($gedung->nama) !!} },
@@ -4631,11 +4778,32 @@
                 },
                 get duplicateItem() {
                     if (!this.nomorApar) return null;
-                    let n = String(this.nomorApar).trim();
-                    return this.allAparItems.find(a => String(a.number) === n) || null;
+                    let raw = String(this.nomorApar).trim();
+                    let n = parseInt(raw, 10);
+                    if (isNaN(n) || n <= 0) return null;
+
+                    let items = this.allAparItems;
+
+                    // 1. Cek duplikat nomor urut PFE (Primary Key): tidak boleh sama di seluruh sistem
+                    let found = items.find(a => {
+                        let aNum = parseInt(String(a.number).trim(), 10);
+                        return !isNaN(aNum) && aNum === n;
+                    });
+
+                    // 2. Cek duplikat kode utuh
+                    if (!found && this.fullKodePreview) {
+                        let preview = this.fullKodePreview.toUpperCase().trim();
+                        found = items.find(a => (a.kode || '').toUpperCase().trim() === preview);
+                    }
+
+                    return found || null;
                 },
                 get isDuplicateNumber() {
-                    return !!this.duplicateItem;
+                    if (this.duplicateItem) return true;
+                    if (this.serverError && this.serverNumber && String(this.nomorApar).trim() === String(this.serverNumber).trim()) {
+                        return true;
+                    }
+                    return false;
                 },
                 get duplicateKode() {
                     return this.duplicateItem ? this.duplicateItem.kode : '';
@@ -4690,7 +4858,11 @@
                 searchLokasi: '',
                 searchRoom: '',
                 isAutofilled: false,
-                allAparItems: @json($allAparItems ?? []),
+                serverError: {{ old('form_type') === 'edit_apar' && $errors->has('nomor_apar') ? json_encode($errors->first('nomor_apar')) : 'null' }},
+                serverNumber: '{{ old('form_type') === 'edit_apar' ? old('nomor_apar', '') : '' }}',
+                get allAparItems() {
+                    return getAllAparList();
+                },
                 gedungOptions: [
                     @foreach($gedungs as $gedung)
                         { id: '{{ $gedung->id }}', name: {!! json_encode($gedung->nama) !!} },
@@ -4778,12 +4950,36 @@
                 },
                 get duplicateItem() {
                     if (!this.editApar || !this.editApar.nomor_apar) return null;
-                    let n = String(this.editApar.nomor_apar).trim();
+                    let raw = String(this.editApar.nomor_apar).trim();
+                    let n = parseInt(raw, 10);
+                    if (isNaN(n) || n <= 0) return null;
                     let currentId = String(this.editApar.id || '');
-                    return this.allAparItems.find(a => String(a.number) === n && String(a.id) !== currentId) || null;
+                    let items = this.allAparItems;
+
+                    // 1. Cek duplikat nomor urut PFE (Primary Key): abaikan id apar yang sedang diedit
+                    let found = items.find(a => {
+                        if (currentId && String(a.id) === currentId) return false;
+                        let aNum = parseInt(String(a.number).trim(), 10);
+                        return !isNaN(aNum) && aNum === n;
+                    });
+
+                    // 2. Cek duplikat kode utuh
+                    if (!found && this.fullKodePreview) {
+                        let preview = this.fullKodePreview.toUpperCase().trim();
+                        found = items.find(a => {
+                            if (currentId && String(a.id) === currentId) return false;
+                            return (a.kode || '').toUpperCase().trim() === preview;
+                        });
+                    }
+
+                    return found || null;
                 },
                 get isDuplicateNumber() {
-                    return !!this.duplicateItem;
+                    if (this.duplicateItem) return true;
+                    if (this.serverError && this.serverNumber && this.editApar && String(this.editApar.nomor_apar).trim() === String(this.serverNumber).trim()) {
+                        return true;
+                    }
+                    return false;
                 },
                 get duplicateKode() {
                     return this.duplicateItem ? this.duplicateItem.kode : '';

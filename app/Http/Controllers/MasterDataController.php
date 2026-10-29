@@ -12,7 +12,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class MasterDataController extends Controller
@@ -478,19 +478,14 @@ class MasterDataController extends Controller
     public function storeLokasi(Request $request)
     {
         $request->validate([
-            'nama' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('lokasi')->where(fn ($query) => $query->where('gedung_id', $request->gedung_id)),
-            ],
+            'nama' => 'required|string|max:255',
             'gedung_id' => 'required|exists:gedung,id',
             'nomor_ruangan' => 'nullable|string|max:100',
             'lantai' => 'nullable|string|max:50',
             'klasifikasi' => 'nullable|string|max:50',
-        ], [
-            'nama.unique' => 'Lokasi dengan nama ini sudah ada di gedung yang dipilih.',
         ]);
+
+        $this->validateUniqueRoomNumber($request);
 
         $klasifikasi = $request->klasifikasi;
         if (! $klasifikasi && $request->klasifikasi_1) {
@@ -644,16 +639,20 @@ class MasterDataController extends Controller
         }
 
         // Cek unik nomor APAR terhadap seluruh APAR yang ada
-        $inputNumber = (string) $request->nomor_apar;
+        $inputNumber = (int) $request->nomor_apar;
         $duplicateApar = Apar::all()->first(function ($item) use ($inputNumber) {
             preg_match('/\d+$/', $item->kode ?? '', $matches);
 
-            return ($matches[0] ?? '') === $inputNumber;
+            if (! isset($matches[0])) {
+                return false;
+            }
+
+            return (int) $matches[0] === $inputNumber;
         });
 
         if ($duplicateApar) {
             return redirect()->back()->withErrors([
-                'nomor_apar' => __('Nomor PFE [:number] sudah digunakan oleh :code! Silakan gunakan nomor lain.', ['number' => $inputNumber, 'code' => $duplicateApar->kode]),
+                'nomor_apar' => __('Nomor PFE [:number] sudah digunakan oleh :code! Nomor PFE adalah Primary Key (unik sistem), silakan gunakan nomor lain.', ['number' => $request->nomor_apar, 'code' => $duplicateApar->kode]),
             ])->withInput()->with('form_type', 'tambah_apar');
         }
 
@@ -695,19 +694,14 @@ class MasterDataController extends Controller
     public function updateLokasi(Request $request, Lokasi $lokasi)
     {
         $request->validate([
-            'nama' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('lokasi')->where(fn ($query) => $query->where('gedung_id', $request->gedung_id))->ignore($lokasi->id),
-            ],
+            'nama' => 'required|string|max:255',
             'gedung_id' => 'required|exists:gedung,id',
             'nomor_ruangan' => 'nullable|string|max:100',
             'lantai' => 'nullable|string|max:50',
             'klasifikasi' => 'nullable|string|max:50',
-        ], [
-            'nama.unique' => 'Lokasi dengan nama ini sudah ada di gedung yang dipilih.',
         ]);
+
+        $this->validateUniqueRoomNumber($request, $lokasi->id);
 
         $klasifikasi = $request->klasifikasi;
         if (! $klasifikasi && $request->klasifikasi_1) {
@@ -726,6 +720,72 @@ class MasterDataController extends Controller
         ]);
 
         return redirect()->back()->with('success', __('Data lokasi berhasil diperbarui!'));
+    }
+
+    /**
+     * Memastikan nomor ruangan dan nomor urut ruangan tidak duplikat dalam 1 gedung.
+     */
+    private function validateUniqueRoomNumber(Request $request, ?int $ignoreLokasiId = null): void
+    {
+        $nomorRuangan = trim((string) $request->nomor_ruangan);
+        $gedungId = $request->gedung_id;
+
+        if ($nomorRuangan === '' || ! $gedungId) {
+            return;
+        }
+
+        $targetSeq = null;
+        if (str_contains($nomorRuangan, '.')) {
+            $parts = explode('.', $nomorRuangan);
+            $last = trim(end($parts));
+            if (preg_match('/^0*(\d+)$/', $last, $m)) {
+                $targetSeq = $m[1];
+            } else {
+                $targetSeq = strtolower($last);
+            }
+        } elseif (preg_match('/^0*(\d+)$/', $nomorRuangan, $m)) {
+            $targetSeq = $m[1];
+        }
+
+        $existingRooms = Lokasi::where('gedung_id', $gedungId)
+            ->when($ignoreLokasiId, fn ($q) => $q->where('id', '!=', $ignoreLokasiId))
+            ->whereNotNull('nomor_ruangan')
+            ->get(['id', 'nomor_ruangan']);
+
+        foreach ($existingRooms as $existing) {
+            $existCode = trim((string) $existing->nomor_ruangan);
+            if ($existCode === '') {
+                continue;
+            }
+
+            if (strcasecmp($existCode, $nomorRuangan) === 0) {
+                throw ValidationException::withMessages([
+                    'nomor_ruangan' => __('Nomor ruangan (:code) sudah terdaftar di gedung yang dipilih.', ['code' => $nomorRuangan]),
+                ]);
+            }
+
+            if ($targetSeq !== null) {
+                $existSeq = null;
+                if (str_contains($existCode, '.')) {
+                    $parts = explode('.', $existCode);
+                    $existLast = trim(end($parts));
+                    if (preg_match('/^0*(\d+)$/', $existLast, $m)) {
+                        $existSeq = $m[1];
+                    } else {
+                        $existSeq = strtolower($existLast);
+                    }
+                } elseif (preg_match('/^0*(\d+)$/', $existCode, $m)) {
+                    $existSeq = $m[1];
+                }
+
+                if ($existSeq !== null && $existSeq === $targetSeq) {
+                    $displaySeq = $last ?? $targetSeq;
+                    throw ValidationException::withMessages([
+                        'nomor_ruangan' => __('Nomor urut ruangan (:seq) sudah digunakan di gedung ini.', ['seq' => $displaySeq]),
+                    ]);
+                }
+            }
+        }
     }
 
     public function updateJenis(Request $request, JenisApar $jenisApar)
@@ -802,16 +862,20 @@ class MasterDataController extends Controller
         }
 
         // Cek unik nomor APAR terhadap seluruh APAR lain
-        $inputNumber = (string) $request->nomor_apar;
+        $inputNumber = (int) $request->nomor_apar;
         $duplicateApar = Apar::where('id', '!=', $apar->id)->get()->first(function ($item) use ($inputNumber) {
             preg_match('/\d+$/', $item->kode ?? '', $matches);
 
-            return ($matches[0] ?? '') === $inputNumber;
+            if (! isset($matches[0])) {
+                return false;
+            }
+
+            return (int) $matches[0] === $inputNumber;
         });
 
         if ($duplicateApar) {
             return redirect()->back()->withErrors([
-                'nomor_apar' => __('Nomor PFE [:number] sudah digunakan oleh :code! Silakan gunakan nomor lain.', ['number' => $inputNumber, 'code' => $duplicateApar->kode]),
+                'nomor_apar' => __('Nomor PFE [:number] sudah digunakan oleh :code! Nomor PFE adalah Primary Key (unik sistem), silakan gunakan nomor lain.', ['number' => $request->nomor_apar, 'code' => $duplicateApar->kode]),
             ])->withInput()->with('form_type', 'edit_apar')->with('id', $apar->id);
         }
 
