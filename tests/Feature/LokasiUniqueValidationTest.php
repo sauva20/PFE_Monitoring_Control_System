@@ -37,7 +37,7 @@ class LokasiUniqueValidationTest extends TestCase
         $this->assertDatabaseCount('lokasi', 2);
     }
 
-    public function test_prevents_duplicate_room_sequence_number_in_same_building_even_if_overall_id_differs(): void
+    public function test_allows_same_sequence_number_on_different_floors_in_same_building(): void
     {
         $admin = User::factory()->create(['role' => 'Super Admin']);
         $gedung = Gedung::create(['nama' => 'BU-S']);
@@ -50,12 +50,38 @@ class LokasiUniqueValidationTest extends TestCase
             'klasifikasi' => 'NC',
         ]);
 
-        // Same building, different floor and classification and name, but same sequence number 20 / 020
+        // Same building (BU-S), but different floor (Lantai 2). Sequence number 20 / 020 IS ALLOWED.
         $response = $this->actingAs($admin)->post('/master-data/lokasi', [
             'nama' => 'PRODUCTION ROOM',
             'gedung_id' => $gedung->id,
-            'nomor_ruangan' => 'S.2.C.020',
+            'nomor_ruangan' => 'S.2.NC.020',
             'lantai' => '2',
+            'klasifikasi' => 'NC',
+        ]);
+
+        $response->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('lokasi', 2);
+    }
+
+    public function test_prevents_duplicate_room_sequence_on_same_floor_and_building(): void
+    {
+        $admin = User::factory()->create(['role' => 'Super Admin']);
+        $gedung = Gedung::create(['nama' => 'BU-S']);
+
+        Lokasi::create([
+            'nama' => 'STAGING AREA',
+            'gedung_id' => $gedung->id,
+            'nomor_ruangan' => 'S.1.NC.020',
+            'lantai' => '1',
+            'klasifikasi' => 'NC',
+        ]);
+
+        // Same building (BU-S) AND same floor (1). Sequence number 20 / 020 MUST BE PREVENTED.
+        $response = $this->actingAs($admin)->post('/master-data/lokasi', [
+            'nama' => 'PACKAGING ROOM',
+            'gedung_id' => $gedung->id,
+            'nomor_ruangan' => 'S.1.C.020',
+            'lantai' => '1',
             'klasifikasi' => 'C',
         ]);
 
@@ -63,29 +89,38 @@ class LokasiUniqueValidationTest extends TestCase
         $this->assertDatabaseCount('lokasi', 1);
     }
 
-    public function test_allows_same_sequence_number_in_different_buildings(): void
+    public function test_supports_and_validates_letter_suffix_sequence(): void
     {
         $admin = User::factory()->create(['role' => 'Super Admin']);
-        $gedungA = Gedung::create(['nama' => 'BU-S']);
-        $gedungB = Gedung::create(['nama' => 'BU-P']);
+        $gedung = Gedung::create(['nama' => 'BU-S']);
 
+        // Create 006A
         Lokasi::create([
-            'nama' => 'STAGING AREA',
-            'gedung_id' => $gedungA->id,
-            'nomor_ruangan' => 'S.1.NC.020',
+            'nama' => 'AIRLOCK ROOM',
+            'gedung_id' => $gedung->id,
+            'nomor_ruangan' => 'S.1.NC.006A',
             'lantai' => '1',
             'klasifikasi' => 'NC',
         ]);
 
-        $response = $this->actingAs($admin)->post('/master-data/lokasi', [
-            'nama' => 'STORAGE',
-            'gedung_id' => $gedungB->id,
-            'nomor_ruangan' => 'P.1.NC.020',
+        // 006B on same floor should be allowed
+        $response1 = $this->actingAs($admin)->post('/master-data/lokasi', [
+            'nama' => 'AIRLOCK ROOM 2',
+            'gedung_id' => $gedung->id,
+            'nomor_ruangan' => 'S.1.NC.006B',
             'lantai' => '1',
             'klasifikasi' => 'NC',
         ]);
+        $response1->assertSessionHasNoErrors();
 
-        $response->assertSessionHasNoErrors();
-        $this->assertDatabaseCount('lokasi', 2);
+        // 006A on same floor should be prevented
+        $response2 = $this->actingAs($admin)->post('/master-data/lokasi', [
+            'nama' => 'AIRLOCK ROOM 3',
+            'gedung_id' => $gedung->id,
+            'nomor_ruangan' => 'S.1.C.006A',
+            'lantai' => '1',
+            'klasifikasi' => 'C',
+        ]);
+        $response2->assertSessionHasErrors('nomor_ruangan');
     }
 }

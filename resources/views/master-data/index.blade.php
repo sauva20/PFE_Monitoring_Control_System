@@ -1120,7 +1120,7 @@
                                         nomor_urut: '', 
                                         existing: [ 
                                             @foreach(\App\Models\Lokasi::all() as $l) 
-                                                { id: {{ $l->id }}, gedung_id: '{{ $l->gedung_id }}', nomor_ruangan: '{{ addslashes($l->nomor_ruangan ?? '') }}' }, 
+                                                { id: {{ $l->id }}, gedung_id: '{{ $l->gedung_id }}', lantai: '{{ addslashes($l->lantai ?? '') }}', nomor_ruangan: '{{ addslashes($l->nomor_ruangan ?? '') }}' }, 
                                             @endforeach 
                                         ], 
                                         get fullKlasifikasi() {
@@ -1131,9 +1131,10 @@
                                             return this.klasifikasi_1;
                                         },
                                         get formattedNomorUrut() {
-                                            let v = (this.nomor_urut || '').trim();
-                                            if (/^\d+$/.test(v)) {
-                                                return v.padStart(3, '0');
+                                            let v = (this.nomor_urut || '').trim().toUpperCase();
+                                            let m = v.match(/^(\d+)([A-Z]*)$/);
+                                            if (m) {
+                                                return m[1].padStart(3, '0') + (m[2] || '');
                                             }
                                             return v;
                                         },
@@ -1154,25 +1155,29 @@
                                         },
                                         extractSeq(code) {
                                             if (!code) return null;
-                                            let s = String(code).trim();
+                                            let s = String(code).trim().toUpperCase();
                                             if (s.includes('.')) {
                                                 let parts = s.split('.');
-                                                let last = parts[parts.length - 1].trim();
-                                                let m = last.match(/^0*(\d+)$/);
-                                                return m ? m[1] : last.toLowerCase();
+                                                s = parts[parts.length - 1].trim();
                                             }
-                                            let m = s.match(/^0*(\d+)$/);
-                                            return m ? m[1] : s.toLowerCase();
+                                            let m = s.match(/^0*(\d+)([A-Z]*)$/);
+                                            if (m) {
+                                                return m[1] + (m[2] || '');
+                                            }
+                                            return s;
                                         },
                                         get isDuplicate() { 
                                             if (!this.gedung_id) return false;
-                                            let raw = (this.nomor_urut || '').trim();
-                                            let targetSeq = raw ? (raw.match(/^0*(\d+)$/) ? raw.match(/^0*(\d+)$/)[1] : raw.toLowerCase()) : null;
+                                            let fl = (this.lantai !== null && this.lantai !== undefined) ? String(this.lantai).trim() : '';
+                                            if (fl === '') return false;
+
+                                            let targetSeq = this.extractSeq(this.nomor_urut);
                                             let targetCode = (this.generatedKode || '').trim().toUpperCase();
                                             if (!targetSeq && !targetCode) return false;
 
                                             return this.existing.some(e => {
                                                 if (e.gedung_id != this.gedung_id) return false;
+                                                if (String(e.lantai ?? '').trim() !== fl) return false;
                                                 if (!e.nomor_ruangan) return false;
                                                 let existCode = String(e.nomor_ruangan).trim().toUpperCase();
                                                 if (targetCode && existCode === targetCode) return true;
@@ -1489,19 +1494,19 @@
                                             <div class="relative">
                                                 <i
                                                     class="ph-bold ph-hash absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
-                                                <input type="text" inputmode="numeric" :value="nomor_urut"
-                                                    @input="nomor_urut = $event.target.value.replace(/\D/g, '')"
-                                                    placeholder="066" maxlength="20"
+                                                <input type="text" :value="nomor_urut"
+                                                    @input="nomor_urut = $event.target.value.replace(/[^0-9a-zA-Z]/g, '').toUpperCase()"
+                                                    placeholder="066 / 066A" maxlength="20"
                                                     class="w-full h-8 bg-white border rounded-lg pl-7 pr-2.5 text-xs font-medium font-mono text-slate-700 outline-none transition-all"
                                                     :class="isDuplicate ? 'border-rose-400 ring-2 ring-rose-400/20' : 'border-slate-200 focus:border-[#009B77] focus:ring-2 focus:ring-[#009B77]/20'">
                                             </div>
                                             <div class="flex items-center justify-between mt-0.5">
                                                 <p class="text-[9px] text-slate-400">
-                                                    {{ __('Example: 66 auto-formatted to 066 / Contoh: 66 otomatis jadi 066') }}
+                                                    {{ __('Contoh: 6 jadi 006, 6A jadi 006A (huruf di digit ke-4)') }}
                                                 </p>
                                                 <p x-show="isDuplicate" x-cloak class="text-[9.5px] text-rose-500 font-semibold flex items-center">
                                                     <i class="ph-bold ph-warning-circle mr-1 text-xs"></i>
-                                                    {{ __('Nomor ini sudah dipakai di gedung ini!') }}
+                                                    {{ __('Nomor ini sudah dipakai di lantai & gedung ini!') }}
                                                 </p>
                                             </div>
                                             @error('nomor_ruangan')
@@ -3349,32 +3354,35 @@
                                         nomor_urut: '',
                                         existing: [ 
                                             @foreach(\App\Models\Lokasi::all() as $l) 
-                                                { id: {{ $l->id }}, gedung_id: '{{ $l->gedung_id }}', nomor_ruangan: '{{ addslashes($l->nomor_ruangan ?? '') }}' }, 
+                                                { id: {{ $l->id }}, gedung_id: '{{ $l->gedung_id }}', lantai: '{{ addslashes($l->lantai ?? '') }}', nomor_ruangan: '{{ addslashes($l->nomor_ruangan ?? '') }}' }, 
                                             @endforeach 
                                         ],
                                         extractSeq(code) {
                                             if (!code) return null;
-                                            let s = String(code).trim();
+                                            let s = String(code).trim().toUpperCase();
                                             if (s.includes('.')) {
                                                 let parts = s.split('.');
-                                                let last = parts[parts.length - 1].trim();
-                                                let m = last.match(/^0*(\d+)$/);
-                                                return m ? m[1] : last.toLowerCase();
+                                                s = parts[parts.length - 1].trim();
                                             }
-                                            let m = s.match(/^0*(\d+)$/);
-                                            return m ? m[1] : s.toLowerCase();
+                                            let m = s.match(/^0*(\d+)([A-Z]*)$/);
+                                            if (m) {
+                                                return m[1] + (m[2] || '');
+                                            }
+                                            return s;
                                         },
                                         get isDuplicate() { 
                                             let gid = editLokasi.gedung_id;
-                                            if (!gid) return false;
-                                            let raw = (this.nomor_urut || '').trim();
-                                            let targetSeq = raw ? (raw.match(/^0*(\d+)$/) ? raw.match(/^0*(\d+)$/)[1] : raw.toLowerCase()) : null;
+                                            let fl = (this.lantai !== null && this.lantai !== undefined) ? String(this.lantai).trim() : '';
+                                            if (!gid || fl === '') return false;
+
+                                            let targetSeq = this.extractSeq(this.nomor_urut);
                                             let targetCode = (this.generatedKode || '').trim().toUpperCase();
                                             if (!targetSeq && !targetCode) return false;
 
                                             return this.existing.some(e => {
                                                 if (e.id == editLokasi.id) return false;
                                                 if (e.gedung_id != gid) return false;
+                                                if (String(e.lantai ?? '').trim() !== fl) return false;
                                                 if (!e.nomor_ruangan) return false;
                                                 let existCode = String(e.nomor_ruangan).trim().toUpperCase();
                                                 if (targetCode && existCode === targetCode) return true;
@@ -3391,8 +3399,9 @@
                                             return this.klasifikasi_1;
                                         },
                                         get formattedNomorUrut() {
-                                            let v = (this.nomor_urut || '').trim();
-                                            if (/^\d+$/.test(v)) return v.padStart(3, '0');
+                                            let v = (this.nomor_urut || '').trim().toUpperCase();
+                                            let m = v.match(/^(\d+)([A-Z]*)$/);
+                                            if (m) return m[1].padStart(3, '0') + (m[2] || '');
                                             return v;
                                         },
                                         get generatedKode() {
@@ -3431,7 +3440,7 @@
                                                 if (this.klasifikasi_2 && !this.klasifikasiList.includes(this.klasifikasi_2)) {
                                                     this.klasifikasiList.push(this.klasifikasi_2);
                                                 }
-                                                this.nomor_urut = parts.slice(3).join('.').replace(/\D/g, '');
+                                                this.nomor_urut = parts.slice(3).join('.').replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
                                             } else {
                                                 this.lantai = editLokasi.lantai !== undefined && editLokasi.lantai !== null ? String(editLokasi.lantai).replace(/\D/g, '') : '';
                                                 let k = editLokasi.klasifikasi || '';
@@ -3449,7 +3458,7 @@
                                                 if (this.klasifikasi_2 && !this.klasifikasiList.includes(this.klasifikasi_2)) {
                                                     this.klasifikasiList.push(this.klasifikasi_2);
                                                 }
-                                                this.nomor_urut = raw.replace(/\D/g, '');
+                                                this.nomor_urut = raw.replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
                                             }
                                         }
                                     }"
@@ -3768,19 +3777,19 @@
                                             <div class="relative">
                                                 <i
                                                     class="ph-bold ph-hash absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
-                                                <input type="text" inputmode="numeric" :value="nomor_urut"
-                                                    @input="nomor_urut = $event.target.value.replace(/\D/g, '')"
-                                                    placeholder="066" maxlength="20"
+                                                <input type="text" :value="nomor_urut"
+                                                    @input="nomor_urut = $event.target.value.replace(/[^0-9a-zA-Z]/g, '').toUpperCase()"
+                                                    placeholder="066 / 066A" maxlength="20"
                                                     class="w-full h-8 bg-white border rounded-lg pl-7 pr-2.5 text-xs font-medium font-mono text-slate-700 outline-none transition-all"
                                                     :class="isDuplicate ? 'border-rose-400 ring-2 ring-rose-400/20' : 'border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-500/20'">
                                             </div>
                                             <div class="flex items-center justify-between mt-0.5">
                                                 <p class="text-[9px] text-slate-400">
-                                                    {{ __('Example: 66 auto-formatted to 066 / Contoh: 66 otomatis jadi 066') }}
+                                                    {{ __('Contoh: 6 jadi 006, 6A jadi 006A (huruf di digit ke-4)') }}
                                                 </p>
                                                 <p x-show="isDuplicate" x-cloak class="text-[9.5px] text-rose-500 font-semibold flex items-center">
                                                     <i class="ph-bold ph-warning-circle mr-1 text-xs"></i>
-                                                    {{ __('Nomor ini sudah dipakai di gedung ini!') }}
+                                                    {{ __('Nomor ini sudah dipakai di lantai & gedung ini!') }}
                                                 </p>
                                             </div>
                                             @if(old('form_type') == 'edit_lokasi')

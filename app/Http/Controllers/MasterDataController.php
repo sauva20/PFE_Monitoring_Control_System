@@ -723,34 +723,45 @@ class MasterDataController extends Controller
     }
 
     /**
-     * Memastikan nomor ruangan dan nomor urut ruangan tidak duplikat dalam 1 gedung.
+     * Memastikan nomor ruangan dan nomor urut ruangan tidak duplikat dalam lantai dan gedung yang sama.
      */
     private function validateUniqueRoomNumber(Request $request, ?int $ignoreLokasiId = null): void
     {
         $nomorRuangan = trim((string) $request->nomor_ruangan);
         $gedungId = $request->gedung_id;
+        $lantai = $request->filled('lantai') ? trim((string) $request->lantai) : null;
 
         if ($nomorRuangan === '' || ! $gedungId) {
             return;
         }
 
-        $targetSeq = null;
-        if (str_contains($nomorRuangan, '.')) {
-            $parts = explode('.', $nomorRuangan);
-            $last = trim(end($parts));
-            if (preg_match('/^0*(\d+)$/', $last, $m)) {
-                $targetSeq = $m[1];
-            } else {
-                $targetSeq = strtolower($last);
+        $extractSeq = function (string $code): ?string {
+            $code = trim($code);
+            if ($code === '') {
+                return null;
             }
-        } elseif (preg_match('/^0*(\d+)$/', $nomorRuangan, $m)) {
-            $targetSeq = $m[1];
+            if (str_contains($code, '.')) {
+                $parts = explode('.', $code);
+                $code = trim(end($parts));
+            }
+            if (preg_match('/^0*(\d+)([a-zA-Z]*)$/', $code, $m)) {
+                return $m[1].strtoupper($m[2] ?? '');
+            }
+
+            return strtoupper($code);
+        };
+
+        $targetSeq = $extractSeq($nomorRuangan);
+
+        $query = Lokasi::where('gedung_id', $gedungId)
+            ->when($ignoreLokasiId, fn ($q) => $q->where('id', '!=', $ignoreLokasiId))
+            ->whereNotNull('nomor_ruangan');
+
+        if ($lantai !== null && $lantai !== '') {
+            $query->where('lantai', $lantai);
         }
 
-        $existingRooms = Lokasi::where('gedung_id', $gedungId)
-            ->when($ignoreLokasiId, fn ($q) => $q->where('id', '!=', $ignoreLokasiId))
-            ->whereNotNull('nomor_ruangan')
-            ->get(['id', 'nomor_ruangan']);
+        $existingRooms = $query->get(['id', 'nomor_ruangan', 'lantai']);
 
         foreach ($existingRooms as $existing) {
             $existCode = trim((string) $existing->nomor_ruangan);
@@ -760,28 +771,15 @@ class MasterDataController extends Controller
 
             if (strcasecmp($existCode, $nomorRuangan) === 0) {
                 throw ValidationException::withMessages([
-                    'nomor_ruangan' => __('Nomor ruangan (:code) sudah terdaftar di gedung yang dipilih.', ['code' => $nomorRuangan]),
+                    'nomor_ruangan' => __('Nomor ruangan (:code) sudah terdaftar di lantai dan gedung yang dipilih.', ['code' => $nomorRuangan]),
                 ]);
             }
 
             if ($targetSeq !== null) {
-                $existSeq = null;
-                if (str_contains($existCode, '.')) {
-                    $parts = explode('.', $existCode);
-                    $existLast = trim(end($parts));
-                    if (preg_match('/^0*(\d+)$/', $existLast, $m)) {
-                        $existSeq = $m[1];
-                    } else {
-                        $existSeq = strtolower($existLast);
-                    }
-                } elseif (preg_match('/^0*(\d+)$/', $existCode, $m)) {
-                    $existSeq = $m[1];
-                }
-
+                $existSeq = $extractSeq($existCode);
                 if ($existSeq !== null && $existSeq === $targetSeq) {
-                    $displaySeq = $last ?? $targetSeq;
                     throw ValidationException::withMessages([
-                        'nomor_ruangan' => __('Nomor urut ruangan (:seq) sudah digunakan di gedung ini.', ['seq' => $displaySeq]),
+                        'nomor_ruangan' => __('Nomor urut ruangan (:seq) sudah digunakan di lantai ini.', ['seq' => $targetSeq]),
                     ]);
                 }
             }
