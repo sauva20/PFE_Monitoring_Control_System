@@ -113,9 +113,9 @@
                         <span>{{ __('Active Only') }}</span>
                         <i class="ph-bold ph-check text-emerald-600" x-show="selected === '{{ __('Active Only') }}'"></i>
                     </button>
-                    <button type="button" @click="selected = '{{ __('Inactive / Expired') }}'; open = false; $refs.status_input.value = 'expired'; $refs.status_input.form.submit();" class="w-full text-left px-4 py-2 text-sm transition-colors flex items-center justify-between hover:bg-slate-50" :class="selected === '{{ __('Inactive / Expired') }}' ? 'text-slate-700 font-bold bg-slate-100' : 'text-slate-600'">
-                        <span>{{ __('Inactive / Expired') }}</span>
-                        <i class="ph-bold ph-check text-slate-700" x-show="selected === '{{ __('Inactive / Expired') }}'"></i>
+                    <button type="button" @click="selected = '{{ __('Inactive') }}'; open = false; $refs.status_input.value = 'expired'; $refs.status_input.form.submit();" class="w-full text-left px-4 py-2 text-sm transition-colors flex items-center justify-between hover:bg-slate-50" :class="selected === '{{ __('Inactive') }}' ? 'text-slate-700 font-bold bg-slate-100' : 'text-slate-600'">
+                        <span>{{ __('Inactive') }}</span>
+                        <i class="ph-bold ph-check text-slate-700" x-show="selected === '{{ __('Inactive') }}'"></i>
                     </button>
                 </div>
             </div>
@@ -245,7 +245,7 @@
                                     <span>{{ $guest->creator->name }}</span>
                                 </div>
                             @else
-                                <span class="text-slate-400 text-xs italic">{{ __('System / Admin') }}</span>
+                                <span class="text-slate-400 text-xs italic">{{ __('System') }}</span>
                             @endif
                         </td>
 
@@ -589,7 +589,7 @@
                             <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 z-10">
                                 <i class="ph-bold ph-clock-counter-clockwise text-base"></i>
                             </div>
-                            <input type="text" x-ref="lastAccessedEditInput" name="last_accessed_at" :value="editGuest.last_accessed_at" placeholder="{{ __('Belum pernah diakses / Never') }}" class="datepicker w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all">
+                            <input type="text" x-ref="lastAccessedEditInput" name="last_accessed_at" :value="editGuest.last_accessed_at" placeholder="{{ __('Never') }}" class="datepicker w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 transition-all">
                         </div>
                     </div>
 

@@ -20,7 +20,7 @@
                 </div>
                 <p class="text-xs font-semibold text-slate-500 mt-0.5">
                     {{ __('History of user actions and system activity') }}
-                    <span class="text-slate-400 font-normal ml-1">({{ __('Log dibersihkan & diperbarui setiap pergantian bulan') }})</span>
+                    <span class="text-slate-400 font-normal ml-1">({{ __('Log is cleaned & renewed at each month turnaround') }})</span>
                 </p>
             </div>
         </div>
@@ -54,11 +54,11 @@
             <table class="w-full text-left border-collapse">
                 <thead>
                     <tr class="bg-[#009B77] text-white divide-x divide-white/20 text-center">
-                        <th class="py-3.5 px-4 text-xs font-bold uppercase tracking-wider w-36 text-left">{{ __('Time / Waktu') }}</th>
-                        <th class="py-3.5 px-4 text-xs font-bold uppercase tracking-wider text-left">{{ __('User / Pengguna') }}</th>
-                        <th class="py-3.5 px-4 text-xs font-bold uppercase tracking-wider w-32">{{ __('Action / Aksi') }}</th>
-                        <th class="py-3.5 px-4 text-xs font-bold uppercase tracking-wider w-40 text-left">{{ __('Module / Modul') }}</th>
-                        <th class="py-3.5 px-4 text-xs font-bold uppercase tracking-wider text-left">{{ __('Description / Keterangan') }}</th>
+                        <th class="py-3.5 px-4 text-xs font-bold uppercase tracking-wider w-36 text-left">{{ __('Time') }}</th>
+                        <th class="py-3.5 px-4 text-xs font-bold uppercase tracking-wider text-left">{{ __('User') }}</th>
+                        <th class="py-3.5 px-4 text-xs font-bold uppercase tracking-wider w-32">{{ __('Action') }}</th>
+                        <th class="py-3.5 px-4 text-xs font-bold uppercase tracking-wider w-40 text-left">{{ __('Module') }}</th>
+                        <th class="py-3.5 px-4 text-xs font-bold uppercase tracking-wider text-left">{{ __('Description') }}</th>
                     </tr>
                 </thead>
                 <tbody class="text-xs divide-y divide-slate-100">
@@ -76,9 +76,9 @@
                         };
 
                         $eventBadge = match ($activity->event) {
-                            'created' => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-700', 'border' => 'border-emerald-200', 'label' => 'CREATED / TAMBAH', 'icon' => 'ph-plus-circle'],
-                            'updated' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-700', 'border' => 'border-amber-200', 'label' => 'UPDATED / UBAH', 'icon' => 'ph-pencil-simple'],
-                            'deleted' => ['bg' => 'bg-rose-50', 'text' => 'text-rose-700', 'border' => 'border-rose-200', 'label' => 'DELETED / HAPUS', 'icon' => 'ph-trash'],
+                            'created' => ['bg' => 'bg-emerald-50', 'text' => 'text-emerald-700', 'border' => 'border-emerald-200', 'label' => __('CREATED'), 'icon' => 'ph-plus-circle'],
+                            'updated' => ['bg' => 'bg-amber-50', 'text' => 'text-amber-700', 'border' => 'border-amber-200', 'label' => __('UPDATED'), 'icon' => 'ph-pencil-simple'],
+                            'deleted' => ['bg' => 'bg-rose-50', 'text' => 'text-rose-700', 'border' => 'border-rose-200', 'label' => __('DELETED'), 'icon' => 'ph-trash'],
                             default => ['bg' => 'bg-slate-100', 'text' => 'text-slate-700', 'border' => 'border-slate-200', 'label' => strtoupper($activity->event), 'icon' => 'ph-activity'],
                         };
                     @endphp
@@ -92,7 +92,7 @@
                                 <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 flex-shrink-0 text-xs">
                                     <i class="ph-fill ph-user"></i>
                                 </div>
-                                <span class="text-xs font-bold text-slate-700">{{ $activity->causer->name ?? __('System / Guest') }}</span>
+                                <span class="text-xs font-bold text-slate-700">{{ $activity->causer->name ?? __('System') }}</span>
                             </div>
                         </td>
                         <td class="py-3 px-4 text-center">
@@ -103,13 +103,13 @@
                         </td>
                         <td class="py-3 px-4">
                             <span class="text-xs font-bold text-[#009B77] bg-[#009B77]/10 px-2 py-0.5 rounded-md border border-[#009B77]/20">
-                                {{ $moduleLabel }}
+                                {{ __($moduleLabel) }}
                             </span>
                         </td>
                         <td class="py-3 px-4">
                             <div class="space-y-1">
                                 <p class="text-xs text-slate-700 font-semibold leading-relaxed">
-                                    {{ $activity->description }}
+                                    {{ \App\Http\Controllers\ActivityLogController::translateDescription($activity->description) }}
                                 </p>
                                 @if(isset($activity->properties['attributes']) && is_array($activity->properties['attributes']) && count($activity->properties['attributes']) > 0)
                                     <div class="flex flex-wrap gap-1 pt-0.5">
@@ -130,8 +130,8 @@
                         <td colspan="5" class="py-12 text-center text-slate-500 font-semibold">
                             <div class="flex flex-col items-center justify-center space-y-2">
                                 <i class="ph-bold ph-clock-counter-clockwise text-3xl text-slate-300"></i>
-                                <p class="text-sm font-bold text-slate-600">{{ __('Belum ada riwayat aktivitas untuk bulan ini.') }}</p>
-                                <p class="text-xs text-slate-400">{{ __('Log audit trail secara otomatis direfresh setiap awal bulan.') }}</p>
+                                <p class="text-sm font-bold text-slate-600">{{ __('No activity log for this month yet.') }}</p>
+                                <p class="text-xs text-slate-400">{{ __('Audit trail log is automatically refreshed at the beginning of each month.') }}</p>
                             </div>
                         </td>
                     </tr>

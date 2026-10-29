@@ -81,7 +81,7 @@
                 Identification Date: {{ \Carbon\Carbon::now()->translatedFormat('d F Y H:i:s') }}
             </td>
             <td style="text-align: right; font-size: 10px; border: none !important; padding: 0 !important; background: transparent; color: #009B77; font-weight: bold;">
-                Period / Periode: {{ $currentPeriod ?? \Carbon\Carbon::now()->translatedFormat('F Y') }}
+                {{ __('Period') }}: {{ $currentPeriod ?? \Carbon\Carbon::now()->translatedFormat('F Y') }}
             </td>
         </tr>
     </table>
@@ -89,26 +89,11 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 18%;">
-                    <div>Time</div>
-                    <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px;">Waktu</div>
-                </th>
-                <th style="width: 18%;">
-                    <div>User</div>
-                    <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px;">Pengguna</div>
-                </th>
-                <th class="text-center" style="width: 14%;">
-                    <div>Action</div>
-                    <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px;">Aksi</div>
-                </th>
-                <th style="width: 18%;">
-                    <div>Module</div>
-                    <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px;">Modul</div>
-                </th>
-                <th style="width: 32%;">
-                    <div>Description</div>
-                    <div style="font-weight: normal; font-style: italic; font-size: 7px; margin-top: 1px;">Keterangan</div>
-                </th>
+                <th style="width: 18%;">{{ __('Time') }}</th>
+                <th style="width: 18%;">{{ __('User') }}</th>
+                <th class="text-center" style="width: 14%;">{{ __('Action') }}</th>
+                <th style="width: 18%;">{{ __('Module') }}</th>
+                <th style="width: 32%;">{{ __('Description') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -124,19 +109,26 @@
                         'Lokasi' => 'Data Lokasi',
                         default => preg_replace('/([a-z])([A-Z])/s', '$1 $2', $moduleName ?: 'System'),
                     };
-                @endphp
+                
+                    $actionLabel = match ($activity->event) {
+                        'created' => __('CREATED'),
+                        'updated' => __('UPDATED'),
+                        'deleted' => __('DELETED'),
+                        default => strtoupper($activity->event),
+                    };
+@endphp
                 <tr>
                     <td class="font-bold">{{ $activity->created_at->format('d M Y H:i:s') }}</td>
-                    <td>{{ $activity->causer->name ?? 'Sistem / System' }}</td>
-                    <td class="text-center font-bold">{{ strtoupper($activity->event) }}</td>
-                    <td>{{ $moduleLabel }}</td>
-                    <td>{{ $activity->description }}</td>
+                    <td>{{ $activity->causer->name ?? __('System') }}</td>
+                    <td class="text-center font-bold">{{ $actionLabel }}</td>
+                    <td>{{ __($moduleLabel) }}</td>
+                    <td>{{ \App\Http\Controllers\ActivityLogController::translateDescription($activity->description) }}</td>
                 </tr>
             @endforeach
             
             @if($activities->isEmpty())
                 <tr>
-                    <td colspan="5" class="text-center" style="padding: 20px;">{{ __('No activity log for this month yet / Belum ada riwayat aktivitas untuk bulan ini.') }}</td>
+                    <td colspan="5" class="text-center" style="padding: 20px;">{{ __('No activity log for this month yet.') }}</td>
                 </tr>
             @endif
         </tbody>

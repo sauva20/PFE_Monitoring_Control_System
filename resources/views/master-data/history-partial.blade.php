@@ -8,7 +8,7 @@
                     </div>
                     <div>
                         <p class="text-sm font-extrabold text-slate-800 tracking-wide">{{ strtoupper($activity->event) }}</p>
-                        <p class="text-xs font-semibold text-slate-500 mt-0.5">{{ __('By:') }} {{ $activity->causer->name ?? __('System / Guest') }}</p>
+                        <p class="text-xs font-semibold text-slate-500 mt-0.5">{{ __('By:') }} {{ $activity->causer->name ?? __('System') }}</p>
                     </div>
                 </div>
                 <div class="text-right">
@@ -108,9 +108,7 @@
                                 </tr>
                                 @if($key === 'lokasi_id')
                                 <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <td class="py-2.5 px-4 font-bold text-slate-700 capitalize text-xs">
-                                        Gedung
-                                    </td>
+                                    <td class="py-2.5 px-4 font-bold text-slate-700 capitalize text-xs">{{ __('Building') }}</td>
                                     @if($activity->event === 'updated')
                                         <td class="py-2.5 px-4 text-xs font-semibold text-red-500/80 line-through decoration-red-300 border-l border-slate-100">{{ formatGedungValue($old[$key] ?? null) }}</td>
                                         <td class="py-2.5 px-4 text-xs font-bold text-[#009B77] border-l border-slate-100 bg-teal-50/30">{{ formatGedungValue($attributes[$key] ?? null) }}</td>

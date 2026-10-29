@@ -406,7 +406,7 @@
                     </div>
 
                     <div x-data="{ open: false }" class="relative">
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{{ __('Role / Position') }} <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{{ __('Role') }} <span class="text-red-500">*</span></label>
                         <!-- Hidden input to submit the value -->
                         <input type="hidden" name="role" x-model="formRoleTambah">
                         
@@ -624,7 +624,7 @@
                     </div>
 
                     <div x-data="{ open: false }" class="relative">
-                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{{ __('Role / Position') }} <span class="text-red-500">*</span></label>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">{{ __('Role') }} <span class="text-red-500">*</span></label>
                         <!-- Hidden input to submit the value -->
                         <input type="hidden" name="role" x-model="editUser.role">
                         

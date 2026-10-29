@@ -48,6 +48,63 @@ class ActivityLogController extends Controller
         return $pdf->stream('Audit_Trail_'.date('Ymd_His').'.pdf');
     }
 
+    public static function translateDescription(?string $desc): string
+    {
+        if (empty($desc)) {
+            return '-';
+        }
+
+        if (app()->getLocale() !== 'en') {
+            return $desc;
+        }
+
+        $patterns = [
+            // APAR
+            '/^Menghapus unit APAR \[(.*?)\]$/' => 'Deleted PFE unit [$1]',
+            '/^Menambahkan unit APAR baru \[(.*?)\] di lokasi (.*?)$/' => 'Added new PFE unit [$1] at location $2',
+            '/^Memperbarui data spesifikasi APAR \[(.*?)\]$/' => 'Updated PFE specification data [$1]',
+            '/^APAR \[(.*?)\] telah di-(.*?)$/' => 'PFE [$1] was $2',
+
+            // Lokasi
+            '/^Menambahkan data lokasi baru \[(.*?)\] di (.*?)$/' => 'Added new location data [$1] in $2',
+            '/^Memperbarui data lokasi \[(.*?)\] di (.*?)$/' => 'Updated location data [$1] in $2',
+            '/^Menghapus data lokasi \[(.*?)\] di (.*?)$/' => 'Deleted location data [$1] in $2',
+            '/^Lokasi \[(.*?)\] telah di-(.*?)$/' => 'Location [$1] was $2',
+
+            // Stok Cadangan
+            '/^Menambahkan stok cadangan APAR (.*?) di (.*?) \(Jumlah: (.*?)\)$/' => 'Added backup PFE stock $1 in $2 (Qty: $3)',
+            '/^Memperbarui stok cadangan APAR (.*?) di (.*?) \(Jumlah: (.*?)\)$/' => 'Updated backup PFE stock $1 in $2 (Qty: $3)',
+            '/^Menghapus stok cadangan APAR (.*?) di (.*?)$/' => 'Deleted backup PFE stock $1 in $2',
+            '/^Stok cadangan APAR (.*?) telah di-(.*?)$/' => 'Backup PFE stock $1 was $2',
+
+            // Inspeksi
+            '/^Melakukan inspeksi rutin APAR \[(.*?)\] - Status: (.*?)$/' => 'Conducted routine PFE inspection [$1] - Status: $2',
+            '/^Memperbarui hasil inspeksi APAR \[(.*?)\] - Status: (.*?)$/' => 'Updated PFE inspection result [$1] - Status: $2',
+            '/^Menghapus riwayat inspeksi APAR \[(.*?)\]$/' => 'Deleted PFE inspection history [$1]',
+            '/^Inspeksi APAR \[(.*?)\] telah di-(.*?)$/' => 'PFE inspection [$1] was $2',
+
+            // Jadwal
+            '/^Menetapkan jadwal inspeksi gedung (.*?) kepada (.*?)$/' => 'Assigned inspection schedule for building $1 to $2',
+            '/^Memperbarui jadwal inspeksi gedung (.*?) untuk (.*?)$/' => 'Updated inspection schedule for building $1 for $2',
+            '/^Menghapus jadwal inspeksi gedung (.*?)$/' => 'Deleted inspection schedule for building $1',
+            '/^Jadwal inspeksi gedung (.*?) telah di-(.*?)$/' => 'Inspection schedule for building $1 was $2',
+
+            // User
+            '/^Menambahkan user baru: (.*?) \((.*?)\)$/' => 'Added new user: $1 ($2)',
+            '/^Memperbarui data akun user: (.*?) \((.*?)\)$/' => 'Updated user account: $1 ($2)',
+            '/^Menghapus akun user: (.*?)$/' => 'Deleted user account: $1',
+            '/^User (.*?) telah di-(.*?)$/' => 'User $1 was $2',
+        ];
+
+        foreach ($patterns as $pattern => $replacement) {
+            if (preg_match($pattern, $desc)) {
+                return preg_replace($pattern, $replacement, $desc);
+            }
+        }
+
+        return $desc;
+    }
+
     public function exportExcel()
     {
         $this->purgePreviousMonthLogs();
@@ -70,11 +127,11 @@ class ActivityLogController extends Controller
         ];
 
         $columns = [
-            'Time / Waktu',
-            'User / Pengguna',
-            'Action / Aksi',
-            'Module / Modul',
-            'Description / Keterangan',
+            __('Time'),
+            __('User'),
+            __('Action'),
+            __('Module'),
+            __('Description'),
         ];
 
         $callback = function () use ($activities, $columns) {
@@ -95,12 +152,19 @@ class ActivityLogController extends Controller
                     default => preg_replace('/([a-z])([A-Z])/s', '$1 $2', $moduleName ?: 'System'),
                 };
 
+                $actionLabel = match ($activity->event) {
+                    'created' => __('CREATED'),
+                    'updated' => __('UPDATED'),
+                    'deleted' => __('DELETED'),
+                    default => strtoupper($activity->event),
+                };
+
                 $row = [
                     $activity->created_at->format('d M Y H:i:s'),
-                    $activity->causer->name ?? 'Sistem / System',
-                    strtoupper($activity->event),
-                    $moduleLabel,
-                    $activity->description,
+                    $activity->causer->name ?? __('System'),
+                    $actionLabel,
+                    __($moduleLabel),
+                    self::translateDescription($activity->description),
                 ];
                 fputcsv($file, $row);
             }
@@ -122,11 +186,11 @@ class ActivityLogController extends Controller
             ->get();
 
         $columns = [
-            'Time / Waktu',
-            'User / Pengguna',
-            'Action / Aksi',
-            'Module / Modul',
-            'Description / Keterangan',
+            __('Time'),
+            __('User'),
+            __('Action'),
+            __('Module'),
+            __('Description'),
         ];
         $rows = [];
 
@@ -142,12 +206,19 @@ class ActivityLogController extends Controller
                 default => preg_replace('/([a-z])([A-Z])/s', '$1 $2', $moduleName ?: 'System'),
             };
 
+            $actionLabel = match ($activity->event) {
+                'created' => __('CREATED'),
+                'updated' => __('UPDATED'),
+                'deleted' => __('DELETED'),
+                default => strtoupper($activity->event),
+            };
+
             $rows[] = [
                 $activity->created_at->format('d M Y H:i:s'),
-                $activity->causer->name ?? 'Sistem / System',
-                strtoupper($activity->event),
-                $moduleLabel,
-                $activity->description,
+                $activity->causer->name ?? __('System'),
+                $actionLabel,
+                __($moduleLabel),
+                self::translateDescription($activity->description),
             ];
         }
 
