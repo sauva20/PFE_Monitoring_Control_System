@@ -348,13 +348,13 @@
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-[#009B77] text-white divide-x divide-white/20 text-center">
+                            <tr class="bg-[#009B77] text-white divide-x divide-white/20 text-center align-middle">
                                 <th
-                                    class="py-2.5 px-1.5 text-[11px] font-bold uppercase tracking-wider w-8 text-center whitespace-nowrap">
+                                    class="py-2.5 px-1.5 text-[11px] font-bold uppercase tracking-wider w-8 text-center align-middle whitespace-nowrap">
                                     {{ __('No') }}
                                 </th>
                                 <th
-                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-center whitespace-nowrap w-24">
+                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-center align-middle whitespace-nowrap w-24">
                                     {{ __('PFE ID') }}
                                 </th>
                                 <th
@@ -362,50 +362,52 @@
                                     {!! str_replace(' ', '<br>', e(__('Room No'))) !!}
                                 </th>
                                 <th
-                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-left whitespace-nowrap">
+                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-center align-middle whitespace-nowrap">
                                     {{ __('Location') }}
                                 </th>
                                 <th
-                                    class="py-2.5 px-1.5 text-[11px] font-bold uppercase tracking-wider text-center whitespace-nowrap w-16">
+                                    class="py-2.5 px-1.5 text-[11px] font-bold uppercase tracking-wider text-center align-middle whitespace-nowrap w-16">
                                     {{ __('Building') }}
                                 </th>
                                 <th
-                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-left whitespace-nowrap">
+                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-center align-middle whitespace-nowrap">
                                     {{ __('Type') }}
                                 </th>
                                 <th
-                                    class="py-2.5 px-1.5 text-[11px] font-bold uppercase tracking-wider text-center whitespace-nowrap w-20">
+                                    class="py-2.5 px-1.5 text-[11px] font-bold uppercase tracking-wider text-center align-middle whitespace-nowrap w-20">
                                     {{ __('Fill Capacity') }}
                                 </th>
                                 <th
-                                    class="py-2.5 px-1.5 text-[11px] font-bold uppercase tracking-wider text-center whitespace-nowrap w-16">
+                                    class="py-2.5 px-1.5 text-[11px] font-bold uppercase tracking-wider text-center align-middle whitespace-nowrap w-16">
                                     {{ __('Fire Class') }}
                                 </th>
                                 <th
-                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-center whitespace-nowrap w-24">
+                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-center align-middle whitespace-nowrap w-24">
                                     {{ __('Expired Date') }}
                                 </th>
                                 <th
-                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-center whitespace-nowrap w-24">
+                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-center align-middle whitespace-nowrap w-24">
                                     {{ __('Last Refill') }}
                                 </th>
-                                <th class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-center whitespace-nowrap w-24"
-                                    title="{{ __('Last Inspection') }}">{{ __('Last Insp.') }}</th>
+                                <th class="py-2 px-1 text-[11px] font-bold uppercase tracking-wider text-center align-middle w-24 min-w-[85px] leading-tight"
+                                    title="{{ __('Last Inspection') }}">
+                                    {!! str_replace(' ', '<br>', e(__('Last Inspection'))) !!}
+                                </th>
                                 <th
-                                    class="py-2.5 px-1 text-[11px] font-bold uppercase tracking-wider text-center whitespace-nowrap w-10">
+                                    class="py-2.5 px-1 text-[11px] font-bold uppercase tracking-wider text-center align-middle whitespace-nowrap w-10">
                                     {{ __('Qty') }}
                                 </th>
                                 <th
-                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-left whitespace-nowrap w-24">
+                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-center align-middle whitespace-nowrap w-24">
                                     {{ __('PIC') }}
                                 </th>
                                 <th
-                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-center whitespace-nowrap w-24">
+                                    class="py-2.5 px-2 text-[11px] font-bold uppercase tracking-wider text-center align-middle whitespace-nowrap w-24">
                                     {{ __('Final Status') }}
                                 </th>
                                 @if(auth()->user()->role !== 'Staff')
                                     <th
-                                        class="py-2.5 px-1.5 text-[11px] font-bold uppercase tracking-wider text-center whitespace-nowrap w-20">
+                                        class="py-2.5 px-1.5 text-[11px] font-bold uppercase tracking-wider text-center align-middle whitespace-nowrap w-20">
                                         {{ __('Actions') }}
                                     </th>
                                 @endif
@@ -1305,7 +1307,8 @@
                                                 <!-- Klasifikasi 1 Custom Dropdown -->
                                                 <div class="relative" @click.away="openKlasifikasi1 = false">
                                                     <span
-                                                        class="block text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">{{ __('Classification 1 (Main / Utama)') }}</span>
+                                                        class="block text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider mb-1 whitespace-nowrap truncate"
+                                                        title="{{ __('Class 1 (Main / Utama)') }}">{{ __('Class 1 (Main / Utama)') }}</span>
                                                     <button type="button"
                                                         @click="openKlasifikasi1 = !openKlasifikasi1; openKlasifikasi2 = false"
                                                         class="w-full h-8 bg-white border border-slate-200 rounded-lg px-2.5 text-xs font-semibold text-left transition-all flex items-center justify-between"
@@ -1369,7 +1372,8 @@
                                                 <!-- Klasifikasi 2 Custom Dropdown -->
                                                 <div class="relative" @click.away="openKlasifikasi2 = false">
                                                     <span
-                                                        class="block text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">{{ __('Classification 2 (Transition / Transisi)') }}</span>
+                                                        class="block text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider mb-1 whitespace-nowrap truncate"
+                                                        title="{{ __('Class 2 (Transition / Transisi)') }}">{{ __('Class 2 (Transition / Transisi)') }}</span>
                                                     <button type="button"
                                                         @click="openKlasifikasi2 = !openKlasifikasi2; openKlasifikasi1 = false"
                                                         class="w-full h-8 bg-white border border-slate-200 rounded-lg px-2.5 text-xs font-semibold text-left transition-all flex items-center justify-between"
@@ -3524,7 +3528,8 @@
                                                 <!-- Klasifikasi 1 Custom Dropdown -->
                                                 <div class="relative" @click.away="openKlasifikasi1 = false">
                                                     <span
-                                                        class="block text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">{{ __('Classification 1 (Main / Utama)') }}</span>
+                                                        class="block text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider mb-1 whitespace-nowrap truncate"
+                                                        title="{{ __('Class 1 (Main / Utama)') }}">{{ __('Class 1 (Main / Utama)') }}</span>
                                                     <button type="button"
                                                         @click="openKlasifikasi1 = !openKlasifikasi1; openKlasifikasi2 = false"
                                                         class="w-full h-8 bg-white border border-slate-200 rounded-lg px-2.5 text-xs font-semibold text-left transition-all flex items-center justify-between"
@@ -3589,7 +3594,8 @@
                                                 <!-- Klasifikasi 2 Custom Dropdown -->
                                                 <div class="relative" @click.away="openKlasifikasi2 = false">
                                                     <span
-                                                        class="block text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">{{ __('Classification 2 (Transition / Transisi)') }}</span>
+                                                        class="block text-[9.5px] font-semibold text-slate-500 uppercase tracking-wider mb-1 whitespace-nowrap truncate"
+                                                        title="{{ __('Class 2 (Transition / Transisi)') }}">{{ __('Class 2 (Transition / Transisi)') }}</span>
                                                     <button type="button"
                                                         @click="openKlasifikasi2 = !openKlasifikasi2; openKlasifikasi1 = false"
                                                         class="w-full h-8 bg-white border border-slate-200 rounded-lg px-2.5 text-xs font-semibold text-left transition-all flex items-center justify-between"
