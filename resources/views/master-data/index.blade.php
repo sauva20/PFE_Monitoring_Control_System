@@ -901,7 +901,7 @@
                                                     <div
                                                         class="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0">
                                                         <button
-                                                            @click="editLokasi = { id: {{ $lok->id }}, nama: '{{ addslashes($lok->nama) }}', nomor_ruangan: '{{ addslashes($lok->nomor_ruangan ?? '') }}', lantai: '{{ addslashes($lok->lantai ?? '') }}', gedung_id: '{{ $lok->gedung_id }}', klasifikasi: '{{ addslashes($lok->klasifikasi ?? '') }}' }; originalEditLokasi = JSON.stringify(editLokasi); showEditLokasi = true"
+                                                            @click="let d = { id: {{ $lok->id }}, nama: '{{ addslashes($lok->nama) }}', nomor_ruangan: '{{ addslashes($lok->nomor_ruangan ?? '') }}', lantai: '{{ addslashes($lok->lantai ?? '') }}', gedung_id: '{{ $lok->gedung_id }}', klasifikasi: '{{ addslashes($lok->klasifikasi ?? '') }}' }; editLokasi = d; originalEditLokasi = JSON.stringify(d); $dispatch('load-edit-lokasi', d); showEditLokasi = true"
                                                             class="w-7 h-7 rounded-lg text-slate-400 hover:text-amber-500 hover:bg-amber-50 flex items-center justify-center transition-colors"><i
                                                                 class="ph-bold ph-pencil-simple text-sm"></i></button>
                                                         <form action="/master-data/lokasi/{{ $lok->id }}" method="POST" class="inline"
@@ -3292,7 +3292,9 @@
                         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                         class="relative transform overflow-visible rounded-3xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-xl border border-slate-100"
                         x-cloak>
-                        <form :action="'/master-data/lokasi/' + editLokasi.id" method="POST" x-data="{
+                        <form :action="'/master-data/lokasi/' + editLokasi.id" method="POST"
+                            @load-edit-lokasi.window="parseFrom($event.detail)"
+                            x-data="{
                                         openGedung: false,
                                         searchGedung: '',
                                         optionsGedung: [
@@ -3345,6 +3347,14 @@
                                             if (target === 2) { this.klasifikasi_2 = clean; this.newKlasifikasi2 = ''; this.openKlasifikasi2 = false; }
                                         },
                                         nomor_urut: '',
+                                        originalKode: '',
+                                        originalNama: '',
+                                        originalGedungId: '',
+                                        get isUnchanged() {
+                                            return this.originalKode === this.generatedKode &&
+                                                   this.originalNama === (editLokasi.nama || '').trim() &&
+                                                   String(this.originalGedungId) === String(editLokasi.gedung_id || '');
+                                        },
                                         existing: [ 
                                             @foreach(\App\Models\Lokasi::all() as $l) 
                                                 { id: {{ $l->id }}, gedung_id: '{{ $l->gedung_id }}', lantai: '{{ addslashes($l->lantai ?? '') }}', nomor_ruangan: '{{ addslashes($l->nomor_ruangan ?? '') }}' }, 
@@ -3413,11 +3423,12 @@
                                             editLokasi.gedung_id = id;
                                             this.openGedung = false;
                                         },
-                                        parseFromCurrent() {
-                                            let raw = (editLokasi.nomor_ruangan || '').trim();
+                                        parseFrom(data) {
+                                            let item = data || editLokasi || {};
+                                            let raw = (item.nomor_ruangan || '').trim();
                                             let parts = raw.split('.');
                                             if (parts.length >= 4) {
-                                                this.lantai = parts[1] !== undefined ? String(parts[1]).replace(/\D/g, '') : (editLokasi.lantai !== undefined ? String(editLokasi.lantai).replace(/\D/g, '') : '');
+                                                this.lantai = parts[1] !== undefined ? String(parts[1]).replace(/\D/g, '') : (item.lantai !== undefined ? String(item.lantai).replace(/\D/g, '') : '');
                                                 let k = parts[2] || '';
                                                 if (k.includes('/')) {
                                                     let ks = k.split('/');
@@ -3433,13 +3444,12 @@
                                                 if (this.klasifikasi_2 && !this.klasifikasiList.includes(this.klasifikasi_2)) {
                                                     this.klasifikasiList.push(this.klasifikasi_2);
                                                 }
-                                                // Extract sequence number: strip leading zeros to get raw digits
                                                 let seqRaw = parts.slice(3).join('.').replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
                                                 let seqMatch = seqRaw.match(/^0*(\d+)([A-Z]*)$/);
                                                 this.nomor_urut = seqMatch ? seqMatch[1] + (seqMatch[2] || '') : seqRaw;
                                             } else {
-                                                this.lantai = editLokasi.lantai !== undefined && editLokasi.lantai !== null ? String(editLokasi.lantai).replace(/\D/g, '') : '';
-                                                let k = editLokasi.klasifikasi || '';
+                                                this.lantai = item.lantai !== undefined && item.lantai !== null ? String(item.lantai).replace(/\D/g, '') : '';
+                                                let k = item.klasifikasi || '';
                                                 if (k.includes('/')) {
                                                     let ks = k.split('/');
                                                     this.klasifikasi_1 = ks[0] ? ks[0].toUpperCase() : 'NC';
@@ -3458,9 +3468,14 @@
                                                 let seqMatch = seqRaw.match(/^0*(\d+)([A-Z]*)$/);
                                                 this.nomor_urut = seqMatch ? seqMatch[1] + (seqMatch[2] || '') : seqRaw;
                                             }
+                                            this.$nextTick(() => {
+                                                this.originalKode = this.generatedKode;
+                                                this.originalNama = (item.nama || editLokasi.nama || '').trim();
+                                                this.originalGedungId = item.gedung_id || editLokasi.gedung_id;
+                                            });
                                         }
                                     }"
-                            x-init="$watch('showEditLokasi', (val) => { if(val) { parseFromCurrent(); } }); $watch('generatedKode', (code) => { editLokasi.nomor_ruangan = code; }); $watch('lantai', (fl) => { editLokasi.lantai = fl; });">
+                            x-init="if (showEditLokasi) { parseFrom(editLokasi); } $watch('showEditLokasi', (val) => { if(val && (!nomor_urut || nomor_urut.trim() === '')) { parseFrom(editLokasi); } });">
                             <input type="hidden" name="form_type" value="edit_lokasi">
                             <input type="hidden" name="id" :value="editLokasi.id">
 
@@ -3847,8 +3862,8 @@
                             </div>
                             <div
                                 class="bg-slate-50 px-5 py-2.5 sm:px-6 sm:py-3 sm:flex sm:flex-row-reverse border-t border-slate-100 rounded-b-2xl sm:rounded-b-3xl gap-2">
-                                <button type="submit" :disabled="isDuplicate || (JSON.stringify(editLokasi) === originalEditLokasi) || !nomor_urut || nomor_urut.trim() === '' || !editLokasi.nama || editLokasi.nama.trim() === ''"
-                                    :class="(isDuplicate || (JSON.stringify(editLokasi) === originalEditLokasi) || !nomor_urut || nomor_urut.trim() === '' || !editLokasi.nama || editLokasi.nama.trim() === '') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-amber-600 shadow-amber-500/20'"
+                                <button type="submit" :disabled="isDuplicate || isUnchanged || !nomor_urut || nomor_urut.trim() === '' || !editLokasi.nama || editLokasi.nama.trim() === ''"
+                                    :class="(isDuplicate || isUnchanged || !nomor_urut || nomor_urut.trim() === '' || !editLokasi.nama || editLokasi.nama.trim() === '') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-amber-600 shadow-amber-500/20'"
                                     class="inline-flex w-full justify-center rounded-xl bg-amber-50 px-4 py-2 text-xs font-bold text-amber-600 sm:w-auto transition-colors"
                                     style="background-color: rgb(245 158 11); color: white;">{{ __('Save Changes') }}</button>
                                 <button type="button" @click="showEditLokasi = false"
