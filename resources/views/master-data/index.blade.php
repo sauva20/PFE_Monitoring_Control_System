@@ -3433,7 +3433,10 @@
                                                 if (this.klasifikasi_2 && !this.klasifikasiList.includes(this.klasifikasi_2)) {
                                                     this.klasifikasiList.push(this.klasifikasi_2);
                                                 }
-                                                this.nomor_urut = parts.slice(3).join('.').replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
+                                                // Extract sequence number: strip leading zeros to get raw digits
+                                                let seqRaw = parts.slice(3).join('.').replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
+                                                let seqMatch = seqRaw.match(/^0*(\d+)([A-Z]*)$/);
+                                                this.nomor_urut = seqMatch ? seqMatch[1] + (seqMatch[2] || '') : seqRaw;
                                             } else {
                                                 this.lantai = editLokasi.lantai !== undefined && editLokasi.lantai !== null ? String(editLokasi.lantai).replace(/\D/g, '') : '';
                                                 let k = editLokasi.klasifikasi || '';
@@ -3451,7 +3454,9 @@
                                                 if (this.klasifikasi_2 && !this.klasifikasiList.includes(this.klasifikasi_2)) {
                                                     this.klasifikasiList.push(this.klasifikasi_2);
                                                 }
-                                                this.nomor_urut = raw.replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
+                                                let seqRaw = raw.replace(/[^0-9a-zA-Z]/g, '').toUpperCase();
+                                                let seqMatch = seqRaw.match(/^0*(\d+)([A-Z]*)$/);
+                                                this.nomor_urut = seqMatch ? seqMatch[1] + (seqMatch[2] || '') : seqRaw;
                                             }
                                         }
                                     }"

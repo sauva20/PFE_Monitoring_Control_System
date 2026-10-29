@@ -156,7 +156,7 @@
                 </div>
                 <!-- Action Buttons: Always require PIN verification -->
                 <div class="flex items-center gap-2">
-                    <button @click="showPinModal = true; pinAction = 'inspeksi'" class="bg-[#009B77] hover:bg-[#008264] text-white px-3.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors font-bold cursor-pointer">
+                    <button @click="showPinModal = true; pinAction = 'inspeksi'" class="bg-red-500 hover:bg-red-600 text-white px-3.5 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5 transition-colors font-bold cursor-pointer">
                         <i class="ph-light ph-scan text-sm"></i>
                         <span class="text-[10px] font-bold uppercase tracking-widest">{{ __('Inspection') }}</span>
                     </button>
