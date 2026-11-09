@@ -26,9 +26,6 @@ class DashboardController extends Controller
         // 1. Summary Cards Data
         $totalApar = Apar::count();
 
-        $startOfSelectedMonth = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->startOfMonth();
-        $endOfSelectedMonth = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth();
-
         $apars = Apar::with('jenis')->get();
 
         // Ambil data inspeksi yang benar-benar tercatat pada bulan & tahun terpilih
@@ -54,21 +51,21 @@ class DashboardController extends Controller
             }
         }
 
-        // Expiry check pada batas bulan terpilih (hanya yang terjadi di bulan tersebut)
-        $thirtyDaysFromSelected = $endOfSelectedMonth->copy()->addDays(30);
-        $akanKedaluwarsa = 0;
+        $today = Carbon::today();
+        $thirtyDaysFromToday = $today->copy()->addDays(30);
         $sudahKedaluwarsa = 0;
+        $akanKedaluwarsa = 0;
 
         foreach ($apars as $apar) {
-            if ($apar->tgl_kedaluwarsa) {
-                // APAR yang kedaluwarsa pada bulan & tahun terpilih
-                if ($apar->tgl_kedaluwarsa->year == $selectedYear && $apar->tgl_kedaluwarsa->month == $selectedMonth) {
-                    $sudahKedaluwarsa++;
-                }
-                // APAR yang akan kedaluwarsa pada rentang 30 hari ke depan setelah akhir bulan terpilih
-                elseif ($apar->tgl_kedaluwarsa->between($endOfSelectedMonth, $thirtyDaysFromSelected)) {
-                    $akanKedaluwarsa++;
-                }
+            if (! $apar->tgl_kedaluwarsa) {
+                continue;
+            }
+
+            $expiryDate = Carbon::parse($apar->tgl_kedaluwarsa);
+            if ($expiryDate->lt($today)) {
+                $sudahKedaluwarsa++;
+            } elseif ($expiryDate->gte($today) && $expiryDate->lte($thirtyDaysFromToday)) {
+                $akanKedaluwarsa++;
             }
         }
 
