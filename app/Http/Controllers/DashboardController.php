@@ -51,6 +51,8 @@ class DashboardController extends Controller
             }
         }
 
+
+        // Hitung jumlah APAR yang sudah kedaluwarsa dan akan kedaluwarsa dalam 30 hari ke depan
         $today = Carbon::today();
         $thirtyDaysFromToday = $today->copy()->addDays(30);
         $sudahKedaluwarsa = 0;

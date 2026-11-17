@@ -7,22 +7,22 @@
         @json($allAparItems ?? [])
     </script>
     <div class="space-y-6"
-        x-data="{ activeTab: (new URLSearchParams(window.location.search).get('tab')) || localStorage.getItem('masterDataTab') || 'data', 
-                    showModalApar: {{ old('form_type') == 'tambah_apar' && $errors->any() ? 'true' : 'false' }} || (new URLSearchParams(window.location.search).get('action') === 'add-pfe'), 
+        x-data="{ activeTab: (new URLSearchParams(window.location.search).get('tab')) || localStorage.getItem('masterDataTab') || 'data',
+                    showModalApar: {{ old('form_type') == 'tambah_apar' && $errors->any() ? 'true' : 'false' }} || (new URLSearchParams(window.location.search).get('action') === 'add-pfe'),
                     showQrModal: false, qrData: { id: '', kode: '', svg: '' },
-                    showModalEditApar: {{ old('form_type') == 'edit_apar' && $errors->any() ? 'true' : 'false' }}, 
-                    editApar: { id:'{{ old('form_type') == 'edit_apar' ? old('id') : '' }}', kode:'{{ old('form_type') == 'edit_apar' ? old('kode') : '' }}', nomor_apar:'{{ old('form_type') == 'edit_apar' ? old('nomor_apar') : '' }}', nomor_ruangan:'{{ old('form_type') == 'edit_apar' ? old('nomor_ruangan') : '' }}', gedung_id:'{{ old('form_type') == 'edit_apar' ? old('gedung_id') : '' }}', lokasi:'{{ old('form_type') == 'edit_apar' ? old('lokasi') : '' }}', jenis_id:'{{ old('form_type') == 'edit_apar' ? old('jenis_id') : '' }}', kapasitas_id:'{{ old('form_type') == 'edit_apar' ? old('kapasitas_id') : '' }}', qty:'{{ old('form_type') == 'edit_apar' ? old('qty') : '' }}', tgl_kedaluwarsa:'{{ old('form_type') == 'edit_apar' ? old('tgl_kedaluwarsa') : '' }}', tgl_isi_ulang:'{{ old('form_type') == 'edit_apar' ? old('tgl_isi_ulang') : '' }}' },  
-                    showModalLokasi: {{ old('form_type') == 'tambah_lokasi' && $errors->any() ? 'true' : 'false' }} || (new URLSearchParams(window.location.search).get('action') === 'add-location'), 
-                    showModalGedung: {{ old('form_type') == 'tambah_gedung' && $errors->any() ? 'true' : 'false' }} || (new URLSearchParams(window.location.search).get('action') === 'add-building'), 
-                    showModalJenis: {{ old('form_type') == 'tambah_jenis' && $errors->any() ? 'true' : 'false' }}, 
-                    showModalKapasitas: {{ old('form_type') == 'tambah_kapasitas' && $errors->any() ? 'true' : 'false' }}, 
-                    showEditGedung: {{ old('form_type') == 'edit_gedung' && $errors->any() ? 'true' : 'false' }}, 
-                    editGedung: { id:'{{ old('form_type') == 'edit_gedung' ? old('id') : '' }}', nama:'{{ old('form_type') == 'edit_gedung' ? old('nama') : '' }}' }, 
-                    showEditLokasi: {{ old('form_type') == 'edit_lokasi' && $errors->any() ? 'true' : 'false' }}, 
-                    editLokasi: { id:'{{ old('form_type') == 'edit_lokasi' ? old('id') : '' }}', nama:'{{ old('form_type') == 'edit_lokasi' ? old('nama') : '' }}', nomor_ruangan:'{{ old('form_type') == 'edit_lokasi' ? old('nomor_ruangan') : '' }}', lantai:'{{ old('form_type') == 'edit_lokasi' ? old('lantai') : '' }}', gedung_id:'{{ old('form_type') == 'edit_lokasi' ? old('gedung_id') : '' }}' }, 
-                    showEditJenis: {{ old('form_type') == 'edit_jenis' && $errors->any() ? 'true' : 'false' }}, 
-                    editJenis: { id:'{{ old('form_type') == 'edit_jenis' ? old('id') : '' }}', nama:'{{ old('form_type') == 'edit_jenis' ? old('nama') : '' }}' }, 
-                    showEditKapasitas: {{ old('form_type') == 'edit_kapasitas' && $errors->any() ? 'true' : 'false' }}, 
+                    showModalEditApar: {{ old('form_type') == 'edit_apar' && $errors->any() ? 'true' : 'false' }},
+                    editApar: { id:'{{ old('form_type') == 'edit_apar' ? old('id') : '' }}', kode:'{{ old('form_type') == 'edit_apar' ? old('kode') : '' }}', nomor_apar:'{{ old('form_type') == 'edit_apar' ? old('nomor_apar') : '' }}', nomor_ruangan:'{{ old('form_type') == 'edit_apar' ? old('nomor_ruangan') : '' }}', gedung_id:'{{ old('form_type') == 'edit_apar' ? old('gedung_id') : '' }}', lokasi:'{{ old('form_type') == 'edit_apar' ? old('lokasi') : '' }}', jenis_id:'{{ old('form_type') == 'edit_apar' ? old('jenis_id') : '' }}', kapasitas_id:'{{ old('form_type') == 'edit_apar' ? old('kapasitas_id') : '' }}', qty:'{{ old('form_type') == 'edit_apar' ? old('qty') : '' }}', tgl_kedaluwarsa:'{{ old('form_type') == 'edit_apar' ? old('tgl_kedaluwarsa') : '' }}', tgl_isi_ulang:'{{ old('form_type') == 'edit_apar' ? old('tgl_isi_ulang') : '' }}' },
+                    showModalLokasi: {{ old('form_type') == 'tambah_lokasi' && $errors->any() ? 'true' : 'false' }} || (new URLSearchParams(window.location.search).get('action') === 'add-location'),
+                    showModalGedung: {{ old('form_type') == 'tambah_gedung' && $errors->any() ? 'true' : 'false' }} || (new URLSearchParams(window.location.search).get('action') === 'add-building'),
+                    showModalJenis: {{ old('form_type') == 'tambah_jenis' && $errors->any() ? 'true' : 'false' }},
+                    showModalKapasitas: {{ old('form_type') == 'tambah_kapasitas' && $errors->any() ? 'true' : 'false' }},
+                    showEditGedung: {{ old('form_type') == 'edit_gedung' && $errors->any() ? 'true' : 'false' }},
+                    editGedung: { id:'{{ old('form_type') == 'edit_gedung' ? old('id') : '' }}', nama:'{{ old('form_type') == 'edit_gedung' ? old('nama') : '' }}' },
+                    showEditLokasi: {{ old('form_type') == 'edit_lokasi' && $errors->any() ? 'true' : 'false' }},
+                    editLokasi: { id:'{{ old('form_type') == 'edit_lokasi' ? old('id') : '' }}', nama:'{{ old('form_type') == 'edit_lokasi' ? old('nama') : '' }}', nomor_ruangan:'{{ old('form_type') == 'edit_lokasi' ? old('nomor_ruangan') : '' }}', lantai:'{{ old('form_type') == 'edit_lokasi' ? old('lantai') : '' }}', gedung_id:'{{ old('form_type') == 'edit_lokasi' ? old('gedung_id') : '' }}' },
+                    showEditJenis: {{ old('form_type') == 'edit_jenis' && $errors->any() ? 'true' : 'false' }},
+                    editJenis: { id:'{{ old('form_type') == 'edit_jenis' ? old('id') : '' }}', nama:'{{ old('form_type') == 'edit_jenis' ? old('nama') : '' }}' },
+                    showEditKapasitas: {{ old('form_type') == 'edit_kapasitas' && $errors->any() ? 'true' : 'false' }},
                     editKapasitas: { id:'{{ old('form_type') == 'edit_kapasitas' ? old('id') : '' }}', ukuran:'{{ old('form_type') == 'edit_kapasitas' ? old('ukuran') : '' }}' },
                     originalEditApar: '', originalEditGedung: '', originalEditLokasi: '', originalEditJenis: '', originalEditKapasitas: '' }">
 
@@ -1073,9 +1073,9 @@
 
                         <form action="/master-data/lokasi" method="POST"
                             @submit="isDuplicate || nama.trim() === '' || gedung_id === '' || !nomor_urut || nomor_urut.trim() === '' ? $event.preventDefault() : true"
-                            x-data="{ 
-                                        nama: '', 
-                                        gedung_id: '', 
+                            x-data="{
+                                        nama: '',
+                                        gedung_id: '',
                                         optionsGedung: [
                                             @foreach($gedungs as $ged)
                                                 { id: '{{ $ged->id }}', name: '{{ addslashes($ged->nama) }}' },
@@ -1084,9 +1084,9 @@
                                         get kode_gedung() {
                                             let sel = this.optionsGedung.find(o => o.id == this.gedung_id);
                                             if (!sel) return '';
-                                            return sel.name.replace(/^(BU|GEDUNG)[-_\s]*/i, '').trim().toUpperCase() || sel.name.trim().toUpperCase();
+                                            return sel.name.replace(/^(BU|GEDUNG)[-_\s]*/i, '').trim().substring(0, 2).toUpperCase() || sel.name.trim().substring(0, 2).toUpperCase();
                                         },
-                                        lantai: '', 
+                                        lantai: '',
                                         klasifikasiList: (function() {
                                             let base = ['NC', 'CNC', 'C', 'D', 'SP'];
                                             try {
@@ -1097,8 +1097,8 @@
                                             } catch(e) {}
                                             return base;
                                         })(),
-                                        klasifikasi_1: 'NC', 
-                                        klasifikasi_2: '', 
+                                        klasifikasi_1: 'NC',
+                                        klasifikasi_2: '',
                                         openKlasifikasi1: false,
                                         openKlasifikasi2: false,
                                         newKlasifikasi1: '',
@@ -1117,12 +1117,12 @@
                                             if (target === 1) { this.klasifikasi_1 = clean; this.newKlasifikasi1 = ''; this.openKlasifikasi1 = false; }
                                             if (target === 2) { this.klasifikasi_2 = clean; this.newKlasifikasi2 = ''; this.openKlasifikasi2 = false; }
                                         },
-                                        nomor_urut: '', 
-                                        existing: [ 
-                                            @foreach(\App\Models\Lokasi::all() as $l) 
-                                                { id: {{ $l->id }}, gedung_id: '{{ $l->gedung_id }}', lantai: '{{ addslashes($l->lantai ?? '') }}', nomor_ruangan: '{{ addslashes($l->nomor_ruangan ?? '') }}' }, 
-                                            @endforeach 
-                                        ], 
+                                        nomor_urut: '',
+                                        existing: [
+                                            @foreach(\App\Models\Lokasi::all() as $l)
+                                                { id: {{ $l->id }}, gedung_id: '{{ $l->gedung_id }}', lantai: '{{ addslashes($l->lantai ?? '') }}', nomor_ruangan: '{{ addslashes($l->nomor_ruangan ?? '') }}' },
+                                            @endforeach
+                                        ],
                                         get fullKlasifikasi() {
                                             if (!this.klasifikasi_1) return '';
                                             if (this.klasifikasi_2 && this.klasifikasi_2 !== '' && this.klasifikasi_2 !== '-') {
@@ -1166,7 +1166,7 @@
                                             }
                                             return s;
                                         },
-                                        get isDuplicate() { 
+                                        get isDuplicate() {
                                             if (!this.gedung_id) return false;
                                             let fl = (this.lantai !== null && this.lantai !== undefined) ? String(this.lantai).trim() : '';
                                             if (fl === '') return false;
@@ -1185,7 +1185,7 @@
                                                 if (targetSeq && existSeq && existSeq === targetSeq) return true;
                                                 return false;
                                             });
-                                        } 
+                                        }
                                     }">
                             <input type="hidden" name="form_type" value="tambah_lokasi">
                             <div class="bg-white rounded-t-2xl sm:rounded-t-3xl px-5 pt-4 pb-3 sm:px-6 sm:pt-4 sm:pb-3">
@@ -1214,15 +1214,15 @@
 
                                 <div class="space-y-2.5">
                                     <!-- Gedung -->
-                                    <div x-data="{ 
-                                                        open: false, 
-                                                        selectedId: '', 
+                                    <div x-data="{
+                                                        open: false,
+                                                        selectedId: '',
                                                         selectedName: '{{ __('Select Building') }}',
                                                         options: [
                                                             @foreach($gedungs as $ged)
                                                                 { id: '{{ $ged->id }}', name: '{{ addslashes($ged->nama) }}' },
                                                             @endforeach
-                                                        ] 
+                                                        ]
                                                     }" class="relative">
 
                                         <label
@@ -2395,15 +2395,15 @@
                                                 class="ph-bold ph-calendar-blank absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg z-10"></i>
                                             <input type="text" name="tgl_kedaluwarsa"
                                                 placeholder="{{ __('Select Date...') }}"
-                                                value="{{ old('tgl_kedaluwarsa') }}" @input.debounce.100ms="if($event.target.value) { 
-                                                                    let d = new Date($event.target.value); 
-                                                                    if(!isNaN(d)) { 
-                                                                         d.setFullYear(d.getFullYear() - 2); 
+                                                value="{{ old('tgl_kedaluwarsa') }}" @input.debounce.100ms="if($event.target.value) {
+                                                                    let d = new Date($event.target.value);
+                                                                    if(!isNaN(d)) {
+                                                                         d.setFullYear(d.getFullYear() - 2);
                                                                         let prev = d.toISOString().split('T')[0];
                                                                         let input2 = $event.target.closest('form').querySelector('input[name=tgl_isi_ulang]');
                                                                         if(input2._flatpickr) input2._flatpickr.setDate(prev, false);
                                                                         else input2.value = prev;
-                                                                    } 
+                                                                    }
                                                                 }"
                                                 class="datepicker w-full bg-white border-2 border-slate-200 rounded-xl py-2.5 pl-10 pr-10 text-sm font-medium text-slate-700 focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 appearance-none cursor-pointer">
                                             <i
@@ -2421,15 +2421,15 @@
                                             <i
                                                 class="ph-bold ph-calendar-blank absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg z-10"></i>
                                             <input type="text" name="tgl_isi_ulang" placeholder="{{ __('Select Date...') }}"
-                                                value="{{ old('tgl_isi_ulang') }}" @input.debounce.100ms="if($event.target.value) { 
-                                                                    let d = new Date($event.target.value); 
-                                                                    if(!isNaN(d)) { 
-                                                                        d.setFullYear(d.getFullYear() + 2); 
+                                                value="{{ old('tgl_isi_ulang') }}" @input.debounce.100ms="if($event.target.value) {
+                                                                    let d = new Date($event.target.value);
+                                                                    if(!isNaN(d)) {
+                                                                        d.setFullYear(d.getFullYear() + 2);
                                                                         let next = d.toISOString().split('T')[0];
                                                                         let input1 = $event.target.closest('form').querySelector('input[name=tgl_kedaluwarsa]');
                                                                         if(input1._flatpickr) input1._flatpickr.setDate(next, false);
                                                                         else input1.value = next;
-                                                                    } 
+                                                                    }
                                                                 }"
                                                 class="datepicker w-full bg-white border-2 border-slate-200 rounded-xl py-2.5 pl-10 pr-10 text-sm font-medium text-slate-700 focus:outline-none focus:border-[#009B77] focus:ring-4 focus:ring-[#009B77]/15 appearance-none cursor-pointer">
                                             <i
@@ -3061,15 +3061,15 @@
                                                 class="ph-bold ph-calendar-blank absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg z-10"></i>
                                             <input type="text" name="tgl_kedaluwarsa"
                                                 placeholder="{{ __('Select Date...') }}" x-model="editApar.tgl_kedaluwarsa"
-                                                @input.debounce.100ms="if($event.target.value) { 
-                                                                    let d = new Date($event.target.value); 
-                                                                    if(!isNaN(d)) { 
-                                                                        d.setFullYear(d.getFullYear() - 2); 
+                                                @input.debounce.100ms="if($event.target.value) {
+                                                                    let d = new Date($event.target.value);
+                                                                    if(!isNaN(d)) {
+                                                                        d.setFullYear(d.getFullYear() - 2);
                                                                         let prev = d.toISOString().split('T')[0];
                                                                         editApar.tgl_isi_ulang = prev;
                                                                         let input2 = $event.target.closest('form').querySelector('input[name=tgl_isi_ulang]');
                                                                         if(input2 && input2._flatpickr) input2._flatpickr.setDate(prev, false);
-                                                                    } 
+                                                                    }
                                                                 }" required
                                                 class="datepicker w-full bg-white border-2 border-slate-200 rounded-xl py-2.5 pl-10 pr-10 text-sm font-medium text-slate-700 focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/15 appearance-none cursor-pointer">
                                             <i
@@ -3087,15 +3087,15 @@
                                             <i
                                                 class="ph-bold ph-calendar-blank absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-lg z-10"></i>
                                             <input type="text" name="tgl_isi_ulang" placeholder="{{ __('Select Date...') }}"
-                                                x-model="editApar.tgl_isi_ulang" @input.debounce.100ms="if($event.target.value) { 
-                                                                    let d = new Date($event.target.value); 
-                                                                    if(!isNaN(d)) { 
-                                                                        d.setFullYear(d.getFullYear() + 2); 
+                                                x-model="editApar.tgl_isi_ulang" @input.debounce.100ms="if($event.target.value) {
+                                                                    let d = new Date($event.target.value);
+                                                                    if(!isNaN(d)) {
+                                                                        d.setFullYear(d.getFullYear() + 2);
                                                                         let next = d.toISOString().split('T')[0];
                                                                         editApar.tgl_kedaluwarsa = next;
                                                                         let input1 = $event.target.closest('form').querySelector('input[name=tgl_kedaluwarsa]');
                                                                         if(input1 && input1._flatpickr) input1._flatpickr.setDate(next, false);
-                                                                    } 
+                                                                    }
                                                                 }"
                                                 class="datepicker w-full bg-white border-2 border-slate-200 rounded-xl py-2.5 pl-10 pr-10 text-sm font-medium text-slate-700 focus:outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-500/15 appearance-none cursor-pointer">
                                             <i
@@ -3313,7 +3313,7 @@
                                         get kode_gedung() {
                                             let sel = this.optionsGedung.find(o => o.id == editLokasi.gedung_id);
                                             if (!sel) return '';
-                                            return sel.name.replace(/^(BU|GEDUNG)[-_\s]*/i, '').trim().toUpperCase() || sel.name.trim().toUpperCase();
+                                            return sel.name.replace(/^(BU|GEDUNG)[-_\s]*/i, '').trim().substring(0, 2).toUpperCase() || sel.name.trim().substring(0, 2).toUpperCase();
                                         },
                                         lantai: '',
                                         klasifikasiList: (function() {
@@ -3355,10 +3355,10 @@
                                                    this.originalNama === (editLokasi.nama || '').trim() &&
                                                    String(this.originalGedungId) === String(editLokasi.gedung_id || '');
                                         },
-                                        existing: [ 
-                                            @foreach(\App\Models\Lokasi::all() as $l) 
-                                                { id: {{ $l->id }}, gedung_id: '{{ $l->gedung_id }}', lantai: '{{ addslashes($l->lantai ?? '') }}', nomor_ruangan: '{{ addslashes($l->nomor_ruangan ?? '') }}' }, 
-                                            @endforeach 
+                                        existing: [
+                                            @foreach(\App\Models\Lokasi::all() as $l)
+                                                { id: {{ $l->id }}, gedung_id: '{{ $l->gedung_id }}', lantai: '{{ addslashes($l->lantai ?? '') }}', nomor_ruangan: '{{ addslashes($l->nomor_ruangan ?? '') }}' },
+                                            @endforeach
                                         ],
                                         extractSeq(code) {
                                             if (!code) return null;
@@ -3373,7 +3373,7 @@
                                             }
                                             return s;
                                         },
-                                        get isDuplicate() { 
+                                        get isDuplicate() {
                                             let gid = editLokasi.gedung_id;
                                             let fl = (this.lantai !== null && this.lantai !== undefined) ? String(this.lantai).trim() : '';
                                             if (!gid || fl === '') return false;
@@ -3984,10 +3984,10 @@
                                         <label
                                             class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{{ __('Capacity') }}</label>
                                         <div class="relative flex items-center">
-                                            <!-- Remove ' Kg' from the model value for display, but keep the input name as ukuran. 
-                                                                 We use a computed property or just x-effect to strip Kg when modal opens, but easier is just allowing Alpine to display the raw value, 
-                                                                 wait, editKapasitas.ukuran already has " Kg" in it from the backend. 
-                                                                 Let's strip it using x-bind:value and x-on:input, or just let the backend handle the 'Kg' part. 
+                                            <!-- Remove ' Kg' from the model value for display, but keep the input name as ukuran.
+                                                                 We use a computed property or just x-effect to strip Kg when modal opens, but easier is just allowing Alpine to display the raw value,
+                                                                 wait, editKapasitas.ukuran already has " Kg" in it from the backend.
+                                                                 Let's strip it using x-bind:value and x-on:input, or just let the backend handle the 'Kg' part.
                                                                  Actually, if we just set x-model="editKapasitas.ukuran_num" and populate it on click. -->
                                             <input type="number" step="any" name="ukuran"
                                                 :value="editKapasitas.ukuran.replace(/[^0-9.]/g, '')"
@@ -4071,13 +4071,13 @@
     </div>
 
     <!-- Modal History -->
-    <div x-data="{ 
-                            show: false, 
-                            loading: false, 
-                            htmlContent: '', 
+    <div x-data="{
+                            show: false,
+                            loading: false,
+                            htmlContent: '',
                             aparKode: '',
-                            openModal(e) { 
-                                this.show = true; 
+                            openModal(e) {
+                                this.show = true;
                                 this.loading = true;
                                 this.aparKode = e.detail.kode;
                                 this.htmlContent = '';
@@ -4133,9 +4133,9 @@
         </div>
     </div>
     <!-- Modal Cadangan (Add/Edit) -->
-    <div x-data="{ 
-                            show: {{ (old('form_type') == 'tambah_cadangan' || old('form_type') == 'edit_cadangan') && $errors->any() ? 'true' : 'false' }}, 
-                            formType: '{{ old('form_type') ?: '' }}', 
+    <div x-data="{
+                            show: {{ (old('form_type') == 'tambah_cadangan' || old('form_type') == 'edit_cadangan') && $errors->any() ? 'true' : 'false' }},
+                            formType: '{{ old('form_type') ?: '' }}',
                             cadanganAction: '{{ old('cadangan_action') ?: '' }}',
                             cadanganData: {
                                 gedung_id: '{{ old('form_type') == 'tambah_cadangan' || old('form_type') == 'edit_cadangan' ? old('gedung_id') : '' }}',
@@ -4152,7 +4152,7 @@
                             get isDuplicateCadangan() {
                                 if (!this.cadanganData.gedung_id || !this.cadanganData.jenis_id || !this.cadanganData.kapasitas_id) return false;
                                 let editId = this.formType === 'edit_cadangan' ? (this.cadanganAction.split('/').pop()) : null;
-                                return this.existingCadangans.some(c => 
+                                return this.existingCadangans.some(c =>
                                     c.gedung_id == this.cadanganData.gedung_id &&
                                     c.jenis_id == this.cadanganData.jenis_id &&
                                     c.kapasitas_id == this.cadanganData.kapasitas_id &&
@@ -4160,8 +4160,8 @@
                                 );
                             }
                          }" @open-cadangan.window="
-                            show = true; 
-                            formType = $event.detail.type; 
+                            show = true;
+                            formType = $event.detail.type;
                             cadanganAction = $event.detail.action;
                             if ($event.detail.type === 'edit_cadangan') {
                                 cadanganData.gedung_id = $event.detail.gedung;
@@ -4213,8 +4213,8 @@
                         <div class="p-6 space-y-5">
 
                             <div>
-                                <div x-data="{ 
-                                                        open: false, 
+                                <div x-data="{
+                                                        open: false,
                                                         search: '',
                                                         options: [
                                                             @foreach($gedungs as $gedung)
@@ -4291,8 +4291,8 @@
                             </div>
 
                             <div>
-                                <div x-data="{ 
-                                                        open: false, 
+                                <div x-data="{
+                                                        open: false,
                                                         search: '',
                                                         options: [
                                                             @foreach($jenisApars as $jenis)
@@ -4369,8 +4369,8 @@
                             </div>
 
                             <div>
-                                <div x-data="{ 
-                                                        open: false, 
+                                <div x-data="{
+                                                        open: false,
                                                         search: '',
                                                         options: [
                                                             @foreach($kapasitasApars as $kapasitas)
@@ -4768,7 +4768,7 @@
                     let name = g.name.toUpperCase();
                     if (name.includes('BU-')) {
                         let parts = name.split('BU-');
-                        return (parts[1] || '').trim();
+                        return (parts[1] || '').trim().substring(0, 2);
                     }
                     return name.charAt(0);
                 },
@@ -4938,7 +4938,7 @@
                     let name = g.name.toUpperCase();
                     if (name.includes('BU-')) {
                         let parts = name.split('BU-');
-                        return (parts[1] || '').trim();
+                        return (parts[1] || '').trim().substring(0, 2);
                     }
                     return name.charAt(0);
                 },
