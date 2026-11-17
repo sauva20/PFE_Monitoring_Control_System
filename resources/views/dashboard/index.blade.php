@@ -6,38 +6,38 @@
 <style>
 @media print {
     @page { size: landscape; margin: 5mm; }
-    html, body { 
-        background: white !important; 
-        -webkit-print-color-adjust: exact !important; 
-        print-color-adjust: exact !important; 
+    html, body {
+        background: white !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
         height: 100% !important;
         margin: 0 !important;
         padding: 0 !important;
         overflow: hidden !important;
     }
-    
+
     * { overflow: visible !important; }
 
     /* Hide UI elements and tables */
     .sidebar, header, nav, .btn-smooth-ring { display: none !important; }
-    
+
     /* Target only the tables */
-    [x-show="tab === 'belum'"], 
+    [x-show="tab === 'belum'"],
     [x-show="tab === 'sudah'"],
     #recentInspectionsTable {
         display: none !important;
     }
 
-    main { 
-        padding: 0 !important; 
-        margin: 0 !important; 
-        height: auto !important; 
+    main {
+        padding: 0 !important;
+        margin: 0 !important;
+        height: auto !important;
         overflow: visible !important;
     }
-    
+
     /* Frame scale for 1 page fit (landscape) */
     .space-y-4 { margin: 0 !important; padding: 0 !important; display: flex; flex-direction: column; gap: 0.25rem !important; }
-    
+
     /* Reduce vertical spacing in print mode to fit 1 page natively */
     .report-card, .chart-container { padding: 0.5rem 1rem !important; }
     .mb-4 { margin-bottom: 0.25rem !important; }
@@ -45,7 +45,7 @@
     .p-5 { padding: 0.75rem 1rem !important; }
     h2.text-2xl { font-size: 1.25rem !important; }
     #progressPieChart { transform: scale(0.85); transform-origin: center; margin: -10px 0 !important; }
-    
+
     /* Force desktop grid layouts for print */
     .grid-cols-1.xl\:grid-cols-7 {
         grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
@@ -59,7 +59,7 @@
     .print-col-span-2 {
         grid-column: span 2 / span 2 !important;
     }
-    
+
     /* Force green box grid layout for print */
     .md\:grid-cols-12 {
         grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
@@ -70,7 +70,7 @@
     .md\:col-span-6 {
         grid-column: span 6 / span 6 !important;
     }
-    
+
     .report-card, .chart-container {
         page-break-inside: avoid !important;
         break-inside: avoid !important;
@@ -107,7 +107,7 @@
             <div class="text-[11px] font-bold text-slate-500">{{ __('Period:') }} {{ __(\Carbon\Carbon::create()->month((int)$selectedMonth)->format('F')) }} {{ $selectedYear }}</div>
         </div>
     </div>
-    
+
     <!-- Header Area -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
         <!-- Left: Date Context -->
@@ -133,16 +133,16 @@
         <div class="flex items-center gap-3 flex-wrap sm:flex-nowrap justify-end">
             <!-- Filter Form -->
             <form method="GET" action="/dashboard" class="flex items-center gap-2 print:hidden" id="filterForm">
-                
+
                 <!-- Custom Month Dropdown -->
                 <div x-data="{ open: false, val: '{{ $selectedMonth }}' }" class="relative" @click.away="open = false">
                     <input type="hidden" name="month" :value="val">
                     <button type="button" @click="open = !open" class="flex items-center justify-between gap-2 w-36 bg-white border border-slate-200/60 rounded-xl py-2 px-3 text-sm font-bold text-slate-700 shadow-sm hover:border-[#009B77]/50 focus:border-[#009B77] focus:ring-2 focus:ring-[#009B77]/20 outline-none transition-all">
                         <span class="truncate text-left flex-1" x-text="
                             @foreach([
-                                1 => __('January'), 2 => __('February'), 3 => __('March'), 
-                                4 => __('April'), 5 => __('May'), 6 => __('June'), 
-                                7 => __('July'), 8 => __('August'), 9 => __('September'), 
+                                1 => __('January'), 2 => __('February'), 3 => __('March'),
+                                4 => __('April'), 5 => __('May'), 6 => __('June'),
+                                7 => __('July'), 8 => __('August'), 9 => __('September'),
                                 10 => __('October'), 11 => __('November'), 12 => __('December')
                             ] as $m => $monthName)
                                 val == '{{ $m }}' ? '{{ $monthName }}' :
@@ -150,15 +150,15 @@
                         "></span>
                         <i class="ph-bold ph-caret-down text-slate-400"></i>
                     </button>
-                    
+
                     <div x-show="open" style="display: none;" class="absolute top-full left-0 mt-1.5 w-full bg-white border border-slate-100 rounded-xl shadow-xl z-50 py-1.5 max-h-60 overflow-y-auto custom-scrollbar">
                         @foreach([
-                            1 => __('January'), 2 => __('February'), 3 => __('March'), 
-                            4 => __('April'), 5 => __('May'), 6 => __('June'), 
-                            7 => __('July'), 8 => __('August'), 9 => __('September'), 
+                            1 => __('January'), 2 => __('February'), 3 => __('March'),
+                            4 => __('April'), 5 => __('May'), 6 => __('June'),
+                            7 => __('July'), 8 => __('August'), 9 => __('September'),
                             10 => __('October'), 11 => __('November'), 12 => __('December')
                         ] as $m => $monthName)
-                            @php 
+                            @php
                                 $isDisabled = ($selectedYear == now()->year && $m > now()->month);
                             @endphp
                             @if($isDisabled)
@@ -181,7 +181,7 @@
                         <span x-text="val"></span>
                         <i class="ph-bold ph-caret-down text-slate-400"></i>
                     </button>
-                    
+
                     <div x-show="open" style="display: none;" class="absolute top-full right-0 mt-1.5 w-full bg-white border border-slate-100 rounded-xl shadow-xl z-50 py-1.5 max-h-60 overflow-y-auto custom-scrollbar">
                         @foreach(range(now()->year - 2, now()->year) as $y)
                             <button type="button" @click="val = '{{ $y }}'; open = false; $nextTick(() => document.getElementById('filterForm').submit())" class="w-full text-left px-3 py-2 text-sm font-bold transition-colors" :class="val == '{{ $y }}' ? 'bg-[#009B77]/10 text-[#009B77]' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'">
@@ -200,10 +200,10 @@
     </div>
 
 
-    
+
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-7 gap-3">
-        
+
         <!-- Card 1: {{ __('TOTAL PFE') }} -->
         <div class="bg-gradient-to-br from-[#009B77] to-[#007b5e] text-white rounded-2xl p-5 shadow-lg shadow-[#009B77]/20 hover:shadow-xl hover:-translate-y-1 border border-[#009B77] flex flex-col justify-between transition-all duration-300 group cursor-pointer report-card relative overflow-hidden xl:col-span-2">
             <!-- Background Decorations -->
@@ -211,7 +211,7 @@
             <div class="absolute right-[5%] bottom-[-10%] text-white/5 transform -rotate-12 scale-150 pointer-events-none transition-transform group-hover:scale-125 duration-500">
                 <i class="ph-fill ph-fire-extinguisher" style="font-size: 150px;"></i>
             </div>
-            
+
             <div class="relative z-10 flex h-full gap-4 items-center">
                 <!-- Left: TOTAL PFE -->
                 <div class="flex-1 flex items-center gap-4 h-full pl-2">
@@ -340,7 +340,7 @@
             <div class="md:col-span-3 lg:col-span-3 flex justify-center">
                 <div id="progressPieChart" class="w-full max-w-[160px]"></div>
             </div>
-            
+
             <!-- Middle: Info & Tabs -->
             <div class="md:col-span-6 lg:col-span-6">
                 <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
@@ -360,7 +360,7 @@
                             <p class="text-lg font-extrabold text-white"><span id="stat-sudahDiinspeksi">{{ $sudahDiinspeksiBulanIni }}</span> <span class="text-xs font-semibold text-emerald-100">APAR</span></p>
                         </div>
                     </div>
-                    
+
                     <div class="flex items-center gap-2.5">
                         <div class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-emerald-100">
                             <i class="ph-bold ph-clock text-lg"></i>
@@ -391,7 +391,7 @@
                     $now = \Carbon\Carbon::now();
                     $endOfMonth = \Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1)->endOfMonth();
                     $isCurrentMonth = $now->format('Y-m') === $endOfMonth->format('Y-m');
-                    
+
                     if ($isCurrentMonth) {
                         $daysLeft = intval(floor($now->diffInDays($endOfMonth, false)));
                     } elseif ($endOfMonth->isPast()) {
@@ -400,7 +400,7 @@
                         $daysLeft = $endOfMonth->daysInMonth;
                     }
                 @endphp
-                
+
                 <div class="bg-transparent rounded-2xl p-5 border-2 border-white/50 w-full min-h-[140px] flex flex-col justify-center relative overflow-hidden transition-colors duration-300 hover:bg-white/5">
                     <div class="flex items-center justify-between mb-3 relative z-10">
                         <h3 class="text-[11px] font-bold text-emerald-100 uppercase tracking-wider">{{ __('MONTHLY INSPECTION DEADLINE') }}</h3>
@@ -408,7 +408,7 @@
                             <i class="ph-bold ph-hourglass-high text-xl"></i>
                         </div>
                     </div>
-                    
+
                     <div class="relative z-10">
                         @if($isCurrentMonth && $daysLeft > 0)
                             <div class="flex items-baseline gap-1">
@@ -495,9 +495,9 @@
 
 
         <div class="overflow-x-auto">
-            
+
         </div>
-        
+
         <div class="overflow-x-auto" id="table-recent-container">
             @include('dashboard.partials.recent-inspections')
         </div>
@@ -507,7 +507,7 @@
 <!-- Script to initialize ApexCharts -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        
+
         // Data for Monthly Inspections Chart
         const yearlyData = @json($yearlyInspections);
         const monthCategories = yearlyData.map(item => item.month);
@@ -605,7 +605,7 @@
         const typesData = @json($jenisData);
         const typeLabels = Object.keys(typesData);
         const typeSeries = Object.values(typesData);
-        
+
         // Elegant Color Palette
         const colors = ['#009B77', '#8b5cf6', '#f59e0b', '#3b82f6', '#ef4444', '#14b8a6'];
 
@@ -774,7 +774,7 @@
                     const percent = totalProgress > 0 ? Math.round((val / totalProgress) * 100) : 0;
                     const isInspected = seriesIndex === 0;
                     const dotColor = isInspected ? '#10b981' : '#38bdf8';
-                    
+
                     return '<div style="background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; padding: 7px 12px; box-shadow: 0 12px 30px -4px rgba(0,0,0,0.4); display: flex; align-items: center; gap: 8px; font-family: inherit; pointer-events: none;">' +
                         '<span style="width: 8px; height: 8px; border-radius: 9999px; background: ' + dotColor + '; box-shadow: 0 0 8px ' + dotColor + ';"></span>' +
                         '<span style="font-weight: 700; color: #e2e8f0; font-size: 11px;">' + label + ':</span>' +
@@ -812,7 +812,7 @@
             if (!el) return;
             const currentText = el.innerText.replace('%', '');
             const currentValue = parseInt(currentText) || 0;
-            
+
             if (currentValue !== newValue) {
                 // Animate Number
                 let startTimestamp = null;
@@ -852,7 +852,7 @@
                     container.innerHTML = newHtml;
                     // Fade in
                     container.style.opacity = '1';
-                    
+
                     // Add a subtle flash effect to the table rows
                     const rows = container.querySelectorAll('tbody tr');
                     rows.forEach(row => {
@@ -868,7 +868,7 @@
             const urlParams = new URLSearchParams(window.location.search);
             const month = urlParams.get('month') || '{{ $selectedMonth }}';
             const year = urlParams.get('year') || '{{ $selectedYear }}';
-            
+
             fetch(`/dashboard?month=${month}&year=${year}`, {
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -877,39 +877,36 @@
             })
             .then(response => response.json())
             .then(data => {
-                // Update stats with super cool animations
                 updateStatWithAnimation('stat-totalApar', data.stats.totalApar);
                 updateStatWithAnimation('stat-totalStock', data.stats.totalStock);
                 updateStatWithAnimation('stat-kondisiBaik', data.stats.kondisiBaik);
                 updateStatWithAnimation('stat-kondisiBaikPercentage', data.stats.kondisiBaikPercentage, true);
-                
+
                 const bar = document.getElementById('stat-kondisiBaikBar');
                 if(bar) bar.style.width = data.stats.kondisiBaikPercentage + '%';
-                
+
                 updateStatWithAnimation('stat-rusakServis', data.stats.rusakServis);
                 updateStatWithAnimation('stat-akanKedaluwarsa', data.stats.akanKedaluwarsa);
                 updateStatWithAnimation('stat-sudahKedaluwarsa', data.stats.sudahKedaluwarsa);
                 updateStatWithAnimation('stat-aparKosong', data.stats.aparKosong);
                 updateStatWithAnimation('stat-sudahDiinspeksi', data.stats.sudahDiinspeksiBulanIni);
                 updateStatWithAnimation('stat-belumDiinspeksi', data.stats.belumDiinspeksiBulanIni);
-                
-                // Update Progress Donut Chart
+
                 const totalProgress = data.stats.sudahDiinspeksiBulanIni + data.stats.belumDiinspeksiBulanIni;
                 const progPct = totalProgress > 0 ? Math.round((data.stats.sudahDiinspeksiBulanIni / totalProgress) * 100) : 0;
-                
+
                 if (window.progressChart) {
                     window.progressChart.updateSeries([data.stats.sudahDiinspeksiBulanIni, data.stats.belumDiinspeksiBulanIni]);
                     window.progressChart.updateOptions({
                         plotOptions: {
-                            pie: { donut: { labels: { 
+                            pie: { donut: { labels: {
                                 value: { formatter: function() { return progPct + "%"; } },
                                 total: { formatter: function() { return progPct + "%"; } }
                             }}}
                         }
                     });
                 }
-                
-                // Update Monthly Chart
+
                 if (window.monthlyChart) {
                     const monthSudah = data.charts.yearlyInspections.map(item => item.sudah);
                     const monthBelum = data.charts.yearlyInspections.map(item => item.belum);
@@ -918,20 +915,19 @@
                         { name: '{{ __('UNINSPECTED') }}', data: monthBelum }
                     ]);
                 }
-                
-                // Update Types Chart
+
                 if (window.typeChart) {
                     window.typeChart.updateSeries(Object.values(data.charts.jenisData));
                     window.typeChart.updateOptions({ labels: Object.keys(data.charts.jenisData) });
                 }
-                
-                // Update Tables with cross-fade animation
+
                 updateTableWithAnimation('table-recent-container', data.html.recentInspections);
                 updateTableWithAnimation('table-uninspected-container', data.html.uninspectedTable);
                 updateTableWithAnimation('table-inspected-container', data.html.inspectedTable);
             })
             .catch(error => console.error('Error fetching real-time dashboard data:', error));
         }, 15000);
+
     });
 </script>
 @endsection

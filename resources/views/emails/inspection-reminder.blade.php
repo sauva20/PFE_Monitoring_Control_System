@@ -6,14 +6,14 @@
 </head>
 <body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; color: #334155; line-height: 1.6; margin: 0; padding: 0;">
     <div style="max-width: 650px; margin: 40px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); border: 1px solid #e2e8f0; border-top: 5px solid #009B77;">
-        
+
         <div style="background-color: #009B77; color: #ffffff; padding: 24px; text-align: center;">
             <h1 style="margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.5px;">Pengingat Deadline Inspeksi Bulanan</h1>
         </div>
 
         <div style="padding: 32px 24px;">
             <p style="font-weight: 600; font-size: 16px; margin-top: 0;">Halo, {{ $user->name }}</p>
-            
+
             <p>
                 Ini adalah pengingat otomatis dari PFE Monitoring Control System — EHSS mengenai <strong>Deadline Inspeksi Bulanan Anda</strong> yang jatuh pada tanggal:
             </p>
